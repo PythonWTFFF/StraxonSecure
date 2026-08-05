@@ -36,23 +36,23 @@ const NAV = [
   { to: "/dashboard", label: "SOC", icon: Activity },
   { to: "/threat-intel", label: "CVE Feed", icon: ShieldAlert },
   { to: "/labs", label: "Labs", icon: Beaker },
-  { to: "/ctf", label: "CTF", icon: Flag, isNew: true },
-  { to: "/warroom", label: "War Room", icon: Swords, isNew: true },
-  { to: "/ir", label: "IR Playbooks", icon: AlertCircle, isNew: true },
-  { to: "/posture", label: "Posture", icon: BarChart3, isNew: true },
-  { to: "/packet-analyzer", label: "Packets", icon: Wifi, isNew: true },
+  { to: "/ctf", label: "CTF", icon: Flag },
+  { to: "/warroom", label: "War Room", icon: Swords },
+  { to: "/ir", label: "IR Playbooks", icon: AlertCircle },
+  { to: "/posture", label: "Posture", icon: BarChart3 },
+  { to: "/packet-analyzer", label: "Packets", icon: Wifi },
   { to: "/replay", label: "Replay", icon: Clapperboard },
   { to: "/learning", label: "Learn", icon: GraduationCap },
   { to: "/architecture", label: "Architect", icon: Network },
   { to: "/compliance", label: "Compliance", icon: ShieldCheck },
   { to: "/scanner", label: "Scanner", icon: ScanLine },
-  { to: "/easm", label: "EASM / Recon", icon: Globe, isNew: true },
-  { to: "/pentest", label: "PTaaS", icon: Crosshair, isNew: true },
-  { to: "/edr", label: "EDR", icon: Cpu, isNew: true },
-  { to: "/reports", label: "Reports", icon: FileText, isNew: true },
+  { to: "/easm", label: "EASM / Recon", icon: Globe },
+  { to: "/pentest", label: "PTaaS", icon: Crosshair },
+  { to: "/edr", label: "EDR", icon: Cpu },
+  { to: "/reports", label: "Reports", icon: FileText },
   { to: "/teams", label: "Teams", icon: Users },
   { to: "/assistant", label: "AI", icon: Bot },
-  { to: "/developer", label: "API & Webhooks", icon: Network, isNew: true },
+  { to: "/developer", label: "API & Webhooks", icon: Network },
   { to: "/settings", label: "Settings", icon: ShieldCheck },
   { to: "/pricing", label: "Pricing", icon: CreditCard },
 ] as const;
@@ -196,12 +196,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Desktop sidebar */}
         <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-border/50 p-4 sticky top-14 self-start h-[calc(100vh-3.5rem)]">
           <NavLinks />
-          <div className="mt-auto pt-4 text-[10px] font-mono text-muted-foreground/60 leading-relaxed">
-            <div>
-              NODE: <span className="text-primary">straxon-01</span>
+          <div className="mt-auto pt-6 text-[10px] font-mono text-muted-foreground/60 leading-relaxed border-t border-border/30">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+                </span>
+                <span className="tracking-wider">NODE: <span className="text-primary font-bold">straxon-01</span></span>
+              </div>
             </div>
-            <div>
-              BUILD: <span className="text-accent">3.0.0</span>
+            <div className="flex justify-between items-center opacity-70">
+              <span>UPTIME: 99.9%</span>
+              <span>LATENCY: 12ms</span>
+            </div>
+            <div className="flex justify-between items-center mt-0.5 opacity-70">
+              <span>BUILD: <span className="text-accent">3.0.0-rc</span></span>
+              <span>UPLINK: <span className="text-success">SECURE</span></span>
             </div>
           </div>
         </aside>
