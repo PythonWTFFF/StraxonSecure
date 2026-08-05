@@ -23,6 +23,8 @@ import {
   Wifi,
   Crosshair,
   Cpu,
+  Globe,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -44,8 +46,10 @@ const NAV = [
   { to: "/architecture", label: "Architect", icon: Network },
   { to: "/compliance", label: "Compliance", icon: ShieldCheck },
   { to: "/scanner", label: "Scanner", icon: ScanLine },
+  { to: "/easm", label: "EASM / Recon", icon: Globe, isNew: true },
   { to: "/pentest", label: "PTaaS", icon: Crosshair, isNew: true },
   { to: "/edr", label: "EDR", icon: Cpu, isNew: true },
+  { to: "/reports", label: "Reports", icon: FileText, isNew: true },
   { to: "/teams", label: "Teams", icon: Users },
   { to: "/assistant", label: "AI", icon: Bot },
   { to: "/developer", label: "API & Webhooks", icon: Network, isNew: true },

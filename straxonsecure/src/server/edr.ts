@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { triggerWebhooks } from "./developer";
 
 
 // ─── Get All Endpoints ────────────────────────────────────────────────────────
@@ -197,6 +198,16 @@ Provide a highly concise response in Markdown:
           .update({ status: "suspicious", last_seen: new Date().toISOString() })
           .eq("id", data.endpointId)
           .eq("user_id", context.userId);
+      }
+
+      if (threat_level === "critical" || threat_level === "high") {
+        // Trigger webhooks in the background (no await)
+        triggerWebhooks(context.userId, "edr.threat_detected", {
+          endpointId: data.endpointId,
+          processName: data.processName,
+          threatLevel: threat_level,
+          analysis,
+        }).catch(console.error);
       }
     }
 

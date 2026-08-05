@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CyberCard } from "@/components/cyber/CyberCard";
 import { CyberButton } from "@/components/cyber/CyberButton";
 import { SectionHeading } from "@/components/cyber/SectionHeading";
@@ -16,9 +16,12 @@ import {
   Activity,
   BookOpen,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { callAuthed } from "@/lib/serverCall";
+import { generateApiKey, getWebhooks, addWebhook, deleteWebhook } from "@/server/developer";
 
 export const Route = createFileRoute("/developer")({
   head: () => ({
@@ -41,14 +44,60 @@ function DeveloperHub() {
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  const generateKey = async () => {
+  const [webhooks, setWebhooks] = useState<any[]>([]);
+  const [newWebhook, setNewWebhook] = useState("");
+  const [addingWh, setAddingWh] = useState(false);
+
+  useEffect(() => {
+    if (user) loadWebhooks();
+  }, [user]);
+
+  const loadWebhooks = async () => {
+    try {
+      const data = await callAuthed(getWebhooks, undefined);
+      setWebhooks(data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleGenerateKey = async () => {
     setGenerating(true);
-    // Simulate generation delay
-    await new Promise((r) => setTimeout(r, 1200));
-    setApiKey(`strx_live_${crypto.randomUUID().replace(/-/g, "")}`);
-    setShowKey(true);
-    setGenerating(false);
-    toast.success("New API key generated successfully");
+    try {
+      const res = await callAuthed(generateApiKey, undefined);
+      setApiKey(res.apiKey);
+      setShowKey(true);
+      toast.success("New API key generated successfully");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to generate key");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleAddWebhook = async () => {
+    if (!newWebhook.trim()) return;
+    setAddingWh(true);
+    try {
+      const wh = await callAuthed(addWebhook, { url: newWebhook.trim() });
+      setWebhooks((prev) => [wh, ...prev]);
+      setNewWebhook("");
+      toast.success("Webhook endpoint added");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to add webhook (must be valid URL)");
+    } finally {
+      setAddingWh(false);
+    }
+  };
+
+  const handleDeleteWebhook = async (id: string) => {
+    try {
+      await callAuthed(deleteWebhook, { id });
+      setWebhooks((prev) => prev.filter((w) => w.id !== id));
+      toast.success("Webhook deleted");
+    } catch (e: any) {
+      toast.error("Failed to delete webhook");
+    }
   };
 
   const copyKey = () => {
@@ -88,7 +137,7 @@ function DeveloperHub() {
                 {!apiKey ? (
                   <div className="p-6 border border-dashed border-white/20 rounded-xl text-center space-y-3">
                     <p className="text-sm font-mono text-slate-500">No active API keys found</p>
-                    <CyberButton onClick={generateKey} disabled={generating} variant="cyan">
+                    <CyberButton onClick={handleGenerateKey} disabled={generating} variant="cyan">
                       {generating ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
                       ) : (
@@ -140,15 +189,37 @@ function DeveloperHub() {
                 Stream SOC alerts, failed compliance checks, and completed SAST scans directly to
                 your servers or Slack/Discord.
               </p>
-              <div className="flex items-center gap-3 p-3 bg-white/5 rounded border border-white/10">
-                <input
-                  type="text"
-                  placeholder="https://your-server.com/webhooks/straxon"
-                  className="flex-1 bg-transparent border-none outline-none font-mono text-sm text-slate-300 placeholder:text-slate-600"
-                />
-                <CyberButton variant="ghost" size="sm">
-                  Add Endpoint
-                </CyberButton>
+              
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 p-3 bg-white/5 rounded border border-white/10">
+                  <input
+                    type="url"
+                    value={newWebhook}
+                    onChange={(e) => setNewWebhook(e.target.value)}
+                    placeholder="https://your-server.com/webhooks/straxon"
+                    className="flex-1 bg-transparent border-none outline-none font-mono text-sm text-slate-300 placeholder:text-slate-600"
+                  />
+                  <CyberButton onClick={handleAddWebhook} disabled={addingWh} variant="ghost" size="sm">
+                    {addingWh ? "Adding..." : "Add Endpoint"}
+                  </CyberButton>
+                </div>
+
+                {webhooks.length > 0 && (
+                  <div className="space-y-2 mt-4">
+                    <h3 className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">Active Endpoints</h3>
+                    {webhooks.map((wh) => (
+                      <div key={wh.id} className="flex items-center justify-between p-3 rounded border border-white/10 bg-white/5">
+                        <div>
+                          <div className="font-mono text-sm text-slate-200">{wh.url}</div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-1">Secret: {wh.secret}</div>
+                        </div>
+                        <button onClick={() => handleDeleteWebhook(wh.id)} className="text-red-400 hover:text-red-300 p-2">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </CyberCard>
           </div>

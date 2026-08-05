@@ -18,6 +18,7 @@ import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as CtfRouteImport } from './routes/ctf'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DeveloperRouteImport } from './routes/developer'
+import { Route as EasmRouteImport } from './routes/easm'
 import { Route as EdrRouteImport } from './routes/edr'
 import { Route as IrRouteImport } from './routes/ir'
 import { Route as LabsRouteImport } from './routes/labs'
@@ -27,6 +28,7 @@ import { Route as PentestRouteImport } from './routes/pentest'
 import { Route as PostureRouteImport } from './routes/posture'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ReplayRouteImport } from './routes/replay'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ScannerRouteImport } from './routes/scanner'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TeamsRouteImport } from './routes/teams'
@@ -47,6 +49,7 @@ import { Route as LabsXssRouteImport } from './routes/labs.xss'
 import { Route as LabsXxeRouteImport } from './routes/labs.xxe'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
+import { Route as ApiPublicEdrIngestRouteImport } from './routes/api/public/edr/ingest'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -93,6 +96,11 @@ const DeveloperRoute = DeveloperRouteImport.update({
   path: '/developer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EasmRoute = EasmRouteImport.update({
+  id: '/easm',
+  path: '/easm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EdrRoute = EdrRouteImport.update({
   id: '/edr',
   path: '/edr',
@@ -136,6 +144,11 @@ const PricingRoute = PricingRouteImport.update({
 const ReplayRoute = ReplayRouteImport.update({
   id: '/replay',
   path: '/replay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScannerRoute = ScannerRouteImport.update({
@@ -239,6 +252,11 @@ const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   path: '/api/public/stripe-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicEdrIngestRoute = ApiPublicEdrIngestRouteImport.update({
+  id: '/api/public/edr/ingest',
+  path: '/api/public/edr/ingest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -250,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/ctf': typeof CtfRoute
   '/dashboard': typeof DashboardRoute
   '/developer': typeof DeveloperRoute
+  '/easm': typeof EasmRoute
   '/edr': typeof EdrRoute
   '/ir': typeof IrRoute
   '/labs': typeof LabsRouteWithChildren
@@ -259,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/posture': typeof PostureRoute
   '/pricing': typeof PricingRoute
   '/replay': typeof ReplayRoute
+  '/reports': typeof ReportsRoute
   '/scanner': typeof ScannerRoute
   '/settings': typeof SettingsRoute
   '/teams': typeof TeamsRoute
@@ -279,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/labs/': typeof LabsIndexRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/api/public/edr/ingest': typeof ApiPublicEdrIngestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -290,6 +311,7 @@ export interface FileRoutesByTo {
   '/ctf': typeof CtfRoute
   '/dashboard': typeof DashboardRoute
   '/developer': typeof DeveloperRoute
+  '/easm': typeof EasmRoute
   '/edr': typeof EdrRoute
   '/ir': typeof IrRoute
   '/learning': typeof LearningRoute
@@ -298,6 +320,7 @@ export interface FileRoutesByTo {
   '/posture': typeof PostureRoute
   '/pricing': typeof PricingRoute
   '/replay': typeof ReplayRoute
+  '/reports': typeof ReportsRoute
   '/scanner': typeof ScannerRoute
   '/settings': typeof SettingsRoute
   '/teams': typeof TeamsRoute
@@ -318,6 +341,7 @@ export interface FileRoutesByTo {
   '/labs': typeof LabsIndexRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/api/public/edr/ingest': typeof ApiPublicEdrIngestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -330,6 +354,7 @@ export interface FileRoutesById {
   '/ctf': typeof CtfRoute
   '/dashboard': typeof DashboardRoute
   '/developer': typeof DeveloperRoute
+  '/easm': typeof EasmRoute
   '/edr': typeof EdrRoute
   '/ir': typeof IrRoute
   '/labs': typeof LabsRouteWithChildren
@@ -339,6 +364,7 @@ export interface FileRoutesById {
   '/posture': typeof PostureRoute
   '/pricing': typeof PricingRoute
   '/replay': typeof ReplayRoute
+  '/reports': typeof ReportsRoute
   '/scanner': typeof ScannerRoute
   '/settings': typeof SettingsRoute
   '/teams': typeof TeamsRoute
@@ -359,6 +385,7 @@ export interface FileRoutesById {
   '/labs/': typeof LabsIndexRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/api/public/edr/ingest': typeof ApiPublicEdrIngestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -372,6 +399,7 @@ export interface FileRouteTypes {
     | '/ctf'
     | '/dashboard'
     | '/developer'
+    | '/easm'
     | '/edr'
     | '/ir'
     | '/labs'
@@ -381,6 +409,7 @@ export interface FileRouteTypes {
     | '/posture'
     | '/pricing'
     | '/replay'
+    | '/reports'
     | '/scanner'
     | '/settings'
     | '/teams'
@@ -401,6 +430,7 @@ export interface FileRouteTypes {
     | '/labs/'
     | '/api/public/razorpay-webhook'
     | '/api/public/stripe-webhook'
+    | '/api/public/edr/ingest'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -412,6 +442,7 @@ export interface FileRouteTypes {
     | '/ctf'
     | '/dashboard'
     | '/developer'
+    | '/easm'
     | '/edr'
     | '/ir'
     | '/learning'
@@ -420,6 +451,7 @@ export interface FileRouteTypes {
     | '/posture'
     | '/pricing'
     | '/replay'
+    | '/reports'
     | '/scanner'
     | '/settings'
     | '/teams'
@@ -440,6 +472,7 @@ export interface FileRouteTypes {
     | '/labs'
     | '/api/public/razorpay-webhook'
     | '/api/public/stripe-webhook'
+    | '/api/public/edr/ingest'
   id:
     | '__root__'
     | '/'
@@ -451,6 +484,7 @@ export interface FileRouteTypes {
     | '/ctf'
     | '/dashboard'
     | '/developer'
+    | '/easm'
     | '/edr'
     | '/ir'
     | '/labs'
@@ -460,6 +494,7 @@ export interface FileRouteTypes {
     | '/posture'
     | '/pricing'
     | '/replay'
+    | '/reports'
     | '/scanner'
     | '/settings'
     | '/teams'
@@ -480,6 +515,7 @@ export interface FileRouteTypes {
     | '/labs/'
     | '/api/public/razorpay-webhook'
     | '/api/public/stripe-webhook'
+    | '/api/public/edr/ingest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -492,6 +528,7 @@ export interface RootRouteChildren {
   CtfRoute: typeof CtfRoute
   DashboardRoute: typeof DashboardRoute
   DeveloperRoute: typeof DeveloperRoute
+  EasmRoute: typeof EasmRoute
   EdrRoute: typeof EdrRoute
   IrRoute: typeof IrRoute
   LabsRoute: typeof LabsRouteWithChildren
@@ -501,6 +538,7 @@ export interface RootRouteChildren {
   PostureRoute: typeof PostureRoute
   PricingRoute: typeof PricingRoute
   ReplayRoute: typeof ReplayRoute
+  ReportsRoute: typeof ReportsRoute
   ScannerRoute: typeof ScannerRoute
   SettingsRoute: typeof SettingsRoute
   TeamsRoute: typeof TeamsRoute
@@ -508,6 +546,7 @@ export interface RootRouteChildren {
   WarroomRoute: typeof WarroomRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
+  ApiPublicEdrIngestRoute: typeof ApiPublicEdrIngestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -575,6 +614,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeveloperRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/easm': {
+      id: '/easm'
+      path: '/easm'
+      fullPath: '/easm'
+      preLoaderRoute: typeof EasmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/edr': {
       id: '/edr'
       path: '/edr'
@@ -636,6 +682,13 @@ declare module '@tanstack/react-router' {
       path: '/replay'
       fullPath: '/replay'
       preLoaderRoute: typeof ReplayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scanner': {
@@ -778,6 +831,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/edr/ingest': {
+      id: '/api/public/edr/ingest'
+      path: '/api/public/edr/ingest'
+      fullPath: '/api/public/edr/ingest'
+      preLoaderRoute: typeof ApiPublicEdrIngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -825,6 +885,7 @@ const rootRouteChildren: RootRouteChildren = {
   CtfRoute: CtfRoute,
   DashboardRoute: DashboardRoute,
   DeveloperRoute: DeveloperRoute,
+  EasmRoute: EasmRoute,
   EdrRoute: EdrRoute,
   IrRoute: IrRoute,
   LabsRoute: LabsRouteWithChildren,
@@ -834,6 +895,7 @@ const rootRouteChildren: RootRouteChildren = {
   PostureRoute: PostureRoute,
   PricingRoute: PricingRoute,
   ReplayRoute: ReplayRoute,
+  ReportsRoute: ReportsRoute,
   ScannerRoute: ScannerRoute,
   SettingsRoute: SettingsRoute,
   TeamsRoute: TeamsRoute,
@@ -841,6 +903,7 @@ const rootRouteChildren: RootRouteChildren = {
   WarroomRoute: WarroomRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
+  ApiPublicEdrIngestRoute: ApiPublicEdrIngestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
