@@ -63,8 +63,15 @@ function AuthPage() {
   return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4 py-12">
       <CyberCard variant="cyan" className="w-full max-w-md p-8">
-        <div className="text-xs font-mono tracking-[0.3em] text-primary uppercase mb-2">
-          // ACCESS TERMINAL
+        <div className="flex flex-col items-center mb-6">
+          <img
+            src="/straxonlogo.jpeg"
+            alt="Straxon Secure"
+            className="w-16 h-16 object-contain mb-4 drop-shadow-[0_0_12px_rgba(255,255,255,0.8)]"
+          />
+          <div className="text-xs font-mono tracking-[0.3em] text-primary uppercase">
+            // ACCESS TERMINAL
+          </div>
         </div>
         <h1 className="font-display text-3xl font-bold mb-1">
           {mode === "signin" ? "Authenticate" : "Initialize"}

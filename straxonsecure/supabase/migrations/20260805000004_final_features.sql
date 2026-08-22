@@ -106,3 +106,118 @@ INSERT INTO public.ctf_challenges (title, description, category, flag_hash, poin
 ('SQLi 101', 'Bypass the login prompt using classic SQL injection.', 'Web', 'flag{sql_m4st3r}', 100),
 ('Reverse Me', 'Reverse engineer the provided binary to find the hardcoded key.', 'Rev', 'flag{r3v_3ng1n33r}', 200),
 ('Crypto Madness', 'Decrypt the intercepted ciphertext.', 'Crypto', 'flag{cr7pt0_n1nj4}', 150);
+
+-- Update soc_events with missing columns
+ALTER TABLE public.soc_events
+ADD COLUMN mitre_tactic TEXT,
+ADD COLUMN mitre_technique TEXT,
+ADD COLUMN raw_payload TEXT,
+ADD COLUMN ioc_hash TEXT,
+ADD COLUMN false_positive BOOLEAN DEFAULT false;
+
+
+-- Update ctf_challenges
+ALTER TABLE public.ctf_challenges
+ADD COLUMN hints JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN max_hints INTEGER DEFAULT 0,
+ADD COLUMN is_active BOOLEAN DEFAULT true,
+ADD COLUMN solve_count INTEGER DEFAULT 0;
+
+-- Rename ctf_submissions to ctf_solves to match backend
+ALTER TABLE public.ctf_submissions RENAME TO ctf_solves;
+ALTER TABLE public.ctf_solves 
+ADD COLUMN hints_used INTEGER DEFAULT 0,
+ADD COLUMN points_earned INTEGER DEFAULT 0,
+RENAME COLUMN submitted_at TO solved_at;
+
+-- Create ctf_hint_usage
+CREATE TABLE IF NOT EXISTS public.ctf_hint_usage (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  challenge_id uuid REFERENCES public.ctf_challenges(id) ON DELETE CASCADE NOT NULL,
+  hint_index integer NOT NULL,
+  used_at timestamptz DEFAULT now() NOT NULL,
+  UNIQUE(user_id, challenge_id, hint_index)
+);
+
+-- Create leads
+CREATE TABLE IF NOT EXISTS public.leads (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  email text NOT NULL,
+  company text,
+  interest text,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Create lab_sessions
+CREATE TABLE IF NOT EXISTS public.lab_sessions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  lab_id text NOT NULL,
+  container_id text,
+  container_ip text,
+  container_port integer,
+  started_at timestamptz DEFAULT now() NOT NULL,
+  completed_at timestamptz
+);
+
+
+-- Create edr_endpoints
+CREATE TABLE IF NOT EXISTS public.edr_endpoints (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  hostname text NOT NULL,
+  os text NOT NULL,
+  ip_address text NOT NULL,
+  agent_version text NOT NULL,
+  status text DEFAULT 'healthy' NOT NULL,
+  tags jsonb DEFAULT '[]'::jsonb NOT NULL,
+  last_seen timestamptz DEFAULT now() NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Create edr_process_events
+CREATE TABLE IF NOT EXISTS public.edr_process_events (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  endpoint_id uuid REFERENCES public.edr_endpoints(id) ON DELETE CASCADE NOT NULL,
+  process_name text NOT NULL,
+  command_line text,
+  parent_process text,
+  run_as_user text,
+  sha256_hash text,
+  threat_level text NOT NULL,
+  ai_analysis text,
+  action_taken text NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Create api_keys
+CREATE TABLE IF NOT EXISTS public.api_keys (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  name text NOT NULL,
+  key_hash text NOT NULL UNIQUE,
+  active boolean DEFAULT true NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Create webhooks
+CREATE TABLE IF NOT EXISTS public.webhooks (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  url text NOT NULL,
+  secret text NOT NULL,
+  active boolean DEFAULT true NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Update soc_events with missing response_action and analyst_notes
+ALTER TABLE public.soc_events
+ADD COLUMN IF NOT EXISTS response_action text,
+ADD COLUMN IF NOT EXISTS analyst_notes text;
+
+
+
+ALTER TABLE public.lab_sessions ADD COLUMN IF NOT EXISTS score integer, ADD COLUMN IF NOT EXISTS flags_captured text[];
+

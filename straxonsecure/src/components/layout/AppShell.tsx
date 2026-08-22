@@ -22,51 +22,90 @@ import {
   BarChart3,
   Wifi,
   Crosshair,
-  Cpu,
+  Server,
   Globe,
   FileText,
+  Mail,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { useSubscription } from "@/hooks/useSubscription";
 import { CommandPalette } from "./CommandPalette";
 
-const NAV = [
-  { to: "/", label: "Home", icon: Shield },
-  { to: "/dashboard", label: "SOC", icon: Activity },
-  { to: "/threat-intel", label: "CVE Feed", icon: ShieldAlert },
-  { to: "/labs", label: "Labs", icon: Beaker },
-  { to: "/ctf", label: "CTF", icon: Flag },
-  { to: "/warroom", label: "War Room", icon: Swords },
-  { to: "/ir", label: "IR Playbooks", icon: AlertCircle },
-  { to: "/posture", label: "Posture", icon: BarChart3 },
-  { to: "/packet-analyzer", label: "Packets", icon: Wifi },
-  { to: "/replay", label: "Replay", icon: Clapperboard },
-  { to: "/learning", label: "Learn", icon: GraduationCap },
-  { to: "/architecture", label: "Architect", icon: Network },
-  { to: "/compliance", label: "Compliance", icon: ShieldCheck },
-  { to: "/scanner", label: "Scanner", icon: ScanLine },
-  { to: "/easm", label: "EASM / Recon", icon: Globe },
-  { to: "/pentest", label: "PTaaS", icon: Crosshair },
-  { to: "/edr", label: "EDR", icon: Cpu },
-  { to: "/reports", label: "Reports", icon: FileText },
-  { to: "/teams", label: "Teams", icon: Users },
-  { to: "/assistant", label: "AI", icon: Bot },
-  { to: "/developer", label: "API & Webhooks", icon: Network },
-  { to: "/settings", label: "Settings", icon: ShieldCheck },
-  { to: "/pricing", label: "Pricing", icon: CreditCard },
-] as const;
+const NAV_GROUPS = [
+  {
+    category: "Core Operations",
+    items: [
+      { to: "/", label: "Home", icon: Shield },
+      { to: "/dashboard", label: "SOC Dashboard", icon: Activity },
+      { to: "/threat-intel", label: "CVE Feed", icon: ShieldAlert },
+      { to: "/reports", label: "Reports", icon: FileText, isNew: true },
+    ],
+  },
+  {
+    category: "Offensive Ops",
+    items: [
+      { to: "/labs", label: "Attack Labs", icon: Beaker },
+      { to: "/ctf", label: "CTF Challenges", icon: Flag },
+      { to: "/pentest", label: "PTaaS", icon: Crosshair },
+      { to: "/easm", label: "EASM / Recon", icon: Globe },
+      { to: "/phishing", label: "Phishing Sim", icon: Mail, isNew: true },
+    ],
+  },
+  {
+    category: "Defensive Ops",
+    items: [
+      { to: "/edr", label: "Endpoint (EDR)", icon: Server },
+      { to: "/packet-analyzer", label: "Packet Analyzer", icon: Wifi },
+      { to: "/warroom", label: "War Room", icon: Swords },
+      { to: "/ir", label: "IR Playbooks", icon: AlertCircle },
+      { to: "/replay", label: "Attack Replay", icon: Clapperboard },
+    ],
+  },
+  {
+    category: "Architecture & Rules",
+    items: [
+      { to: "/architecture", label: "Designer", icon: Network },
+      { to: "/posture", label: "Cloud Posture", icon: BarChart3 },
+      { to: "/compliance", label: "Compliance", icon: ShieldCheck },
+      { to: "/scanner", label: "Scanner", icon: ScanLine },
+      { to: "/supply-chain", label: "Supply Chain", icon: Package, isNew: true },
+      { to: "/learning", label: "Learning Hub", icon: GraduationCap },
+    ],
+  },
+  {
+    category: "System",
+    items: [
+      { to: "/teams", label: "Teams", icon: Users, isNew: true },
+      { to: "/assistant", label: "AI Assistant", icon: Bot, isNew: true },
+      { to: "/developer", label: "API & Webhooks", icon: Network, isNew: true },
+      { to: "/settings", label: "Settings", icon: ShieldCheck },
+      { to: "/pricing", label: "Billing & Plans", icon: CreditCard },
+    ],
+  },
+];
 
 function Brand() {
   return (
-    <Link to="/" className="flex items-center gap-2 group">
-      <div className="relative">
-        <Zap className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
-        <div className="absolute inset-0 blur-md bg-primary/40 group-hover:bg-primary/70 transition-colors rounded-full" />
+    <Link to="/" className="flex items-center gap-3 group">
+      <div className="relative flex items-center justify-center">
+        <img
+          src="/straxonlogo.jpeg"
+          alt="Straxon Secure Logo"
+          className="h-8 w-8 object-contain group-hover:scale-110 transition-transform relative z-10 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+        />
+        <div className="absolute inset-0 blur-md bg-white/20 group-hover:bg-white/40 transition-colors rounded-full" />
       </div>
       <div className="flex flex-col leading-none">
         <span className="font-display text-base font-bold tracking-widest neon-text">STRAXON</span>
-        <span className="font-mono text-[10px] text-muted-foreground tracking-[0.3em]">
+        <span className="font-mono text-xs text-muted-foreground tracking-[0.3em] group-hover:text-primary transition-colors">
           SECURE v2
         </span>
       </div>
@@ -77,37 +116,51 @@ function Brand() {
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
   return (
-    <nav className="flex flex-col gap-1">
-      {NAV.map((item) => {
-        const Icon = item.icon;
-        const active =
-          location.pathname === item.to ||
-          (item.to !== "/" && location.pathname.startsWith(item.to as string));
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all relative group",
-              active
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-            )}
-          >
-            {active && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0.5 bg-primary rounded-r glow-cyan" />
-            )}
-            <Icon className={cn("h-4 w-4", active && "text-primary")} />
-            <span className="font-mono tracking-wide flex-1">{item.label}</span>
-            {(item as any).isNew && (
-              <span className="text-[8px] font-mono bg-success/20 text-success border border-success/30 rounded px-1 py-0.5 leading-none">
-                NEW
-              </span>
-            )}
-          </Link>
-        );
-      })}
+    <nav className="flex flex-col gap-4">
+      {NAV_GROUPS.map((group) => (
+        <div key={group.category} className="flex flex-col gap-1">
+          <h4 className="px-4 text-xs font-mono tracking-widest text-muted-foreground/70 uppercase mb-1">
+            {group.category}
+          </h4>
+          {group.items.map((item) => {
+            const Icon = item.icon;
+            const active =
+              location.pathname === item.to ||
+              (item.to !== "/" && location.pathname.startsWith(item.to as string));
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative group",
+                  active
+                    ? "bg-primary/10 text-primary shadow-[inset_0_0_12px_rgba(0,243,255,0.05)]"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                )}
+              >
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 bg-primary rounded-r glow-cyan" />
+                )}
+                <Icon
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    active
+                      ? "text-primary drop-shadow-[0_0_8px_rgba(0,243,255,0.6)]"
+                      : "opacity-70 group-hover:opacity-100 transition-opacity",
+                  )}
+                />
+                <span className="font-mono tracking-wide flex-1 truncate">{item.label}</span>
+                {item.isNew && (
+                  <span className="text-[10px] font-mono bg-success/10 text-success border border-success/20 rounded px-1.5 py-0.5 leading-none shrink-0 shadow-[0_0_8px_rgba(0,255,100,0.1)]">
+                    NEW
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
     </nav>
   );
 }
@@ -155,7 +208,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative min-h-screen flex flex-col">
+    <div className="relative min-h-[100dvh] flex flex-col noise-bg">
       {/* Animated grid background */}
       <div className="fixed inset-0 grid-bg pointer-events-none -z-10" />
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
@@ -178,6 +231,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 side="left"
                 className="bg-card/95 backdrop-blur-xl border-border w-64 p-4"
               >
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Use this menu to navigate through the application.
+                </SheetDescription>
                 <div className="mb-6">
                   <Brand />
                 </div>
@@ -186,24 +243,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Sheet>
             <Brand />
           </div>
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-4">
+            <a
+              href="https://straxonlabs.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors border border-border/50 px-3 py-1.5 rounded-full hover:border-primary/50"
+            >
+              Main Website ↗
+            </a>
             <StatusPill />
           </div>
         </div>
       </header>
 
-      <div className="flex-1 flex">
-        {/* Desktop sidebar */}
-        <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-border/50 p-4 sticky top-14 self-start h-[calc(100vh-3.5rem)]">
-          <NavLinks />
-          <div className="mt-auto pt-6 text-[10px] font-mono text-muted-foreground/60 leading-relaxed border-t border-border/30">
+      <div className="flex-1 flex overflow-hidden">
+        {/* Desktop sidebar - Advanced Floating Glass Dock */}
+        <aside className="hidden lg:flex flex-col w-64 shrink-0 m-4 rounded-2xl border border-border/50 bg-[#020610]/60 backdrop-blur-3xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-20 overflow-hidden glass">
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40 p-4">
+            <NavLinks />
+          </div>
+
+          <div className="shrink-0 p-4 pt-4 text-[10px] font-mono text-muted-foreground/60 leading-relaxed border-t border-border/30 bg-black/20">
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
                 </span>
-                <span className="tracking-wider">NODE: <span className="text-primary font-bold">straxon-01</span></span>
+                <span className="tracking-wider">
+                  NODE: <span className="text-primary font-bold">straxon-01</span>
+                </span>
               </div>
             </div>
             <div className="flex justify-between items-center opacity-70">
@@ -211,8 +281,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span>LATENCY: 12ms</span>
             </div>
             <div className="flex justify-between items-center mt-0.5 opacity-70">
-              <span>BUILD: <span className="text-accent">3.0.0-rc</span></span>
-              <span>UPLINK: <span className="text-success">SECURE</span></span>
+              <span>
+                BUILD: <span className="text-accent">3.0.0-rc</span>
+              </span>
+              <span>
+                UPLINK: <span className="text-success">SECURE</span>
+              </span>
             </div>
           </div>
         </aside>

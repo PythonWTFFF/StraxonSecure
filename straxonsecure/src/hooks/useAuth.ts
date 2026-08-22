@@ -13,14 +13,38 @@ export function useAuth() {
       setUser(s?.user ?? null);
     });
 
+    // Enterprise Security: 15 Minute Idle Timeout
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const resetTimeout = () => {
+      clearTimeout(timeoutId);
+      if (session) {
+        timeoutId = setTimeout(
+          async () => {
+            await supabase.auth.signOut();
+            window.location.href = "/auth";
+          },
+          15 * 60 * 1000,
+        ); // 15 minutes
+      }
+    };
+
+    window.addEventListener("mousemove", resetTimeout);
+    window.addEventListener("keypress", resetTimeout);
+    resetTimeout();
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
     });
 
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    return () => {
+      sub.subscription.unsubscribe();
+      window.removeEventListener("mousemove", resetTimeout);
+      window.removeEventListener("keypress", resetTimeout);
+      clearTimeout(timeoutId);
+    };
+  }, [session]);
 
   return { session, user, loading };
 }

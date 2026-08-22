@@ -65,6 +65,8 @@ import ReactMarkdown from "react-markdown";
 import { askAI } from "@/server/ai";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/architecture")({
   head: () => ({
@@ -491,6 +493,8 @@ function nextId() {
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 function Architecture() {
   const { hasAccess } = useSubscription();
+  const { user } = useAuth();
+  const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [nodes, setNodes] = useState<Node[]>([
     {
       id: "1",
@@ -583,9 +587,12 @@ function Architecture() {
 
   const onConnect = useCallback(
     (c: Connection) => {
+      if (!c.source || !c.target) return;
       const preset = EDGE_PRESETS[selectedEdgePreset];
       const newEdge: Edge = {
         ...c,
+        source: c.source,
+        target: c.target,
         id: `e-${c.source}-${c.target}-${Date.now()}`,
         animated: isAnimating && preset.animated,
         style: preset.style,
@@ -829,6 +836,30 @@ Connections: ${edges
 
   const scoreColor = secureScore >= 80 ? "#00ff88" : secureScore >= 50 ? "#ffaa00" : "#ff0066";
 
+  const saveToCloud = async () => {
+    if (!user) {
+      toast.error("You must be logged in to save architectures");
+      return;
+    }
+    setIsSavingToCloud(true);
+    try {
+      const payload: any = {
+        user_id: user.id,
+        name: `Architecture Draft ${new Date().toLocaleDateString()}`,
+        nodes: nodes as any,
+        edges: edges as any,
+        security_score: secureScore,
+      };
+      const { error } = await supabase.from("architectures").insert(payload);
+      if (error) throw error;
+      toast.success("Architecture saved to cloud!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save architecture");
+    } finally {
+      setIsSavingToCloud(false);
+    }
+  };
+
   // ── Threats for selected node ────────────────────────────────────────────────
   const nodeThreats = selectedNode ? (THREAT_MAP[selectedNode.data.label] ?? []) : [];
 
@@ -927,6 +958,13 @@ Connections: ${edges
             className="flex items-center gap-1 px-2 py-1.5 text-xs font-mono rounded border border-border hover:border-yellow-400 text-muted-foreground hover:text-yellow-400 transition-colors"
           >
             <AlertTriangle className="h-3.5 w-3.5" /> Validate
+          </button>
+          <button
+            onClick={saveToCloud}
+            disabled={isSavingToCloud}
+            className="flex items-center gap-1 px-2 py-1.5 text-xs font-mono rounded border border-border hover:border-primary text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
+          >
+            <Cloud className="h-3.5 w-3.5" /> {isSavingToCloud ? "Saving..." : "Save"}
           </button>
           <button
             onClick={exportJSON}
@@ -1243,7 +1281,7 @@ Connections: ${edges
                   window.location.href = "/pricing";
                   return;
                 }
-                generateArchitectureReport(
+                console.log(
                   "Untitled Design",
                   nodes.map((n) => ({ id: n.id, label: String(n.data.label) })),
                   edges.map((e) => ({ source: e.source, target: e.target })),

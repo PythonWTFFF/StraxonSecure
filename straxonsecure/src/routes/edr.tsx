@@ -1,590 +1,304 @@
-import React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { CyberCard } from "@/components/cyber/CyberCard";
 import {
   Server,
-  Activity,
-  Terminal,
-  Shield,
   ShieldAlert,
-  Cpu,
+  Activity,
   PowerOff,
-  Zap,
   Lock,
-  Plus,
-  Trash2,
-  RefreshCw,
-  Loader2,
-  CheckCircle2,
+  TerminalSquare,
   AlertTriangle,
 } from "lucide-react";
-import { CyberCard } from "@/components/cyber/CyberCard";
-import { CyberButton } from "@/components/cyber/CyberButton";
-import { SectionHeading } from "@/components/cyber/SectionHeading";
-import {
-  analyzeProcess,
-  getEDREndpoints,
-  upsertEDREndpoint,
-  deleteEDREndpoint,
-  updateEndpointStatus,
-  getProcessEvents,
-} from "@/server/edr";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/edr")({
-  head: () => ({
-    meta: [{ title: "EDR Agents — Endpoint Detection — Straxon Secure" }],
-  }),
-  component: EDRPage,
+  component: AgentDashboard,
 });
 
-type Endpoint = {
-  id: string;
+type Agent = {
+  agent_id: string;
   hostname: string;
-  ip_address: string;
   os: string;
-  status: "healthy" | "suspicious" | "compromised" | "offline";
-  last_seen: string;
-  agent_version: string;
-  tags: string[];
+  last_seen: number;
+  risk_score: number;
 };
 
 type ProcessEvent = {
   id: string;
   processName: string;
   commandLine: string;
-  parentProcess: string;
-  user: string;
-  hash: string;
-  timestamp: string;
-  status: "running" | "killed";
-  malicious?: boolean;
-  endpointId?: string;
+  agent_id: string;
+  hostname: string;
+  severity: "low" | "medium" | "high" | "critical";
+  type: string;
+  timestamp: number;
 };
 
-// ── Simulated live processes for selected endpoint ───────────────────────────
+function AgentDashboard() {
+  const [liveFeed, setLiveFeed] = useState<ProcessEvent[]>([]);
+  const { limits } = useSubscription();
+  const { session } = useAuth();
+  const feedEndRef = useRef<HTMLDivElement>(null);
 
-const ENDPOINT_PROCESSES: Record<string, ProcessEvent[]> = {
-  suspicious: [
-    {
-      id: "p-1",
-      processName: "explorer.exe",
-      commandLine: "C:\\Windows\\explorer.exe",
-      parentProcess: "userinit.exe",
-      user: "DEV\\jdoe",
-      hash: "a3f5b9c2d1e8f047",
-      timestamp: "",
-      status: "running",
+  // Poll for agents list using TanStack Query
+  const { data: agents = [] } = useQuery({
+    queryKey: ["edr-agents"],
+    queryFn: async () => {
+      const rawUrl = import.meta.env.VITE_ML_ENGINE_URL || "http://127.0.0.1:8082";
+      const res = await fetch(`${rawUrl}/api/ml/agents`);
+      if (!res.ok) throw new Error("Failed to fetch agents");
+      const data = await res.json();
+      return data.agents || [];
     },
-    {
-      id: "p-2",
-      processName: "powershell.exe",
-      commandLine:
-        "powershell.exe -nop -w hidden -EncodedCommand JABzAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAEkATwAuAE0AZQBtAG8AcgB5AFMAdAByAGUAYQBtACgAWwBDAG8AbgB2AGUAcgB0AF0AOgA6AEYAcgBvAG0AQgBhAHMAZQA2ADQAUwB0AHIAaQBuAGcAKAAiAEgA...",
-      parentProcess: "winword.exe",
-      user: "DEV\\jdoe",
-      hash: "e5c7f1a9b3d2e8f0",
-      timestamp: "",
-      status: "running",
-      malicious: true,
-    },
-    {
-      id: "p-3",
-      processName: "cmd.exe",
-      commandLine: 'cmd.exe /c "net user /domain"',
-      parentProcess: "powershell.exe",
-      user: "DEV\\jdoe",
-      hash: "c8a4e3f1b9d6e2a7",
-      timestamp: "",
-      status: "running",
-      malicious: true,
-    },
-  ],
-  healthy: [
-    {
-      id: "p-4",
-      processName: "nginx",
-      commandLine: "nginx -g 'daemon off;'",
-      parentProcess: "systemd",
-      user: "root",
-      hash: "9b4c1a2f8d3e6c5a",
-      timestamp: "",
-      status: "running",
-    },
-    {
-      id: "p-5",
-      processName: "node",
-      commandLine: "node /app/server.js",
-      parentProcess: "bash",
-      user: "app",
-      hash: "7a3e9c1f5d2b8a6e",
-      timestamp: "",
-      status: "running",
-    },
-  ],
-};
+    refetchInterval: 5000, // Poll every 5s
+  });
 
-const STATUS_COLORS: Record<string, string> = {
-  healthy: "text-success border-success/40",
-  suspicious: "text-warning border-warning/40",
-  compromised: "text-destructive border-destructive/40",
-  offline: "text-muted-foreground border-border",
-};
+  // WebSocket for Live Telemetry
+  useEffect(() => {
+    if (!session?.access_token) return;
 
-const STATUS_ICONS: Record<string, React.ReactNode> = {
-  healthy: <CheckCircle2 className="h-3.5 w-3.5 text-success" />,
-  suspicious: <ShieldAlert className="h-3.5 w-3.5 text-warning animate-pulse" />,
-  compromised: <AlertTriangle className="h-3.5 w-3.5 text-destructive" />,
-  offline: <PowerOff className="h-3.5 w-3.5 text-muted-foreground" />,
-};
+    const rawUrl = import.meta.env.VITE_ML_ENGINE_URL || "http://127.0.0.1:8082";
+    const wsUrl =
+      rawUrl.replace("http://", "ws://").replace("https://", "wss://") + "/api/ml/edr-stream";
 
-// ── Add Endpoint Modal ────────────────────────────────────────────────────────
+    const ws = new WebSocket(wsUrl, ["supabase", session.access_token]);
 
-function AddEndpointModal({
-  onClose,
-  onSave,
-}: {
-  onClose: () => void;
-  onSave: (data: Omit<Endpoint, "id" | "last_seen" | "agent_version" | "tags">) => void;
-}) {
-  const [hostname, setHostname] = useState("");
-  const [ip, setIp] = useState("");
-  const [os, setOs] = useState("Linux (Ubuntu 22.04)");
+    ws.onopen = () => {
+      console.log("[EDR] Connected to telemetry stream");
+      toast.success("Live EDR Stream Connected", {
+        description: "Ingesting real-time process telemetry from agents.",
+      });
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.processName && data.agent_id) {
+          setLiveFeed((prev) => {
+            const updated = [...prev, { ...data, timestamp: Date.now() }];
+            return updated.slice(-100); // Keep last 100 events
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse WS msg", e);
+      }
+    };
+
+    ws.onerror = (err) => console.error("[EDR] WS Error:", err);
+    ws.onclose = () => console.log("[EDR] WS Closed");
+
+    return () => {
+      ws.close();
+    };
+  }, [session?.access_token]);
+
+  // Auto-scroll feed
+  useEffect(() => {
+    if (feedEndRef.current) {
+      feedEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [liveFeed]);
+
+  const allowedAgents = agents.slice(0, limits.max_edr_hosts);
+  const exceededCount = Math.max(0, agents.length - limits.max_edr_hosts);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-background border border-primary/30 rounded-xl p-6 w-full max-w-md shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="font-display text-lg font-bold mb-4">Register Endpoint</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-mono text-muted-foreground">Hostname</label>
-            <input
-              value={hostname}
-              onChange={(e) => setHostname(e.target.value)}
-              placeholder="e.g. srv-prod-db01"
-              className="w-full mt-1 bg-black/40 border border-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-mono text-muted-foreground">IP Address</label>
-            <input
-              value={ip}
-              onChange={(e) => setIp(e.target.value)}
-              placeholder="e.g. 10.0.4.52"
-              className="w-full mt-1 bg-black/40 border border-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-mono text-muted-foreground">Operating System</label>
-            <select
-              value={os}
-              onChange={(e) => setOs(e.target.value)}
-              className="w-full mt-1 bg-black/40 border border-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary"
-            >
-              <option>Linux (Ubuntu 22.04)</option>
-              <option>Linux (Alpine)</option>
-              <option>Linux (CentOS 9)</option>
-              <option>Windows 11 Enterprise</option>
-              <option>Windows Server 2022</option>
-              <option>macOS Sonoma</option>
-              <option>Unknown</option>
-            </select>
-          </div>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-lg bg-teal-500/10 flex items-center justify-center border border-teal-500/20">
+          <Server className="h-6 w-6 text-teal-500" />
         </div>
-        <div className="flex gap-3 mt-6">
-          <CyberButton
-            variant="cyan"
-            className="flex-1"
-            disabled={!hostname.trim() || !ip.trim()}
-            onClick={() => {
-              onSave({ hostname: hostname.trim(), ip_address: ip.trim(), os, status: "healthy" });
-              onClose();
-            }}
-          >
-            Register Agent
-          </CyberButton>
-          <CyberButton variant="ghost" onClick={onClose}>
-            Cancel
-          </CyberButton>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ── EDR Main Page ─────────────────────────────────────────────────────────────
-
-function EDRPage() {
-  const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
-  const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(null);
-  const [processes, setProcesses] = useState<ProcessEvent[]>([]);
-  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [isolating, setIsolating] = useState(false);
-
-  // ── Load endpoints from DB ─────────────────────────────────────────────────
-  const loadEndpoints = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getEDREndpoints();
-      const eps = (res.endpoints ?? []) as unknown as Endpoint[];
-      setEndpoints(eps);
-      if (eps.length > 0 && !selectedEndpoint) {
-        setSelectedEndpoint(eps[0]);
-      }
-    } catch (e: any) {
-      toast.error("Failed to load endpoints: " + e.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadEndpoints();
-  }, [loadEndpoints]);
-
-  // ── Simulate live processes for selected endpoint ──────────────────────────
-  useEffect(() => {
-    if (!selectedEndpoint) return;
-    const template =
-      selectedEndpoint.status === "suspicious" || selectedEndpoint.status === "compromised"
-        ? ENDPOINT_PROCESSES.suspicious
-        : ENDPOINT_PROCESSES.healthy;
-    setProcesses(
-      template.map((p) => ({
-        ...p,
-        id: p.id + "-" + selectedEndpoint.id,
-        timestamp: new Date().toLocaleTimeString(),
-        endpointId: selectedEndpoint.id,
-      })),
-    );
-    setAnalysisResult(null);
-  }, [selectedEndpoint?.id]);
-
-  // ── Analyze process with AI ────────────────────────────────────────────────
-  const handleAnalyze = async (proc: ProcessEvent) => {
-    setAnalyzingId(proc.id);
-    setAnalysisResult(null);
-    try {
-      const res = await analyzeProcess({
-        data: {
-          endpointId: proc.endpointId,
-          processName: proc.processName,
-          commandLine: proc.commandLine,
-          parentProcess: proc.parentProcess,
-          user: proc.user,
-          hash: proc.hash,
-        },
-      });
-      setAnalysisResult(res.analysis);
-
-      // If threat found, refresh endpoint list to pick up status change
-      const tl = res.threat_level as string;
-      if (tl === "critical" || tl === "high") {
-        await loadEndpoints();
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to analyze process");
-    } finally {
-      setAnalyzingId(null);
-    }
-  };
-
-  const handleKill = (id: string) => {
-    setProcesses((prev) => prev.map((p) => (p.id === id ? { ...p, status: "killed" } : p)));
-    toast.success("SIGKILL sent to process.");
-  };
-
-  // ── Isolate host ───────────────────────────────────────────────────────────
-  const handleIsolate = async () => {
-    if (!selectedEndpoint) return;
-    setIsolating(true);
-    try {
-      await updateEndpointStatus({
-        data: { endpointId: selectedEndpoint.id, status: "offline" },
-      });
-      toast.success(`🔒 ${selectedEndpoint.hostname} isolated from network`);
-      await loadEndpoints();
-      setSelectedEndpoint((prev) => (prev ? { ...prev, status: "offline" } : null));
-    } catch (e: any) {
-      toast.error("Failed to isolate: " + e.message);
-    } finally {
-      setIsolating(false);
-    }
-  };
-
-  // ── Add endpoint ───────────────────────────────────────────────────────────
-  const handleAddEndpoint = async (data: {
-    hostname: string;
-    ip_address: string;
-    os: string;
-    status: Endpoint["status"];
-  }) => {
-    try {
-      await upsertEDREndpoint({ data });
-      toast.success(`Agent registered: ${data.hostname}`);
-      await loadEndpoints();
-    } catch (e: any) {
-      toast.error("Failed to register agent: " + e.message);
-    }
-  };
-
-  // ── Delete endpoint ────────────────────────────────────────────────────────
-  const handleDeleteEndpoint = async (id: string) => {
-    try {
-      await deleteEDREndpoint({ data: { endpointId: id } });
-      toast.info("Endpoint removed");
-      setEndpoints((prev) => prev.filter((ep) => ep.id !== id));
-      if (selectedEndpoint?.id === id) setSelectedEndpoint(null);
-    } catch (e: any) {
-      toast.error("Failed to remove: " + e.message);
-    }
-  };
-
-  return (
-    <div className="px-4 lg:px-8 py-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-end justify-between flex-wrap gap-4">
-        <SectionHeading
-          eyebrow="// ENDPOINT SECURITY"
-          title="EDR Agent Telemetry"
-          description="Monitor live process executions across your fleet. AI-powered analysis detects LOLBins, ransomware, and lateral movement."
-        />
-        <div className="flex gap-2">
-          <CyberButton variant="ghost" onClick={loadEndpoints} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </CyberButton>
-          <CyberButton variant="cyan" onClick={() => setShowAddModal(true)}>
-            <Plus className="h-4 w-4" /> Add Endpoint
-          </CyberButton>
+        <div className="flex-1">
+          <h1 className="font-display text-3xl font-bold text-white tracking-wide">
+            Endpoint Detection & Response
+          </h1>
+          <p className="font-mono text-xs text-slate-400 mt-1 uppercase tracking-widest">
+            Agent Management & Live Telemetry
+          </p>
         </div>
       </div>
 
-      <AnimatePresence>
-        {showAddModal && (
-          <AddEndpointModal onClose={() => setShowAddModal(false)} onSave={handleAddEndpoint} />
-        )}
-      </AnimatePresence>
-
-      <div className="grid lg:grid-cols-12 gap-6">
-        {/* ENDPOINT LIST */}
-        <div className="lg:col-span-3 space-y-3">
-          <h3 className="font-mono text-xs uppercase text-muted-foreground flex items-center gap-2">
-            <Server className="h-4 w-4" /> Active Agents ({endpoints.length})
-          </h3>
-
-          {loading ? (
-            <div className="flex items-center gap-2 text-muted-foreground font-mono text-xs p-4">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-            </div>
-          ) : endpoints.length === 0 ? (
-            <CyberCard variant="plain" className="text-center py-6">
-              <Server className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
-              <p className="text-xs font-mono text-muted-foreground">No endpoints registered</p>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="mt-3 text-xs font-mono text-primary hover:underline"
-              >
-                + Add first endpoint
-              </button>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Left Column: Agents */}
+        <div className="lg:col-span-2 space-y-6">
+          {agents.length === 0 ? (
+            <CyberCard className="p-12 flex flex-col items-center justify-center text-center bg-[#020610] h-64">
+              <Activity className="h-12 w-12 text-slate-600 mb-4 animate-pulse" />
+              <h3 className="font-mono text-lg text-slate-300 mb-2">No Active Agents</h3>
+              <p className="text-sm text-slate-500 max-w-md">
+                Download the Bash EDR agent and run it on your local machine to register an
+                endpoint.
+              </p>
+              <div className="mt-6 bg-black/40 border border-white/5 p-4 rounded font-mono text-xs text-teal-400">
+                ./straxon-agent.sh API_KEY
+              </div>
             </CyberCard>
           ) : (
-            <div className="space-y-2">
-              {endpoints.map((ep) => (
-                <div key={ep.id} className="group relative">
-                  <button
-                    onClick={() => {
-                      setSelectedEndpoint(ep);
-                      setAnalysisResult(null);
-                    }}
-                    className={`w-full text-left p-3 rounded-lg border font-mono transition-all ${
-                      selectedEndpoint?.id === ep.id
-                        ? "bg-primary/20 border-primary"
-                        : "bg-black/40 border-border/50 hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-bold text-foreground truncate">
-                        {ep.hostname}
+            <div className="grid md:grid-cols-2 gap-6">
+              {allowedAgents.map((agent) => (
+                <CyberCard
+                  key={agent.agent_id}
+                  variant={agent.risk_score > 5 ? "magenta" : "teal"}
+                  className="p-5 bg-[#020610] flex flex-col gap-4"
+                >
+                  <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span
+                          className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${agent.risk_score > 5 ? "bg-fuchsia-400" : "bg-teal-400"}`}
+                        ></span>
+                        <span
+                          className={`relative inline-flex rounded-full h-2 w-2 ${agent.risk_score > 5 ? "bg-fuchsia-500" : "bg-teal-500"}`}
+                        ></span>
                       </span>
-                      {STATUS_ICONS[ep.status]}
+                      <span className="font-mono font-bold text-white tracking-widest">
+                        {agent.hostname}
+                      </span>
                     </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      {ep.ip_address} • {ep.os.split(" ")[0]}
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`font-mono text-[10px] border px-2 py-0.5 rounded uppercase ${agent.risk_score > 5 ? "text-fuchsia-500 border-fuchsia-500/30 bg-fuchsia-500/10" : "text-teal-500 border-teal-500/30 bg-teal-500/10"}`}
+                      >
+                        {agent.os}
+                      </span>
                     </div>
-                    <div
-                      className={`text-[10px] font-mono mt-1 ${STATUS_COLORS[ep.status] || "text-muted-foreground"}`}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-black/40 border border-white/5 rounded p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ShieldAlert className="h-4 w-4 text-slate-400" />
+                        <span className="font-mono text-[10px] text-slate-500 uppercase">
+                          Risk Score
+                        </span>
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <span
+                          className={`font-display text-2xl font-bold ${agent.risk_score > 5 ? "text-fuchsia-400" : "text-teal-400"}`}
+                        >
+                          {agent.risk_score.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-black/40 border border-white/5 rounded p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Activity className="h-4 w-4 text-slate-400" />
+                        <span className="font-mono text-[10px] text-slate-500 uppercase">
+                          Last Seen
+                        </span>
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <span className="font-mono text-sm text-slate-300">
+                          {Math.max(0, Math.floor(Date.now() / 1000 - agent.last_seen))}s ago
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-between items-center text-xs font-mono text-slate-500">
+                    <span>ID: {agent.agent_id.slice(0, 8)}...</span>
+                    <button
+                      onClick={() => toast.success("Isolate command queued (mock)")}
+                      className="flex items-center gap-1 font-mono text-[10px] text-red-500 border border-red-500/30 bg-red-500/10 px-2 py-0.5 rounded uppercase hover:bg-red-500/30 transition-colors"
                     >
-                      {ep.status.toUpperCase()}
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteEndpoint(ep.id)}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                      <PowerOff className="h-3 w-3" /> Isolate Host
+                    </button>
+                  </div>
+                </CyberCard>
               ))}
+
+              {exceededCount > 0 && (
+                <CyberCard
+                  variant="plain"
+                  className="p-8 flex flex-col items-center justify-center text-center bg-black/50 border-dashed border-white/20"
+                >
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <Lock className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-display text-lg font-bold text-white mb-2">
+                    Host Limit Reached
+                  </h3>
+                  <p className="text-sm text-slate-400 max-w-sm mb-6">
+                    {exceededCount} additional agent{exceededCount > 1 ? "s" : ""} attempting to
+                    connect.
+                  </p>
+                  <Link to="/pricing">
+                    <button className="bg-primary text-black font-mono font-bold text-sm px-6 py-2 rounded shadow-[0_0_15px_rgba(0,243,255,0.4)] hover:shadow-[0_0_25px_rgba(0,243,255,0.6)] transition-all">
+                      UPGRADE
+                    </button>
+                  </Link>
+                </CyberCard>
+              )}
             </div>
           )}
         </div>
 
-        {/* PROCESS TELEMETRY */}
-        <div className="lg:col-span-9 space-y-6">
-          {selectedEndpoint ? (
-            <CyberCard
-              variant={
-                selectedEndpoint.status === "suspicious" ||
-                selectedEndpoint.status === "compromised"
-                  ? "magenta"
-                  : "cyan"
-              }
-            >
-              <div className="flex items-center justify-between mb-4 border-b border-border/50 pb-4">
-                <div className="flex items-center gap-3">
-                  <Cpu className="h-5 w-5 text-primary" />
-                  <div>
-                    <h2 className="font-display text-lg font-bold">{selectedEndpoint.hostname}</h2>
-                    <p className="text-xs font-mono text-muted-foreground">
-                      {selectedEndpoint.ip_address} • {selectedEndpoint.os} • Agent v
-                      {selectedEndpoint.agent_version}
-                    </p>
-                  </div>
+        {/* Right Column: Live Telemetry Matrix Feed */}
+        <div className="lg:col-span-1 h-[600px] flex flex-col">
+          <CyberCard className="flex-1 flex flex-col overflow-hidden bg-[#020610]">
+            <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/40">
+              <div className="flex items-center gap-2">
+                <TerminalSquare className="h-4 w-4 text-teal-500" />
+                <h3 className="font-display font-bold text-white tracking-wide">LIVE TELEMETRY</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                </span>
+                <span className="text-[10px] font-mono text-teal-500 uppercase">Streaming</span>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-[10px] bg-black/60 custom-scrollbar">
+              {liveFeed.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-2">
+                  <Activity className="h-8 w-8 animate-pulse opacity-50" />
+                  <p>Awaiting process execution events...</p>
                 </div>
-                <CyberButton
-                  variant="danger"
-                  size="sm"
-                  onClick={handleIsolate}
-                  disabled={isolating || selectedEndpoint.status === "offline"}
-                >
-                  {isolating ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Lock className="h-4 w-4 mr-2" />
-                  )}
-                  {selectedEndpoint.status === "offline" ? "ISOLATED" : "ISOLATE HOST"}
-                </CyberButton>
-              </div>
-
-              <div className="space-y-3">
-                {processes.map((proc) => (
-                  <div
-                    key={proc.id}
-                    className={`p-4 rounded border bg-black/60 relative overflow-hidden ${
-                      proc.status === "killed"
-                        ? "opacity-50 border-border"
-                        : proc.malicious
-                          ? "border-warning/50 bg-warning/5"
-                          : "border-primary/20"
-                    }`}
-                  >
-                    {proc.malicious && proc.status !== "killed" && (
-                      <div className="absolute top-0 left-0 w-1 h-full bg-warning animate-pulse" />
-                    )}
-
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Terminal className="h-4 w-4 text-primary" />
-                          <span className="font-mono text-sm font-bold text-foreground">
-                            {proc.processName}
-                          </span>
-                          {proc.malicious && (
-                            <span className="px-2 py-0.5 bg-warning/20 text-warning text-[10px] font-mono rounded">
-                              SUSPICIOUS
-                            </span>
-                          )}
-                          {proc.status === "killed" && (
-                            <span className="px-2 py-0.5 bg-destructive/20 text-destructive text-[10px] font-mono rounded">
-                              TERMINATED
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs font-mono text-muted-foreground mt-1">
-                          Parent: {proc.parentProcess} • User: {proc.user}
-                        </div>
-                      </div>
-                      <div className="text-[10px] font-mono text-muted-foreground/60">
-                        {proc.timestamp}
-                      </div>
-                    </div>
-
-                    <div className="bg-[#020610] p-2 rounded text-xs font-mono text-slate-300 break-all mb-4 border border-white/5">
-                      <span className="text-primary/50 mr-2">$</span>
-                      {proc.commandLine}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <CyberButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleAnalyze(proc)}
-                        disabled={analyzingId === proc.id || proc.status === "killed"}
-                      >
-                        {analyzingId === proc.id ? (
-                          <Activity className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Zap className="h-4 w-4 mr-2 text-primary" />
-                        )}
-                        Analyze with AI
-                      </CyberButton>
-                      {proc.status !== "killed" && (
-                        <button
-                          onClick={() => handleKill(proc.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono text-destructive hover:bg-destructive/20 transition-colors"
+              ) : (
+                liveFeed.map((ev, i) => {
+                  const isAlert = ev.severity === "high" || ev.severity === "critical";
+                  return (
+                    <div
+                      key={ev.id + i}
+                      className={`p-2 rounded border border-white/5 bg-black/40 transition-all duration-300 animate-in fade-in slide-in-from-right-4 ${isAlert ? "border-fuchsia-500/30" : "border-teal-500/10"}`}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <span
+                          className={`font-bold ${isAlert ? "text-fuchsia-400" : "text-teal-400"}`}
                         >
-                          <PowerOff className="h-3.5 w-3.5" /> Kill Process
-                        </button>
-                      )}
+                          {ev.processName}
+                        </span>
+                        <span className="text-slate-500">
+                          {new Date(ev.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <div className="text-slate-400 truncate mb-1" title={ev.commandLine}>
+                        <span className="text-slate-600 mr-1">$</span>
+                        {ev.commandLine}
+                      </div>
+                      <div className="flex justify-between items-center text-[9px]">
+                        <span className="text-slate-500">{ev.hostname}</span>
+                        {isAlert && (
+                          <span className="flex items-center gap-1 text-fuchsia-500 bg-fuchsia-500/10 px-1.5 py-0.5 rounded">
+                            <AlertTriangle className="h-2.5 w-2.5" />
+                            {ev.type.toUpperCase()}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CyberCard>
-          ) : (
-            <CyberCard variant="cyan" className="text-center py-20">
-              <Server className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-40" />
-              <p className="font-mono text-sm text-muted-foreground">
-                {endpoints.length === 0
-                  ? "Register an endpoint to start monitoring"
-                  : "Select an endpoint from the list"}
-              </p>
-            </CyberCard>
-          )}
-
-          {/* AI ANALYSIS RESULTS */}
-          <AnimatePresence>
-            {analysisResult && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                <CyberCard variant="plain" className="border-accent/50 bg-accent/5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Shield className="h-5 w-5 text-accent" />
-                    <h3 className="font-display text-lg font-bold text-accent">
-                      Straxon EDR Intelligence
-                    </h3>
-                  </div>
-                  <div className="prose prose-sm prose-invert max-w-none prose-headings:text-accent prose-headings:font-mono prose-headings:text-sm prose-strong:text-white prose-li:text-slate-300">
-                    <ReactMarkdown>{analysisResult}</ReactMarkdown>
-                  </div>
-                </CyberCard>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  );
+                })
+              )}
+              <div ref={feedEndRef} />
+            </div>
+          </CyberCard>
         </div>
       </div>
     </div>

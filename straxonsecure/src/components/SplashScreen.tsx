@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const BOOT_LINES = [
-  "[BOOT] Straxon kernel v2.4.1 initializing…",
-  "[NET]  Establishing encrypted uplink → 198.51.100.7",
-  "[CRYP] Loading cipher suites: AES-256-GCM, CHACHA20-POLY1305",
-  "[INTEL] Syncing global threat feed (4,812,330 IOCs)",
-  "[AUTH]  Verifying operator credentials…",
-  "[SOC]   Spinning up live telemetry channels",
+  "[BOOT] Straxon Secure Core v3.0.0 initializing…",
+  "[NET]  Establishing quantum-encrypted uplink → 198.51.100.7",
+  "[CRYP] Loading zero-trust cipher suites: AES-256-GCM, CHACHA20-POLY1305",
+  "[INTEL] Syncing global threat feed (4,812,330 IOCs) via ML Engine",
+  "[AUTH]  Verifying root operator credentials…",
+  "[SOC]   Spinning up live anomaly detection telemetry",
   "[OK]    All systems nominal — welcome, operator.",
 ];
 
@@ -56,7 +56,7 @@ export function SplashScreen() {
             }}
           />
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent animate-scan-line" />
+            <div className="absolute h-[2px] w-full bg-gradient-to-r from-transparent via-[#00f3ff]/80 to-transparent animate-scan-line shadow-[0_0_20px_rgba(0,243,255,0.5)]" />
           </div>
 
           {/* Concentric rings */}
@@ -93,22 +93,26 @@ export function SplashScreen() {
                 <span className="absolute bottom-1 left-1 h-3 w-3 border-b-2 border-l-2 border-accent" />
                 <span className="absolute bottom-1 right-1 h-3 w-3 border-b-2 border-r-2 border-accent" />
 
-                {/* Placeholder — replace by dropping <img> here */}
-                <div className="text-center px-2">
-                  <div className="font-display text-4xl sm:text-5xl font-black text-gradient-neon leading-none">
-                    SX
-                  </div>
-                  <div className="mt-1 text-[8px] sm:text-[9px] font-mono text-muted-foreground tracking-[0.3em]">
-                    LOGO SLOT
-                  </div>
-                </div>
+                {/* The Official Shield Logo */}
+                <motion.div
+                  initial={{ rotateY: 90, opacity: 0 }}
+                  animate={{ rotateY: 0, opacity: 1 }}
+                  transition={{ duration: 1, ease: "backOut" }}
+                  className="relative z-10"
+                >
+                  <img
+                    src="/straxonlogo.jpeg"
+                    alt="Straxon Secure"
+                    className="w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-[0_0_25px_rgba(0,243,255,0.6)] animate-float"
+                  />
+                </motion.div>
 
-                {/* Sweep */}
+                {/* Cyber Sweep */}
                 <motion.div
                   initial={{ x: "-100%" }}
-                  animate={{ x: "100%" }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-primary/20 to-transparent"
+                  animate={{ x: "200%" }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-[#00f3ff]/30 to-transparent skew-x-12 mix-blend-overlay z-20"
                 />
               </div>
             </motion.div>
@@ -117,9 +121,12 @@ export function SplashScreen() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="font-display text-3xl sm:text-5xl font-black tracking-[0.3em] text-gradient-neon"
+              className="font-display text-3xl sm:text-5xl font-black tracking-[0.2em] text-white drop-shadow-[0_0_15px_rgba(0,243,255,0.4)] flex items-center justify-center gap-3 mt-4"
             >
-              STRAXON
+              STRAXON{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f3ff] to-[#ff003c]">
+                SECURE
+              </span>
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, letterSpacing: "0.1em" }}

@@ -1,18 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 import * as net from "net";
+import { checkFeatureUsage, logFeatureUsage } from "@/server/usage";
+import { assertSafeScanTarget } from "@/server/security/scanTarget";
 
 // ===== DB Helpers =====
 
 export const getTargets = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await (supabaseAdmin as any)
       .from("easm_targets")
       .select("*")
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .order("created_at", { ascending: false });
 
     if (error) throw new Error(error.message);
@@ -20,7 +23,7 @@ export const getTargets = createServerFn({ method: "GET" })
   });
 
 export const getFindings = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ targetId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     // Basic auth check ensuring the target belongs to the user
@@ -28,7 +31,7 @@ export const getFindings = createServerFn({ method: "GET" })
       .from("easm_targets")
       .select("id")
       .eq("id", data.targetId)
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .single();
 
     if (!target) throw new Error("Unauthorized or not found");
@@ -44,19 +47,35 @@ export const getFindings = createServerFn({ method: "GET" })
   });
 
 export const addTarget = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ domain: z.string().min(3) }).parse(d))
   .handler(async ({ data, context }) => {
+    await checkFeatureUsage((context as any).userId as string, "easm_scan");
+
     // Strip http/https and paths if user entered a URL
-    let cleanDomain = data.domain.replace(/^https?:\/\//, "").split("/")[0].trim().toLowerCase();
+    const cleanDomain = data.domain
+      .replace(/^https?:\/\//, "")
+      .split("/")[0]
+      .trim()
+      .toLowerCase();
+
+    // SSRF Mitigation (we construct a dummy http url to use our existing validator)
+    await assertSafeScanTarget(`http://${cleanDomain}`);
 
     const { data: target, error } = await (supabaseAdmin as any)
       .from("easm_targets")
-      .insert({ user_id: context.userId, domain: cleanDomain })
+      .insert({ user_id: (context as any).userId as string, domain: cleanDomain })
       .select()
       .single();
 
     if (error) throw new Error("Failed to add target. It might already exist.");
+
+    await logFeatureUsage(
+      (context as any).userId as string,
+      "easm_scan",
+      { domain: cleanDomain },
+      (context as any).requestId as string,
+    );
 
     // Fire off recon in the background so we don't block the UI
     runRecon(target.id, cleanDomain).catch(console.error);
@@ -71,22 +90,22 @@ async function checkPort(host: string, port: number, timeoutMs = 1500): Promise<
   return new Promise((resolve) => {
     const socket = new net.Socket();
     socket.setTimeout(timeoutMs);
-    
+
     socket.on("connect", () => {
       socket.destroy();
       resolve(true);
     });
-    
+
     socket.on("timeout", () => {
       socket.destroy();
       resolve(false);
     });
-    
+
     socket.on("error", () => {
       socket.destroy();
       resolve(false);
     });
-    
+
     socket.connect(port, host);
   });
 }
@@ -94,13 +113,16 @@ async function checkPort(host: string, port: number, timeoutMs = 1500): Promise<
 // Background Task
 async function runRecon(targetId: string, domain: string) {
   try {
-    await (supabaseAdmin as any).from("easm_targets").update({ status: "scanning" }).eq("id", targetId);
+    await (supabaseAdmin as any)
+      .from("easm_targets")
+      .update({ status: "scanning" })
+      .eq("id", targetId);
 
     // 1. Subdomain Enumeration via crt.sh
     const crtUrl = `https://crt.sh/?q=%.${domain}&output=json`;
     const res = await fetch(crtUrl);
-    
-    let subdomains = new Set<string>();
+
+    const subdomains = new Set<string>();
 
     if (res.ok) {
       const logs = await res.json();
@@ -122,16 +144,18 @@ async function runRecon(targetId: string, domain: string) {
     const uniqueSubdomains = Array.from(subdomains);
 
     // Save subdomains to DB
-    const findingRecords = uniqueSubdomains.map(sub => ({
+    const findingRecords = uniqueSubdomains.map((sub) => ({
       target_id: targetId,
       finding_type: "subdomain",
       value: sub,
-      severity: "info"
+      severity: "info",
     }));
 
     // Upsert to handle duplicates safely
     if (findingRecords.length > 0) {
-      await (supabaseAdmin as any).from("easm_findings").upsert(findingRecords, { onConflict: "target_id, finding_type, value" });
+      await (supabaseAdmin as any)
+        .from("easm_findings")
+        .upsert(findingRecords, { onConflict: "target_id, finding_type, value" });
     }
 
     // 2. Port Scanning on a small sample of discovered subdomains (limit to 10 to avoid huge delays)
@@ -146,22 +170,30 @@ async function runRecon(targetId: string, domain: string) {
           if (port === 22) severity = "medium";
           if (port === 3389) severity = "high"; // RDP exposed
 
-          await (supabaseAdmin as any).from("easm_findings").upsert({
-            target_id: targetId,
-            finding_type: "open_port",
-            value: `${host}:${port}`,
-            severity,
-            details: { port, host }
-          }, { onConflict: "target_id, finding_type, value" });
+          await (supabaseAdmin as any).from("easm_findings").upsert(
+            {
+              target_id: targetId,
+              finding_type: "open_port",
+              value: `${host}:${port}`,
+              severity,
+              details: { port, host },
+            },
+            { onConflict: "target_id, finding_type, value" },
+          );
         }
       }
     }
 
     // Done
-    await (supabaseAdmin as any).from("easm_targets").update({ status: "completed" }).eq("id", targetId);
-
+    await (supabaseAdmin as any)
+      .from("easm_targets")
+      .update({ status: "completed" })
+      .eq("id", targetId);
   } catch (error) {
     console.error("EASM Recon Failed for", domain, error);
-    await (supabaseAdmin as any).from("easm_targets").update({ status: "failed" }).eq("id", targetId);
+    await (supabaseAdmin as any)
+      .from("easm_targets")
+      .update({ status: "failed" })
+      .eq("id", targetId);
   }
 }

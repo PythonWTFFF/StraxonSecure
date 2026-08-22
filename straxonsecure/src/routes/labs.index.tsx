@@ -15,6 +15,8 @@ import {
   FolderOpen,
   FileCode,
   Users,
+  Cloud,
+  Mail,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -33,6 +35,46 @@ export const Route = createFileRoute("/labs/")({
 });
 
 const LABS = [
+  {
+    to: "/labs/terminal",
+    icon: Terminal,
+    title: "Interactive Shell (xterm)",
+    desc: "Connect directly to a vulnerable Docker container via WebSockets. Full bash access.",
+    difficulty: "Advanced",
+    badge: "LAB-00",
+    accent: "magenta" as const,
+    isNew: true,
+  },
+  {
+    to: "/labs/iam-privesc",
+    icon: Cloud,
+    title: "IAM Privilege Escalation",
+    desc: "Exploit an AWS IAM misconfiguration to escalate a compromised developer key to AdministratorAccess.",
+    difficulty: "Advanced",
+    badge: "LAB-IAM",
+    accent: "yellow" as const,
+    isNew: true,
+  },
+  {
+    to: "/labs/phishing-payload",
+    icon: Mail,
+    title: "Phishing Payload Analysis",
+    desc: "Reverse-engineer an obfuscated PowerShell dropper extracted from a malicious email attachment to find the C2 server.",
+    difficulty: "Intermediate",
+    badge: "LAB-PHY",
+    accent: "magenta" as const,
+    isNew: true,
+  },
+  {
+    to: "/labs/juiceshop",
+    icon: Globe,
+    title: "Web Vulnerability Lab",
+    desc: "Dynamically spin up an isolated OWASP Juice Shop container for hands-on web exploitation.",
+    difficulty: "Advanced",
+    badge: "LAB-JS",
+    accent: "fuchsia" as const,
+    isNew: true,
+  },
   {
     to: "/labs/sqli",
     icon: Database,
@@ -95,6 +137,26 @@ const LABS = [
     desc: "Pivot to cloud metadata endpoints and steal AWS IAM credentials.",
     difficulty: "Advanced",
     badge: "LAB-07",
+    accent: "cyan" as const,
+    isNew: true,
+  },
+  {
+    to: "/labs/ad-network",
+    icon: Users,
+    title: "Active Directory Exploitation",
+    desc: "Simulate a ZeroLogon attack against a Windows Server Domain Controller.",
+    difficulty: "Expert",
+    badge: "LAB-13",
+    accent: "magenta" as const,
+    isNew: true,
+  },
+  {
+    to: "/labs/ransomware",
+    icon: ShieldOff,
+    title: "Ransomware Containment",
+    desc: "Detect and contain a simulated ransomware outbreak across the network.",
+    difficulty: "Expert",
+    badge: "LAB-14",
     accent: "cyan" as const,
     isNew: true,
   },

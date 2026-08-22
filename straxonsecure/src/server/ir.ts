@@ -1,15 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 
 export const getPlaybooks = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await (supabaseAdmin as any)
       .from("ir_playbooks")
       .select("*, author:profiles(display_name)")
-      .or(`is_public.eq.true,author_id.eq.${context.userId}`)
+      .or(`is_public.eq.true,author_id.eq.${(context as any).userId as string}`)
       .order("created_at", { ascending: false });
 
     if (error) throw new Error("Failed to load playbooks");
@@ -17,14 +18,18 @@ export const getPlaybooks = createServerFn({ method: "GET" })
   });
 
 export const savePlaybook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((d) => z.object({
-    id: z.string().uuid().optional(),
-    title: z.string(),
-    description: z.string(),
-    steps: z.array(z.any()),
-    isPublic: z.boolean()
-  }).parse(d))
+  .middleware([requireRequestId, requireSupabaseAuth])
+  .validator((d) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        title: z.string(),
+        description: z.string(),
+        steps: z.array(z.any()),
+        isPublic: z.boolean(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     if (data.id) {
       // Update
@@ -34,37 +39,35 @@ export const savePlaybook = createServerFn({ method: "POST" })
           title: data.title,
           description: data.description,
           steps: data.steps,
-          is_public: data.isPublic
+          is_public: data.isPublic,
         })
         .eq("id", data.id)
-        .eq("author_id", context.userId);
+        .eq("author_id", (context as any).userId as string);
       if (error) throw new Error("Failed to update playbook");
     } else {
       // Insert
-      const { error } = await (supabaseAdmin as any)
-        .from("ir_playbooks")
-        .insert({
-          title: data.title,
-          description: data.description,
-          steps: data.steps,
-          is_public: data.isPublic,
-          author_id: context.userId
-        });
+      const { error } = await (supabaseAdmin as any).from("ir_playbooks").insert({
+        title: data.title,
+        description: data.description,
+        steps: data.steps,
+        is_public: data.isPublic,
+        author_id: (context as any).userId as string,
+      });
       if (error) throw new Error("Failed to create playbook");
     }
     return { success: true };
   });
 
 export const deletePlaybook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await (supabaseAdmin as any)
       .from("ir_playbooks")
       .delete()
       .eq("id", data.id)
-      .eq("author_id", context.userId);
-    
+      .eq("author_id", (context as any).userId as string);
+
     if (error) throw new Error("Failed to delete playbook");
     return { success: true };
   });

@@ -216,6 +216,13 @@ export type Database = {
           source_lng: number | null;
           target: string | null;
           user_id: string | null;
+          mitre_tactic: string | null;
+          mitre_technique: string | null;
+          raw_payload: string | null;
+          ioc_hash: string | null;
+          false_positive: boolean;
+          response_action: string | null;
+          analyst_notes: string | null;
         };
         Insert: {
           attack_type: string;
@@ -229,6 +236,13 @@ export type Database = {
           source_lng?: number | null;
           target?: string | null;
           user_id?: string | null;
+          mitre_tactic?: string | null;
+          mitre_technique?: string | null;
+          raw_payload?: string | null;
+          ioc_hash?: string | null;
+          false_positive?: boolean;
+          response_action?: string | null;
+          analyst_notes?: string | null;
         };
         Update: {
           attack_type?: string;
@@ -242,6 +256,13 @@ export type Database = {
           source_lng?: number | null;
           target?: string | null;
           user_id?: string | null;
+          mitre_tactic?: string | null;
+          mitre_technique?: string | null;
+          raw_payload?: string | null;
+          ioc_hash?: string | null;
+          false_positive?: boolean;
+          response_action?: string | null;
+          analyst_notes?: string | null;
         };
         Relationships: [];
       };
@@ -382,6 +403,471 @@ export type Database = {
         };
         Relationships: [];
       };
+      ctf_challenges: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          points: number;
+          category: string;
+          flag_hash: string;
+          created_at: string;
+          hints: any;
+          max_hints: number;
+          is_active: boolean;
+          solve_count: number;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description: string;
+          points?: number;
+          category: string;
+          flag_hash: string;
+          created_at?: string;
+          hints?: any;
+          max_hints?: number;
+          is_active?: boolean;
+          solve_count?: number;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string;
+          points?: number;
+          category?: string;
+          flag_hash?: string;
+          created_at?: string;
+          hints?: any;
+          max_hints?: number;
+          is_active?: boolean;
+          solve_count?: number;
+        };
+        Relationships: [];
+      };
+      ctf_solves: {
+        Row: {
+          id: string;
+          user_id: string;
+          challenge_id: string;
+          solved_at: string;
+          hints_used: number;
+          points_earned: number;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          challenge_id: string;
+          solved_at?: string;
+          hints_used?: number;
+          points_earned?: number;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          challenge_id?: string;
+          solved_at?: string;
+          hints_used?: number;
+          points_earned?: number;
+        };
+        Relationships: [];
+      };
+      ctf_hint_usage: {
+        Row: {
+          id: string;
+          user_id: string;
+          challenge_id: string;
+          hint_index: number;
+          used_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          challenge_id: string;
+          hint_index: number;
+          used_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          challenge_id?: string;
+          hint_index?: number;
+          used_at?: string;
+        };
+        Relationships: [];
+      };
+      warroom_sessions: {
+        Row: {
+          id: string;
+          title: string;
+          scenario: string;
+          owner_id: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          scenario: string;
+          owner_id: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          scenario?: string;
+          owner_id?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      warroom_messages: {
+        Row: {
+          id: string;
+          session_id: string;
+          user_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          user_id: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          user_id?: string;
+          content?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      ir_playbooks: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          author_id: string;
+          steps: any;
+          is_public: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description: string;
+          author_id: string;
+          steps?: any;
+          is_public?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string;
+          author_id?: string;
+          steps?: any;
+          is_public?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      packet_scans: {
+        Row: {
+          id: string;
+          user_id: string;
+          filename: string;
+          size_bytes: number;
+          analysis_results: any;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          filename: string;
+          size_bytes: number;
+          analysis_results: any;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          filename?: string;
+          size_bytes?: number;
+          analysis_results?: any;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      pentest_jobs: {
+        Row: {
+          id: string;
+          user_id: string;
+          target: string;
+          mode: string;
+          status: string;
+          risk_level: string | null;
+          ai_report: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          target: string;
+          mode: string;
+          status?: string;
+          risk_level?: string | null;
+          ai_report?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          target?: string;
+          mode?: string;
+          status?: string;
+          risk_level?: string | null;
+          ai_report?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      posture_evaluations: {
+        Row: {
+          id: string;
+          user_id: string;
+          cloud_provider: string;
+          score: number;
+          findings: any;
+          evaluated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          cloud_provider: string;
+          score: number;
+          findings: any;
+          evaluated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          cloud_provider?: string;
+          score?: number;
+          findings?: any;
+          evaluated_at?: string;
+        };
+        Relationships: [];
+      };
+      leads: {
+        Row: {
+          id: string;
+          email: string;
+          company: string | null;
+          source: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          company?: string | null;
+          source?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          company?: string | null;
+          source?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      lab_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          lab_id: string;
+          mode: string | null;
+          container_id: string | null;
+          container_ip: string | null;
+          container_port: number | null;
+          started_at: string;
+          completed_at: string | null;
+          score: number | null;
+          flags_captured: string[] | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          lab_id: string;
+          mode?: string | null;
+          container_id?: string | null;
+          container_ip?: string | null;
+          container_port?: number | null;
+          started_at?: string;
+          completed_at?: string | null;
+          score?: number | null;
+          flags_captured?: string[] | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          lab_id?: string;
+          mode?: string | null;
+          container_id?: string | null;
+          container_ip?: string | null;
+          container_port?: number | null;
+          started_at?: string;
+          completed_at?: string | null;
+          score?: number | null;
+          flags_captured?: string[] | null;
+        };
+        Relationships: [];
+      };
+      edr_endpoints: {
+        Row: {
+          id: string;
+          user_id: string;
+          hostname: string;
+          os: string;
+          ip_address: string;
+          agent_version: string;
+          tags: string[];
+          status: string;
+          last_seen: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          hostname: string;
+          os: string;
+          ip_address: string;
+          agent_version: string;
+          tags: string[];
+          status?: string;
+          last_seen?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          hostname?: string;
+          os?: string;
+          ip_address?: string;
+          agent_version?: string;
+          tags?: string[];
+          status?: string;
+          last_seen?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      api_keys: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          key_hash: string;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          key_hash: string;
+          active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          key_hash?: string;
+          active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      webhooks: {
+        Row: {
+          id: string;
+          user_id: string;
+          url: string;
+          secret: string;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          url: string;
+          secret: string;
+          active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          url?: string;
+          secret?: string;
+          active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      edr_process_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint_id: string;
+          process_name: string;
+          command_line: string | null;
+          parent_process: string | null;
+          run_as_user: string | null;
+          sha256_hash: string | null;
+          threat_level: string;
+          ai_analysis: string | null;
+          action_taken: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint_id: string;
+          process_name: string;
+          command_line?: string | null;
+          parent_process?: string | null;
+          run_as_user?: string | null;
+          sha256_hash?: string | null;
+          threat_level: string;
+          ai_analysis?: string | null;
+          action_taken: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint_id?: string;
+          process_name?: string;
+          command_line?: string | null;
+          parent_process?: string | null;
+          run_as_user?: string | null;
+          sha256_hash?: string | null;
+          threat_level?: string;
+          ai_analysis?: string | null;
+          action_taken?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -395,7 +881,7 @@ export type Database = {
     };
     Enums: {
       sub_plan: "free" | "pro_monthly" | "pro_yearly";
-      sub_provider: "stripe" | "razorpay" | "none";
+      sub_provider: "stripe" | "razorpay" | "none" | "developer_override";
       sub_status: "trialing" | "active" | "past_due" | "canceled" | "expired";
     };
     CompositeTypes: {

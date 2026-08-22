@@ -13,6 +13,7 @@ import {
 import { CyberCard } from "@/components/cyber/CyberCard";
 import { CyberButton } from "@/components/cyber/CyberButton";
 import { LabFrame, LogPanel, nowTs, type LogEntry } from "@/components/labs/LabFrame";
+import { DockerLabLauncher } from "@/components/labs/DockerLabLauncher";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/labs/rce")({
@@ -139,7 +140,7 @@ function executeVulnCommand(input: string): CommandResult {
 }
 
 function executeSafeCommand(host: string): CommandResult {
-  const safe = host.replace(/[^a-zA-Z0-9.\-]/g, "");
+  const safe = host.replace(/[^a-zA-Z0-9.-]/g, "");
   if (safe !== host) {
     return {
       output: `Error: Invalid hostname. Only alphanumeric characters, dots, and hyphens allowed.\nInput rejected: "${host}"`,
@@ -229,7 +230,7 @@ function RCELab() {
   };
 
   return (
-    <LabFrame title="REMOTE CODE EXECUTION" badge="LAB-06" recorderLab="rce">
+    <LabFrame title="REMOTE CODE EXECUTION" badge="LAB-06" recorderLab="rce" dockerLabId="rce">
       <p className="text-muted-foreground max-w-3xl">
         A network tool takes a hostname and runs{" "}
         <code className="text-primary font-mono">ping</code> on it. But it's built vulnerably — can

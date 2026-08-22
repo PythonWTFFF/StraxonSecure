@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
@@ -6,12 +7,12 @@ import { z } from "zod";
 // ===== SCHEDULES =====
 
 export const getSchedule = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await (supabaseAdmin as any)
       .from("report_schedules")
       .select("*")
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .single();
 
     // It's okay if not found, we'll return null to the frontend
@@ -19,23 +20,28 @@ export const getSchedule = createServerFn({ method: "GET" })
   });
 
 export const updateSchedule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
-    z.object({
-      frequency: z.enum(["daily", "weekly", "monthly"]),
-      emails: z.array(z.string().email()),
-      active: z.boolean(),
-    }).parse(d)
+    z
+      .object({
+        frequency: z.enum(["daily", "weekly", "monthly"]),
+        emails: z.array(z.string().email()),
+        active: z.boolean(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { data: schedule, error } = await (supabaseAdmin as any)
       .from("report_schedules")
-      .upsert({
-        user_id: context.userId,
-        frequency: data.frequency,
-        emails: data.emails,
-        active: data.active,
-      }, { onConflict: "user_id" })
+      .upsert(
+        {
+          user_id: (context as any).userId as string,
+          frequency: data.frequency,
+          emails: data.emails,
+          active: data.active,
+        },
+        { onConflict: "user_id" },
+      )
       .select()
       .single();
 
@@ -43,18 +49,17 @@ export const updateSchedule = createServerFn({ method: "POST" })
     return schedule;
   });
 
-
 // ===== AGGREGATION ENGINE =====
 
 export const getReportMetrics = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     // 1. EDR Metrics
     const { data: edrEvents } = await (supabaseAdmin as any)
       .from("edr_process_events")
       .select("threat_level")
-      .eq("user_id", context.userId);
-      
+      .eq("user_id", (context as any).userId as string);
+
     const edrStats = { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
     if (edrEvents) {
       edrEvents.forEach((e: any) => {
@@ -70,7 +75,7 @@ export const getReportMetrics = createServerFn({ method: "GET" })
     const { data: complianceRuns } = await (supabaseAdmin as any)
       .from("compliance_runs")
       .select("status, controls_passed, controls_failed, total_controls")
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .order("created_at", { ascending: false })
       .limit(1);
 
@@ -81,10 +86,10 @@ export const getReportMetrics = createServerFn({ method: "GET" })
     const { data: targets } = await (supabaseAdmin as any)
       .from("easm_targets")
       .select("id")
-      .eq("user_id", context.userId);
+      .eq("user_id", (context as any).userId as string);
 
     const easmStats = { totalFindings: 0, subdomains: 0, openPorts: 0 };
-    
+
     if (targets && targets.length > 0) {
       const targetIds = targets.map((t: any) => t.id);
       const { data: findings } = await (supabaseAdmin as any)
@@ -104,8 +109,8 @@ export const getReportMetrics = createServerFn({ method: "GET" })
     // 4. SOC Metrics
     const { count: socAlerts } = await (supabaseAdmin as any)
       .from("soc_events")
-      .select("*", { count: 'exact', head: true })
-      .eq("user_id", context.userId);
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", (context as any).userId as string);
 
     return {
       timestamp: new Date().toISOString(),
@@ -114,6 +119,6 @@ export const getReportMetrics = createServerFn({ method: "GET" })
       easm: easmStats,
       soc: {
         totalAlerts: socAlerts || 0,
-      }
+      },
     };
   });

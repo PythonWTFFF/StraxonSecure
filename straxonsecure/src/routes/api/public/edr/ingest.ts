@@ -35,18 +35,20 @@ export const Route = createFileRoute("/api/public/edr/ingest")({
             return new Response("Missing endpointId", { status: 400 });
           }
 
-          // 1. Upsert the Endpoint to mark it online and active
-          await (supabaseAdmin as any)
-            .from("edr_endpoints")
-            .upsert({
+          // 1. Upsert the Endpoint to mark it healthy and active
+          await (supabaseAdmin as any).from("edr_endpoints").upsert(
+            {
               id: endpointId,
               user_id: userId,
               hostname: hostname || "Unknown Host",
               ip_address: request.headers.get("x-forwarded-for") || "127.0.0.1",
-              os_info: os,
-              status: "online",
+              os: os,
+              agent_version: "1.0.0",
+              status: "healthy",
               last_seen: new Date().toISOString(),
-            }, { onConflict: "id" });
+            },
+            { onConflict: "id" },
+          );
 
           // 2. Insert process telemetry
           // Note: The agent is responsible for only sending NEW processes to avoid DB bloat.
@@ -62,6 +64,37 @@ export const Route = createFileRoute("/api/public/edr/ingest")({
               threat_level: "low", // Default to low, operator can click "Analyze" in UI
               action_taken: "monitored",
             }));
+
+            // ── ML Engine Anomaly Detection ──
+            try {
+              const mlUrl = import.meta.env.VITE_ML_ENGINE_URL || "http://localhost:8082";
+              const mlRes = await fetch(`${mlUrl}/api/ml/anomaly-detect`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  events: processRecords.map((p: any) => ({
+                    id: "tmp",
+                    attack_type: p.process_name,
+                    severity: "low",
+                  })),
+                }),
+              });
+
+              if (mlRes.ok) {
+                const mlData = await mlRes.json();
+                if (mlData.anomalies && mlData.anomalies.length > 0) {
+                  // If the ML model flags any process, escalate the entire batch
+                  processRecords.forEach((p: any) => {
+                    p.threat_level = "critical";
+                    p.action_taken = "quarantined";
+                    p.ai_analysis = "ML Isolation Forest flagged this process as highly anomalous.";
+                  });
+                }
+              }
+            } catch (e) {
+              console.error("ML Engine not reachable", e);
+            }
+            // ─────────────────────────────────
 
             // Insert in batches if there are many, though we assume agent sends small batches
             const { error: insertError } = await (supabaseAdmin as any)

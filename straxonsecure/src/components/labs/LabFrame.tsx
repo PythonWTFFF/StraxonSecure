@@ -3,16 +3,19 @@ import { ArrowLeft } from "lucide-react";
 import { ReactNode } from "react";
 import { CyberCard } from "@/components/cyber/CyberCard";
 import { ReplayRecorder } from "@/components/labs/ReplayRecorder";
+import { DockerLabLauncher } from "@/components/labs/DockerLabLauncher";
 
 export function LabFrame({
   title,
   badge,
   recorderLab,
+  dockerLabId,
   children,
 }: {
   title: string;
   badge: string;
   recorderLab?: string;
+  dockerLabId?: string;
   children: ReactNode;
 }) {
   return (
@@ -25,6 +28,7 @@ export function LabFrame({
           <ArrowLeft className="h-3.5 w-3.5" /> All Labs
         </Link>
         <div className="flex items-center gap-3 flex-wrap">
+          {dockerLabId && <DockerLabLauncher labId={dockerLabId} />}
           {recorderLab && <ReplayRecorder lab={recorderLab} />}
           <span className="text-[10px] font-mono tracking-widest text-accent border border-accent/40 rounded px-2 py-1">
             {badge}
@@ -42,11 +46,11 @@ export function LabFrame({
 export interface LogEntry {
   ts: string;
   line: string;
-  level?: "info" | "warn" | "error" | "ok";
+  level?: string;
 }
 
 export function LogPanel({ logs }: { logs: LogEntry[] }) {
-  const colors = {
+  const colors: Record<string, string> = {
     info: "text-muted-foreground",
     warn: "text-warning",
     error: "text-destructive",

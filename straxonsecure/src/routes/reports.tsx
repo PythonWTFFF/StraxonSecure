@@ -25,7 +25,7 @@ export const Route = createFileRoute("/reports")({
 function ReportsDashboard() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<any>(null);
-  
+
   // Schedule state
   const [schedule, setSchedule] = useState<any>(null);
   const [frequency, setFrequency] = useState("weekly");
@@ -67,10 +67,13 @@ function ReportsDashboard() {
   const handleSaveSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    
+
     // Parse emails
-    const emails = emailStr.split(",").map(s => s.trim()).filter(s => s.includes("@"));
-    
+    const emails = emailStr
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.includes("@"));
+
     if (emails.length === 0 && emailStr.length > 0) {
       toast.error("Please enter valid email addresses.");
       setIsSaving(false);
@@ -81,7 +84,7 @@ function ReportsDashboard() {
       await callAuthed(updateSchedule, {
         frequency: frequency as any,
         emails,
-        active: isActive
+        active: isActive,
       });
       toast.success("Report schedule updated!");
     } catch (e: any) {
@@ -94,77 +97,83 @@ function ReportsDashboard() {
   const generatePDF = () => {
     if (!metrics) return;
     setIsGenerating(true);
-    
+
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.width;
-      
+
       // Theme colors
       const primaryColor = "#00f3ff";
-      
+
       // Header
       doc.setFillColor(10, 15, 25);
       doc.rect(0, 0, pageWidth, 40, "F");
-      
+
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(24);
       doc.text("STRAXON SECURE", 14, 22);
-      
+
       doc.setFontSize(10);
       doc.setTextColor(200, 200, 200);
       doc.text("Executive Security Posture Report", 14, 30);
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 14, 30, { align: "right" });
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 14, 30, {
+        align: "right",
+      });
 
       // Body
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(16);
       doc.text("1. Threat Intelligence (EDR)", 14, 55);
-      
-      // @ts-ignore
+
+      // @ts-expect-error jsPDF plugin missing type
       doc.autoTable({
         startY: 60,
-        head: [['Threat Level', 'Detected Instances']],
+        head: [["Threat Level", "Detected Instances"]],
         body: [
-          ['Critical', metrics.edr.critical.toString()],
-          ['High', metrics.edr.high.toString()],
-          ['Medium', metrics.edr.medium.toString()],
-          ['Low', metrics.edr.low.toString()]
+          ["Critical", metrics.edr.critical.toString()],
+          ["High", metrics.edr.high.toString()],
+          ["Medium", metrics.edr.medium.toString()],
+          ["Low", metrics.edr.low.toString()],
         ],
-        theme: 'grid',
-        headStyles: { fillColor: [0, 243, 255], textColor: [0,0,0] }
+        theme: "grid",
+        headStyles: { fillColor: [0, 243, 255], textColor: [0, 0, 0] },
       });
 
-      // @ts-ignore
+      // @ts-expect-error jsPDF plugin missing type
       let currentY = doc.lastAutoTable.finalY + 15;
 
       doc.text("2. External Attack Surface (EASM)", 14, currentY);
-      // @ts-ignore
+      // @ts-expect-error jsPDF plugin missing type
       doc.autoTable({
         startY: currentY + 5,
-        head: [['Metric', 'Count']],
+        head: [["Metric", "Count"]],
         body: [
-          ['Exposed Subdomains', metrics.easm.subdomains.toString()],
-          ['Open Ports', metrics.easm.openPorts.toString()],
-          ['Total OSINT Findings', metrics.easm.totalFindings.toString()]
+          ["Exposed Subdomains", metrics.easm.subdomains.toString()],
+          ["Open Ports", metrics.easm.openPorts.toString()],
+          ["Total OSINT Findings", metrics.easm.totalFindings.toString()],
         ],
-        theme: 'grid',
-        headStyles: { fillColor: [0, 243, 255], textColor: [0,0,0] }
+        theme: "grid",
+        headStyles: { fillColor: [0, 243, 255], textColor: [0, 0, 0] },
       });
 
-      // @ts-ignore
+      // @ts-expect-error jsPDF plugin missing type
       currentY = doc.lastAutoTable.finalY + 15;
 
       doc.text("3. Compliance & Audit", 14, currentY);
       if (metrics.compliance) {
-        // @ts-ignore
+        // @ts-expect-error jsPDF plugin missing type
         doc.autoTable({
           startY: currentY + 5,
-          head: [['Status', 'Passed', 'Failed']],
+          head: [["Status", "Passed", "Failed"]],
           body: [
-            [metrics.compliance.status.toUpperCase(), metrics.compliance.controls_passed.toString(), metrics.compliance.controls_failed.toString()]
+            [
+              metrics.compliance.status.toUpperCase(),
+              metrics.compliance.controls_passed.toString(),
+              metrics.compliance.controls_failed.toString(),
+            ],
           ],
-          theme: 'grid',
-          headStyles: { fillColor: [0, 243, 255], textColor: [0,0,0] }
+          theme: "grid",
+          headStyles: { fillColor: [0, 243, 255], textColor: [0, 0, 0] },
         });
       } else {
         doc.setFontSize(12);
@@ -174,7 +183,6 @@ function ReportsDashboard() {
       // Save
       doc.save(`Straxon_Report_${new Date().getTime()}.pdf`);
       toast.success("PDF Generated successfully!");
-      
     } catch (e) {
       console.error(e);
       toast.error("Failed to generate PDF");
@@ -196,87 +204,86 @@ function ReportsDashboard() {
         description="Pro unlocks on-demand PDF generation and scheduled email delivery for executive stakeholders."
       >
         <div className="grid lg:grid-cols-3 gap-6">
-          
           {/* Left Column: Schedule Form */}
           <div className="lg:col-span-1 space-y-6">
-            <CyberCard variant="cyan" className="p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-5 w-5 text-[#00f3ff]" />
-                <h3 className="font-display font-bold text-lg">Scheduled Delivery</h3>
+            <CyberCard
+              variant="cyan"
+              className="p-6 bg-[#020610]/80 backdrop-blur-md shadow-[0_0_30px_rgba(0,243,255,0.1)]"
+            >
+              <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
+                <Clock className="h-6 w-6 text-[#00f3ff] drop-shadow-[0_0_8px_rgba(0,243,255,0.6)]" />
+                <h3 className="font-display font-bold text-lg text-white">Scheduled Delivery</h3>
               </div>
-              <p className="text-xs text-slate-400 mb-6">
-                Automatically email this report to your stakeholders.
+              <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+                Automatically email this report to your stakeholders on a recurring schedule.
               </p>
 
-              <form onSubmit={handleSaveSchedule} className="space-y-4">
+              <form onSubmit={handleSaveSchedule} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-mono text-slate-300">Frequency</label>
-                  <select 
+                  <label className="text-xs font-mono text-slate-400 tracking-widest uppercase">
+                    Frequency
+                  </label>
+                  <select
                     value={frequency}
                     onChange={(e) => setFrequency(e.target.value)}
-                    className="w-full bg-[#020610] border border-[#00f3ff]/30 rounded px-3 py-2 text-sm text-slate-200 outline-none"
+                    className="w-full bg-black/40 border border-[#00f3ff]/30 rounded-lg px-3 py-2.5 text-sm text-slate-200 outline-none focus:border-[#00f3ff] transition-colors"
                   >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
+                    <option value="daily">Daily Report</option>
+                    <option value="weekly">Weekly Summary</option>
+                    <option value="monthly">Monthly Executive Brief</option>
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-mono text-slate-300">Recipients (comma separated)</label>
-                  <input 
+                  <label className="text-xs font-mono text-slate-400 tracking-widest uppercase">
+                    Recipients (comma separated)
+                  </label>
+                  <input
                     type="text"
                     placeholder="ciso@company.com, admin@company.com"
                     value={emailStr}
                     onChange={(e) => setEmailStr(e.target.value)}
-                    className="w-full bg-[#020610] border border-[#00f3ff]/30 rounded px-3 py-2 text-sm text-slate-200 outline-none"
+                    className="w-full bg-black/40 border border-[#00f3ff]/30 rounded-lg px-3 py-2.5 text-sm text-slate-200 outline-none focus:border-[#00f3ff] transition-colors placeholder:text-slate-600"
                   />
                 </div>
 
-                <div className="flex items-center gap-2 pt-2">
-                  <input 
-                    type="checkbox" 
+                <div className="flex items-center gap-3 pt-4 border-t border-white/5">
+                  <input
+                    type="checkbox"
                     checked={isActive}
                     onChange={(e) => setIsActive(e.target.checked)}
                     id="active-toggle"
-                    className="accent-[#00f3ff]"
+                    className="accent-[#00f3ff] w-4 h-4 cursor-pointer"
                   />
-                  <label htmlFor="active-toggle" className="text-xs font-mono text-slate-300 cursor-pointer">
+                  <label
+                    htmlFor="active-toggle"
+                    className="text-sm font-mono text-slate-300 cursor-pointer hover:text-white transition-colors"
+                  >
                     Enable Scheduled Emails
                   </label>
                 </div>
 
-                <CyberButton type="submit" disabled={isSaving} variant="cyan" className="w-full">
+                <CyberButton
+                  variant="cyan"
+                  type="submit"
+                  disabled={isSaving}
+                  className="w-full justify-center mt-6"
+                >
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? "Saving..." : "Save Schedule"}
                 </CyberButton>
               </form>
             </CyberCard>
-
-            <CyberCard variant="plain" className="p-5 flex flex-col items-center justify-center text-center gap-4">
-              <FileText className="h-10 w-10 text-slate-400" />
-              <div className="space-y-1">
-                <h4 className="font-mono font-bold text-sm text-white">Manual Export</h4>
-                <p className="text-xs text-slate-400">Download the report right now.</p>
-              </div>
-              <CyberButton onClick={generatePDF} disabled={isGenerating || !metrics} variant="ghost" className="w-full border border-white/20">
-                <Download className="h-4 w-4 mr-2" />
-                {isGenerating ? "Generating..." : "Download PDF"}
-              </CyberButton>
-            </CyberCard>
           </div>
 
-          {/* Right Column: Live Metrics Preview */}
+          {/* Right Column: Preview & Generate */}
           <div className="lg:col-span-2 space-y-6">
-            <h3 className="font-mono text-sm text-[#00f3ff] uppercase tracking-widest pl-2 border-l-2 border-[#00f3ff]">
-              Live Report Preview
-            </h3>
-
             {!metrics ? (
-              <div className="p-12 text-center text-slate-500 font-mono animate-pulse">Loading Aggregations...</div>
+              <div className="p-12 text-center text-slate-500 font-mono animate-pulse">
+                Loading Aggregations...
+              </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
-                
                 {/* EDR Preview */}
                 <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                   <div className="flex items-center gap-2 text-slate-400 mb-3">
@@ -325,26 +332,32 @@ function ReportsDashboard() {
                   </div>
                   {metrics.compliance ? (
                     <div className="flex gap-8">
-                       <div className="space-y-1">
-                          <div className="text-xs text-slate-500 font-mono uppercase">Status</div>
-                          <div className={`font-bold ${metrics.compliance.status === 'failed' ? 'text-red-400' : 'text-green-400'}`}>
-                            {metrics.compliance.status.toUpperCase()}
-                          </div>
-                       </div>
-                       <div className="space-y-1">
-                          <div className="text-xs text-slate-500 font-mono uppercase">Controls Passed</div>
-                          <div className="font-bold text-white">{metrics.compliance.controls_passed} / {metrics.compliance.total_controls}</div>
-                       </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-slate-500 font-mono uppercase">Status</div>
+                        <div
+                          className={`font-bold ${metrics.compliance.status === "failed" ? "text-red-400" : "text-green-400"}`}
+                        >
+                          {metrics.compliance.status.toUpperCase()}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-slate-500 font-mono uppercase">
+                          Controls Passed
+                        </div>
+                        <div className="font-bold text-white">
+                          {metrics.compliance.controls_passed} / {metrics.compliance.total_controls}
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="text-xs text-slate-500 font-mono italic">No audits performed yet.</div>
+                    <div className="text-xs text-slate-500 font-mono italic">
+                      No audits performed yet.
+                    </div>
                   )}
                 </div>
-
               </div>
             )}
           </div>
-          
         </div>
       </PremiumGate>
     </div>

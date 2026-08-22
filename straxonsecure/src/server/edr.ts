@@ -1,19 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireRequestId } from "@/server/security/requestId";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { triggerWebhooks } from "./developer";
-
+import { triggerWebhooks } from "./webhooks.server";
 
 // ─── Get All Endpoints ────────────────────────────────────────────────────────
 
 export const getEDREndpoints = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await supabaseAdmin
       .from("edr_endpoints")
       .select("*")
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .order("last_seen", { ascending: false });
 
     if (error) throw new Error(error.message);
@@ -23,7 +23,7 @@ export const getEDREndpoints = createServerFn({ method: "GET" })
 // ─── Upsert Endpoint ─────────────────────────────────────────────────────────
 
 export const upsertEDREndpoint = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -39,7 +39,7 @@ export const upsertEDREndpoint = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const payload = {
-      user_id: context.userId,
+      user_id: (context as any).userId as string,
       hostname: data.hostname,
       ip_address: data.ip_address,
       os: data.os,
@@ -54,7 +54,7 @@ export const upsertEDREndpoint = createServerFn({ method: "POST" })
         .from("edr_endpoints")
         .update(payload)
         .eq("id", data.id)
-        .eq("user_id", context.userId);
+        .eq("user_id", (context as any).userId as string);
       if (error) throw new Error(error.message);
       return { id: data.id };
     } else {
@@ -71,21 +71,21 @@ export const upsertEDREndpoint = createServerFn({ method: "POST" })
 // ─── Delete Endpoint ─────────────────────────────────────────────────────────
 
 export const deleteEDREndpoint = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ endpointId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await supabaseAdmin
       .from("edr_endpoints")
       .delete()
       .eq("id", data.endpointId)
-      .eq("user_id", context.userId);
+      .eq("user_id", (context as any).userId as string);
     return { ok: true };
   });
 
 // ─── Update Endpoint Status ───────────────────────────────────────────────────
 
 export const updateEndpointStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -99,7 +99,7 @@ export const updateEndpointStatus = createServerFn({ method: "POST" })
       .from("edr_endpoints")
       .update({ status: data.status, last_seen: new Date().toISOString() })
       .eq("id", data.endpointId)
-      .eq("user_id", context.userId);
+      .eq("user_id", (context as any).userId as string);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -107,7 +107,7 @@ export const updateEndpointStatus = createServerFn({ method: "POST" })
 // ─── Analyze Process ─────────────────────────────────────────────────────────
 
 export const analyzeProcess = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -164,7 +164,7 @@ Provide a highly concise response in Markdown:
     const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const analysis = json.choices?.[0]?.message?.content ?? "";
 
-    let threat_level: "low" | "medium" | "high" | "critical" = "low";
+    let threat_level: string = "low";
     const threatMatch = analysis.match(/Threat Level.*?(Critical|High|Medium|Low)/i);
     if (threatMatch) {
       threat_level = threatMatch[1].toLowerCase() as typeof threat_level;
@@ -173,7 +173,7 @@ Provide a highly concise response in Markdown:
     // Save process event to DB if endpoint is known
     if (data.endpointId) {
       await supabaseAdmin.from("edr_process_events").insert({
-        user_id: context.userId,
+        user_id: (context as any).userId as string,
         endpoint_id: data.endpointId,
         process_name: data.processName,
         command_line: data.commandLine,
@@ -182,7 +182,8 @@ Provide a highly concise response in Markdown:
         sha256_hash: data.hash,
         threat_level,
         ai_analysis: analysis,
-        action_taken: threat_level === "critical" || threat_level === "high" ? "quarantined" : "monitored",
+        action_taken:
+          threat_level === "critical" || threat_level === "high" ? "quarantined" : "monitored",
       });
 
       // Auto-update endpoint status if critical threat found
@@ -191,18 +192,18 @@ Provide a highly concise response in Markdown:
           .from("edr_endpoints")
           .update({ status: "compromised", last_seen: new Date().toISOString() })
           .eq("id", data.endpointId)
-          .eq("user_id", context.userId);
+          .eq("user_id", (context as any).userId as string);
       } else if (threat_level === "high") {
         await supabaseAdmin
           .from("edr_endpoints")
           .update({ status: "suspicious", last_seen: new Date().toISOString() })
           .eq("id", data.endpointId)
-          .eq("user_id", context.userId);
+          .eq("user_id", (context as any).userId as string);
       }
 
       if (threat_level === "critical" || threat_level === "high") {
         // Trigger webhooks in the background (no await)
-        triggerWebhooks(context.userId, "edr.threat_detected", {
+        triggerWebhooks((context as any).userId as string, "edr.threat_detected", {
           endpointId: data.endpointId,
           processName: data.processName,
           threatLevel: threat_level,
@@ -221,15 +222,20 @@ Provide a highly concise response in Markdown:
 // ─── Get Process Events ───────────────────────────────────────────────────────
 
 export const getProcessEvents = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
-    z.object({ endpointId: z.string().uuid().optional(), limit: z.number().int().max(100).default(50) }).parse(d),
+    z
+      .object({
+        endpointId: z.string().uuid().optional(),
+        limit: z.number().int().max(100).default(50),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     let q = supabaseAdmin
       .from("edr_process_events")
       .select("*")
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .order("created_at", { ascending: false })
       .limit(data.limit);
 

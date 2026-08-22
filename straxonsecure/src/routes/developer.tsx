@@ -123,47 +123,59 @@ function DeveloperHub() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main API Settings */}
           <div className="lg:col-span-2 space-y-6">
-            <CyberCard variant="cyan">
-              <div className="flex items-center gap-2 mb-4">
-                <Key className="h-5 w-5 text-[#00f3ff]" />
-                <h2 className="font-display text-xl font-bold">API Authentication</h2>
+            <CyberCard
+              variant="cyan"
+              className="p-8 bg-[#020610]/80 backdrop-blur-md shadow-[0_0_30px_rgba(0,243,255,0.1)]"
+            >
+              <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
+                <Key className="h-6 w-6 text-[#00f3ff] drop-shadow-[0_0_8px_rgba(0,243,255,0.6)]" />
+                <h2 className="font-display text-xl font-bold text-white">API Authentication</h2>
               </div>
-              <p className="text-slate-400 text-sm mb-6">
+              <p className="text-slate-400 text-sm mb-6 leading-relaxed">
                 Use this key to authenticate requests to the Straxon Secure REST API. Keep it
                 secret. Do not expose it in client-side code or public repositories.
               </p>
 
               <div className="space-y-4">
                 {!apiKey ? (
-                  <div className="p-6 border border-dashed border-white/20 rounded-xl text-center space-y-3">
+                  <div className="p-8 border-2 border-dashed border-white/10 rounded-xl text-center space-y-4 bg-black/20 hover:bg-black/40 transition-colors">
                     <p className="text-sm font-mono text-slate-500">No active API keys found</p>
-                    <CyberButton onClick={handleGenerateKey} disabled={generating} variant="cyan">
+                    <CyberButton
+                      onClick={handleGenerateKey}
+                      disabled={generating}
+                      variant="cyan"
+                      className="mx-auto shadow-[0_0_20px_rgba(0,243,255,0.2)]"
+                    >
                       {generating ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
                       ) : (
-                        <Key className="h-4 w-4" />
+                        <Key className="h-4 w-4 mr-2" />
                       )}
                       Generate Production Key
                     </CyberButton>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4 p-5 rounded-xl bg-black/40 border border-[#00f3ff]/20">
                     <div className="flex items-center gap-2">
                       <div className="relative flex-1">
                         <input
                           type={showKey ? "text" : "password"}
                           readOnly
                           value={apiKey}
-                          className="w-full bg-[#020610] border border-[#00f3ff]/30 rounded-lg py-2.5 pl-4 pr-12 font-mono text-sm text-[#00f3ff] outline-none"
+                          className="w-full bg-[#020610] border border-[#00f3ff]/50 rounded-lg py-3 pl-4 pr-12 font-mono text-sm text-[#00f3ff] outline-none shadow-[inset_0_0_15px_rgba(0,243,255,0.1)] focus:shadow-[inset_0_0_20px_rgba(0,243,255,0.2)] transition-shadow"
                         />
                         <button
                           onClick={() => setShowKey(!showKey)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#00f3ff] transition-colors"
                         >
                           {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
-                      <CyberButton onClick={copyKey} variant="ghost" className="px-3">
+                      <CyberButton
+                        onClick={copyKey}
+                        variant="ghost"
+                        className="px-4 h-[46px] bg-white/5 hover:bg-white/10"
+                      >
                         {copied ? (
                           <Check className="h-4 w-4 text-green-400" />
                         ) : (
@@ -171,9 +183,9 @@ function DeveloperHub() {
                         )}
                       </CyberButton>
                     </div>
-                    <p className="text-xs text-orange-400 font-mono flex items-center gap-1.5">
-                      <AlertTriangle className="h-3 w-3" /> Make sure to copy your key now. You
-                      won't be able to see it again!
+                    <p className="text-[11px] text-orange-400 font-mono flex items-center gap-1.5 bg-orange-400/10 px-3 py-2 rounded border border-orange-400/20">
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      Make sure to copy your key now. You won't be able to see it again!
                     </p>
                   </div>
                 )}
@@ -189,7 +201,7 @@ function DeveloperHub() {
                 Stream SOC alerts, failed compliance checks, and completed SAST scans directly to
                 your servers or Slack/Discord.
               </p>
-              
+
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3 p-3 bg-white/5 rounded border border-white/10">
                   <input
@@ -199,21 +211,36 @@ function DeveloperHub() {
                     placeholder="https://your-server.com/webhooks/straxon"
                     className="flex-1 bg-transparent border-none outline-none font-mono text-sm text-slate-300 placeholder:text-slate-600"
                   />
-                  <CyberButton onClick={handleAddWebhook} disabled={addingWh} variant="ghost" size="sm">
+                  <CyberButton
+                    onClick={handleAddWebhook}
+                    disabled={addingWh}
+                    variant="ghost"
+                    size="sm"
+                  >
                     {addingWh ? "Adding..." : "Add Endpoint"}
                   </CyberButton>
                 </div>
 
                 {webhooks.length > 0 && (
                   <div className="space-y-2 mt-4">
-                    <h3 className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">Active Endpoints</h3>
+                    <h3 className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">
+                      Active Endpoints
+                    </h3>
                     {webhooks.map((wh) => (
-                      <div key={wh.id} className="flex items-center justify-between p-3 rounded border border-white/10 bg-white/5">
+                      <div
+                        key={wh.id}
+                        className="flex items-center justify-between p-3 rounded border border-white/10 bg-white/5"
+                      >
                         <div>
                           <div className="font-mono text-sm text-slate-200">{wh.url}</div>
-                          <div className="text-[10px] text-slate-500 font-mono mt-1">Secret: {wh.secret}</div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-1">
+                            Secret: {wh.secret}
+                          </div>
                         </div>
-                        <button onClick={() => handleDeleteWebhook(wh.id)} className="text-red-400 hover:text-red-300 p-2">
+                        <button
+                          onClick={() => handleDeleteWebhook(wh.id)}
+                          className="text-red-400 hover:text-red-300 p-2"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>

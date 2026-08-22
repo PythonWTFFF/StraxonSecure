@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 
 export const getWarrooms = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data: sessions, error } = await (supabaseAdmin as any)
       .from("warroom_sessions")
@@ -16,12 +17,16 @@ export const getWarrooms = createServerFn({ method: "GET" })
   });
 
 export const createWarroom = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ title: z.string(), scenario: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: session, error } = await (supabaseAdmin as any)
       .from("warroom_sessions")
-      .insert({ title: data.title, scenario: data.scenario, owner_id: context.userId })
+      .insert({
+        title: data.title,
+        scenario: data.scenario,
+        owner_id: (context as any).userId as string,
+      })
       .select()
       .single();
 
@@ -30,7 +35,7 @@ export const createWarroom = createServerFn({ method: "POST" })
   });
 
 export const getMessages = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ sessionId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: messages, error } = await (supabaseAdmin as any)
@@ -44,12 +49,14 @@ export const getMessages = createServerFn({ method: "GET" })
   });
 
 export const sendMessage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ sessionId: z.string().uuid(), content: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await (supabaseAdmin as any)
-      .from("warroom_messages")
-      .insert({ session_id: data.sessionId, user_id: context.userId, content: data.content });
+    const { error } = await (supabaseAdmin as any).from("warroom_messages").insert({
+      session_id: data.sessionId,
+      user_id: (context as any).userId as string,
+      content: data.content,
+    });
 
     if (error) throw new Error("Failed to send message");
     return { success: true };

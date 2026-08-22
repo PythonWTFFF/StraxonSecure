@@ -75,7 +75,7 @@ function readFile(
 
   if (secure) {
     // Safe: only allow specific filenames, no traversal
-    const allowed = /^[a-zA-Z0-9_\-]+\.php$/;
+    const allowed = /^[a-zA-Z0-9_-]+\.php$/;
     if (!allowed.test(path) || path.includes("..") || path.includes("/") || path.includes("\\")) {
       return { content: null, blocked: true };
     }

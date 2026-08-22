@@ -15,6 +15,11 @@ export interface Subscription {
   cancel_at_period_end: boolean;
 }
 
+export interface UsageLimits {
+  max_edr_hosts: number;
+  max_lab_sessions: number;
+}
+
 export function useSubscription() {
   const { user, loading: authLoading } = useAuth();
   const [sub, setSub] = useState<Subscription | null>(null);
@@ -23,6 +28,21 @@ export function useSubscription() {
   const fetchSub = useCallback(async () => {
     if (!user) {
       setSub(null);
+      setLoading(false);
+      return;
+    }
+
+    // Check DEV Override first to avoid 404s on missing tables
+    if (localStorage.getItem("dev_pro_override") === "true") {
+      setSub({
+        id: "dev-override",
+        plan: "pro_monthly",
+        status: "active",
+        provider: "none",
+        trial_ends_at: new Date(Date.now() + 86400000 * 30).toISOString(),
+        current_period_end: new Date(Date.now() + 86400000 * 30).toISOString(),
+        cancel_at_period_end: false,
+      });
       setLoading(false);
       return;
     }
@@ -59,6 +79,19 @@ export function useSubscription() {
     ? Math.max(0, Math.ceil((new Date(sub.trial_ends_at).getTime() - now) / 86400000))
     : 0;
 
+  // Determine limits based on plan
+  let limits: UsageLimits = { max_edr_hosts: 1, max_lab_sessions: 1 };
+  if (devOverride) {
+    limits = { max_edr_hosts: 999, max_lab_sessions: 999 };
+  } else if (hasAccess) {
+    if (sub?.plan === "pro_monthly" || sub?.plan === "pro_yearly") {
+      limits = { max_edr_hosts: 5, max_lab_sessions: 10 };
+    } else {
+      // Free or expired
+      limits = { max_edr_hosts: 1, max_lab_sessions: 1 };
+    }
+  }
+
   return {
     sub,
     loading: loading || authLoading,
@@ -66,6 +99,7 @@ export function useSubscription() {
     trialActive,
     paidActive,
     trialDaysLeft,
+    limits,
     refresh: fetchSub,
   };
 }

@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireRequestId } from "@/server/security/requestId";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { checkFeatureUsage, logFeatureUsage } from "./usage";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -290,7 +292,7 @@ function checkSecrets(code: string): ScanFinding[] {
 // ─── Run Full Scan ───────────────────────────────────────────────────────────
 
 export const runFullScan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -301,6 +303,15 @@ export const runFullScan = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    // 1. Usage Enforcement
+    await checkFeatureUsage((context as any).userId as string, "code_scan");
+    await logFeatureUsage(
+      (context as any).userId as string,
+      "code_scan",
+      { filename: data.filename, scanType: data.scanType },
+      (context as any).requestId as string,
+    );
+
     const findings: ScanFinding[] = [];
 
     if (data.scanType === "owasp" || data.scanType === "full") {
@@ -330,9 +341,9 @@ export const runFullScan = createServerFn({ method: "POST" })
     const { data: saved } = await supabaseAdmin
       .from("scan_results")
       .insert({
-        user_id: context.userId,
+        user_id: (context as any).userId as string,
         filename: data.filename,
-        findings: unique,
+        findings: unique as unknown as any,
       })
       .select("id")
       .single();
@@ -340,7 +351,7 @@ export const runFullScan = createServerFn({ method: "POST" })
     return {
       scanId: saved?.id,
       filename: data.filename,
-      findings: unique,
+      findings: unique as unknown as any,
       summary: {
         total: unique.length,
         critical: unique.filter((f) => f.severity === "critical").length,
@@ -356,19 +367,19 @@ export const runFullScan = createServerFn({ method: "POST" })
 // ─── Generate SARIF Report ───────────────────────────────────────────────────
 
 export const generateSARIF = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ scanId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: scan } = await supabaseAdmin
       .from("scan_results")
       .select("*")
       .eq("id", data.scanId)
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .single();
 
     if (!scan) throw new Error("Scan not found");
 
-    const findings = scan.findings as ScanFinding[];
+    const findings = scan.findings as unknown as ScanFinding[];
 
     const sarif = {
       $schema:
@@ -419,12 +430,12 @@ export const generateSARIF = createServerFn({ method: "POST" })
 // ─── Scan History ────────────────────────────────────────────────────────────
 
 export const getScanHistory = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await supabaseAdmin
       .from("scan_results")
       .select("id, filename, created_at, findings")
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .order("created_at", { ascending: false })
       .limit(20);
 

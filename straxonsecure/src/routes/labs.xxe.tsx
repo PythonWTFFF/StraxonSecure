@@ -162,7 +162,7 @@ function XXELab() {
   } | null>(null);
 
   const run = () => {
-    const res = secure ? parseSafeXML(xml) : parseVulnerableXML(xml);
+    const res: any = secure ? parseSafeXML(xml) : parseVulnerableXML(xml);
     setOutput(res);
 
     setLogs((p) =>

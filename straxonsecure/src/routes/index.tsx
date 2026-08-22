@@ -21,8 +21,16 @@ import {
   AlertCircle,
   BarChart3,
   Wifi,
+  Mail,
+  Ghost,
 } from "lucide-react";
 import { CyberButton } from "@/components/cyber/CyberButton";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { callAuthed } from "@/lib/serverCall";
+import { captureLead } from "@/server/leads";
+import { toast } from "sonner";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -31,216 +39,19 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// ─────────────────────────────────────────────
-// 1. 3D HOLOGRAPHIC BACKGROUND (Particle Swarm)
-// ─────────────────────────────────────────────
-function ParticleSwarm() {
-  const pointsRef = useRef<THREE.Points>(null);
+import React, { lazy, Suspense } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-  const [positions, colors] = useMemo(() => {
-    const count = 3000;
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    const colorPrimary = new THREE.Color("#00f3ff");
-    const colorAccent = new THREE.Color("#ff003c");
+const ParticleSwarm = lazy(() =>
+  import("@/components/cyber/LandingGlobes").then((m) => ({ default: m.ParticleSwarm })),
+);
+const BackgroundGlobe = lazy(() =>
+  import("@/components/cyber/LandingGlobes").then((m) => ({ default: m.BackgroundGlobe })),
+);
+const CyberEarth = lazy(() =>
+  import("@/components/cyber/LandingGlobes").then((m) => ({ default: m.CyberEarth })),
+);
 
-    for (let i = 0; i < count; i++) {
-      const r = 12 * Math.cbrt(Math.random());
-      const theta = Math.random() * 2 * Math.PI;
-      const phi = Math.acos(2 * Math.random() - 1);
-
-      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      pos[i * 3 + 2] = r * Math.cos(phi);
-
-      const mixedColor = colorPrimary.clone().lerp(colorAccent, Math.random() > 0.85 ? 1 : 0);
-      col[i * 3] = mixedColor.r;
-      col[i * 3 + 1] = mixedColor.g;
-      col[i * 3 + 2] = mixedColor.b;
-    }
-    return [pos, col];
-  }, []);
-
-  useFrame((state) => {
-    if (!pointsRef.current) return;
-    const time = state.clock.getElapsedTime();
-    pointsRef.current.rotation.y = time * 0.02;
-    pointsRef.current.rotation.x = Math.sin(time * 0.01) * 0.05;
-
-    const scale = 1 + Math.sin(time * 0.5) * 0.02;
-    pointsRef.current.scale.set(scale, scale, scale);
-  });
-
-  return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={positions.length / 3}
-          array={positions}
-          itemSize={3}
-        />
-        <bufferAttribute
-          attach="attributes-color"
-          count={colors.length / 3}
-          array={colors}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        size={0.03}
-        vertexColors
-        transparent
-        opacity={0.3}
-        sizeAttenuation
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-      />
-    </points>
-  );
-}
-
-function BackgroundGlobe() {
-  const globeRef = useRef<THREE.Mesh>(null);
-
-  useFrame(({ clock }) => {
-    if (globeRef.current) {
-      globeRef.current.rotation.y = clock.getElapsedTime() * 0.03;
-      globeRef.current.rotation.x = clock.getElapsedTime() * 0.01;
-      globeRef.current.rotation.z = clock.getElapsedTime() * 0.02;
-    }
-  });
-
-  return (
-    <mesh ref={globeRef} position={[5, 0, -10]} scale={[12, 12, 12]}>
-      <icosahedronGeometry args={[1, 3]} />
-      <meshBasicMaterial
-        color="#00f3ff"
-        wireframe
-        transparent
-        opacity={0.04}
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-      />
-    </mesh>
-  );
-}
-
-// ─────────────────────────────────────────────
-// 2. 3D CYBER EARTH (Hero Widget)
-// ─────────────────────────────────────────────
-function CyberEarth() {
-  const earthGroupRef = useRef<THREE.Group>(null);
-  const ringGroupRef = useRef<THREE.Group>(null);
-
-  useFrame(({ clock, pointer }) => {
-    const t = clock.getElapsedTime();
-
-    if (earthGroupRef.current) {
-      earthGroupRef.current.rotation.y = t * 0.12;
-      earthGroupRef.current.rotation.x = Math.sin(t * 0.1) * 0.05;
-
-      earthGroupRef.current.position.x = THREE.MathUtils.lerp(
-        earthGroupRef.current.position.x,
-        pointer.x * 0.4,
-        0.05,
-      );
-      earthGroupRef.current.position.y = THREE.MathUtils.lerp(
-        earthGroupRef.current.position.y,
-        pointer.y * 0.4,
-        0.05,
-      );
-    }
-
-    if (ringGroupRef.current) {
-      ringGroupRef.current.rotation.x = t * 0.2;
-      ringGroupRef.current.rotation.y = t * 0.3;
-      ringGroupRef.current.rotation.z = Math.sin(t * 0.4) * 0.1;
-    }
-  });
-
-  return (
-    <group>
-      <group ref={earthGroupRef}>
-        <mesh>
-          <sphereGeometry args={[2, 64, 64]} />
-          <meshBasicMaterial color="#020617" transparent opacity={0.95} />
-        </mesh>
-
-        <mesh>
-          <sphereGeometry args={[2.02, 32, 32]} />
-          <meshBasicMaterial
-            color="#00f3ff"
-            wireframe
-            transparent
-            opacity={0.2}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-
-        <mesh>
-          <icosahedronGeometry args={[2.05, 2]} />
-          <meshBasicMaterial
-            color="#d946ef"
-            wireframe
-            transparent
-            opacity={0.08}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-
-        <mesh position={[1.4, 1.4, 0.2]}>
-          <sphereGeometry args={[0.04, 16, 16]} />
-          <meshBasicMaterial color="#10b981" blending={THREE.AdditiveBlending} />
-        </mesh>
-        <mesh position={[-1.4, -0.6, 1.4]}>
-          <sphereGeometry args={[0.05, 16, 16]} />
-          <meshBasicMaterial color="#ef4444" blending={THREE.AdditiveBlending} />
-        </mesh>
-        <mesh position={[0.5, -1.8, 0.5]}>
-          <sphereGeometry args={[0.03, 16, 16]} />
-          <meshBasicMaterial color="#d946ef" blending={THREE.AdditiveBlending} />
-        </mesh>
-      </group>
-
-      <group ref={ringGroupRef}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[2.4, 0.003, 32, 100]} />
-          <meshBasicMaterial
-            color="#00f3ff"
-            transparent
-            opacity={0.5}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-        <mesh rotation={[Math.PI / 3, Math.PI / 4, 0]}>
-          <torusGeometry args={[2.5, 0.002, 32, 100]} />
-          <meshBasicMaterial
-            color="#d946ef"
-            transparent
-            opacity={0.4}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-
-        <mesh position={[2.4, 0, 0]}>
-          <sphereGeometry args={[0.04, 16, 16]} />
-          <meshBasicMaterial color="#00f3ff" blending={THREE.AdditiveBlending} />
-        </mesh>
-        <mesh
-          position={[-2.5 * Math.cos(Math.PI / 4), 2.5 * Math.sin(Math.PI / 4), 0]}
-          rotation={[Math.PI / 3, Math.PI / 4, 0]}
-        >
-          <sphereGeometry args={[0.03, 16, 16]} />
-          <meshBasicMaterial color="#d946ef" blending={THREE.AdditiveBlending} />
-        </mesh>
-      </group>
-    </group>
-  );
-}
-
-// ─────────────────────────────────────────────
-// DATA & CONSTANTS
 // ─────────────────────────────────────────────
 const MODULES = [
   {
@@ -302,10 +113,18 @@ const MODULES = [
   {
     to: "/scanner",
     icon: ScanLine,
-    title: "DevSecOps Scanner",
-    desc: "Detect leaked secrets, hardcoded passwords, and vulnerable patterns in source code.",
+    title: "Vulnerability Scanner",
+    desc: "Continuous automated scanning for known CVEs across your external attack surface.",
+    accent: "cyan" as const,
+    tag: "08 / SCAN",
+  },
+  {
+    to: "/darkweb",
+    icon: Ghost,
+    title: "Dark Web Monitor",
+    desc: "Track leaked credentials, exposed domains, and compromised VIP emails across illicit forums.",
     accent: "magenta" as const,
-    tag: "08 / DEFEND",
+    tag: "09 / INTEL",
   },
   {
     to: "/assistant",
@@ -327,7 +146,7 @@ const STATS = [
 // ─────────────────────────────────────────────
 // SMOOTH EASING CURVES
 // ─────────────────────────────────────────────
-const customEase = [0.16, 1, 0.3, 1];
+const customEase: any = [0.16, 1, 0.3, 1];
 
 const fadeUpVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -343,8 +162,60 @@ const staggerContainer = {
 // MAIN INDEX PAGE
 // ─────────────────────────────────────────────
 function Index() {
+  const [email, setEmail] = useState("");
+  const [capturing, setCapturing] = useState(false);
+
+  // Global Threat Matrix Real-Time Simulation
+  const [nodes, setNodes] = useState(1402);
+  const [defcon, setDefcon] = useState(3);
+  const [matrixStatus, setMatrixStatus] = useState("Monitoring");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Fluctuate nodes organically between 1200 and 1600
+      setNodes((prev) => {
+        const change = Math.floor(Math.random() * 40) - 20;
+        return Math.max(1200, Math.min(1600, prev + change));
+      });
+
+      // Determine Defcon based on simulated global spikes
+      const spike = Math.random();
+      if (spike > 0.95) {
+        setDefcon(1);
+        setMatrixStatus("CRITICAL THREAT");
+      } else if (spike > 0.85) {
+        setDefcon(2);
+        setMatrixStatus("ELEVATED RISK");
+      } else if (spike > 0.5) {
+        setDefcon(3);
+        setMatrixStatus("Monitoring");
+      } else {
+        setDefcon(4);
+        setMatrixStatus("Stable");
+      }
+    }, 2500); // update every 2.5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleCaptureLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setCapturing(true);
+    try {
+      await callAuthed(captureLead, { email, source: "landing_footer" });
+      toast.success("Welcome to the network. We'll be in touch.");
+      setEmail("");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to join network");
+    } finally {
+      setCapturing(false);
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-[#020610] text-slate-300 font-sans overflow-x-hidden selection:bg-[#00f3ff] selection:text-black">
+    <div className="relative min-h-screen bg-[#020610] text-slate-300 font-sans selection:bg-[#00f3ff] selection:text-black overflow-hidden flex flex-col">
+      <OnboardingTour />
       {/* CRT SCANLINE OVERLAY */}
       <div className="pointer-events-none fixed inset-0 z-50 opacity-[0.025] mix-blend-overlay bg-[linear-gradient(rgba(255,255,255,1)_1px,transparent_1px)] bg-[size:100%_4px]" />
 
@@ -357,8 +228,12 @@ function Index() {
         }}
       >
         <Canvas camera={{ position: [0, 0, 8], fov: 60 }} dpr={[1, 1.5]}>
-          <ParticleSwarm />
-          <BackgroundGlobe />
+          <ErrorBoundary>
+            <Suspense fallback={null}>
+              <ParticleSwarm />
+              <BackgroundGlobe />
+            </Suspense>
+          </ErrorBoundary>
         </Canvas>
       </div>
 
@@ -452,19 +327,50 @@ function Index() {
               <div className="flex-1 w-full relative cursor-crosshair">
                 <Canvas camera={{ position: [0, 0, 6], fov: 45 }} dpr={[1, 1.5]}>
                   <ambientLight intensity={0.5} />
-                  <CyberEarth />
+                  <ErrorBoundary>
+                    <Suspense fallback={null}>
+                      <CyberEarth />
+                    </Suspense>
+                  </ErrorBoundary>
                 </Canvas>
 
                 {/* Floating HUD Metrics */}
                 <div className="absolute bottom-3 left-3 md:bottom-5 md:left-5 font-mono text-[8px] md:text-[10px] text-[#00f3ff]/90 uppercase tracking-widest space-y-1 md:space-y-1.5 bg-[#020610]/80 p-2.5 md:p-4 backdrop-blur-md border border-[#00f3ff]/20 [clip-path:polygon(6px_0,100%_0,100%_calc(100%-6px),calc(100%-6px)_100%,0_100%,0_6px)]">
                   <div className="flex justify-between gap-6 md:gap-8">
-                    <span>Status:</span> <span className="text-emerald-400">Monitoring</span>
+                    <span>Status:</span>
+                    <span
+                      className={
+                        matrixStatus === "CRITICAL THREAT"
+                          ? "text-[#ff003c] animate-pulse"
+                          : matrixStatus === "ELEVATED RISK"
+                            ? "text-orange-400"
+                            : matrixStatus === "Monitoring"
+                              ? "text-yellow-400"
+                              : "text-emerald-400"
+                      }
+                    >
+                      {matrixStatus}
+                    </span>
                   </div>
                   <div className="flex justify-between gap-6 md:gap-8">
-                    <span>Active Nodes:</span> <span className="text-white">1,402</span>
+                    <span>Active Nodes:</span>{" "}
+                    <span className="text-white">{nodes.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between gap-6 md:gap-8 hidden sm:flex">
-                    <span>Network Defcon:</span> <span className="text-yellow-400">Level 3</span>
+                    <span>Network Defcon:</span>
+                    <span
+                      className={
+                        defcon === 1
+                          ? "text-[#ff003c] animate-pulse font-bold"
+                          : defcon === 2
+                            ? "text-orange-500 font-bold"
+                            : defcon === 3
+                              ? "text-yellow-400"
+                              : "text-emerald-400"
+                      }
+                    >
+                      Level {defcon}
+                    </span>
                   </div>
                 </div>
 
@@ -494,7 +400,7 @@ function Index() {
                 key={s.label}
                 variants={fadeUpVariants}
                 whileHover={{ y: -5 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.3 }}
               >
                 <div className="text-center py-6 md:py-8 bg-[#020610]/70 backdrop-blur-xl border border-white/5 hover:border-[#00f3ff]/40 transition-colors shadow-lg group overflow-hidden relative [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]">
                   <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -552,7 +458,7 @@ function Index() {
                   key={m.to}
                   variants={fadeUpVariants}
                   whileHover={{ y: -6 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  transition={{ duration: 0.4 }}
                   className="h-full"
                 >
                   <Link to={m.to} className="block group h-full">
@@ -638,6 +544,31 @@ function Index() {
                     Try AI Terminal First
                   </CyberButton>
                 </Link>
+              </div>
+
+              {/* Lead Capture */}
+              <div className="mt-16 max-w-md mx-auto p-1 rounded-xl bg-gradient-to-r from-[#00f3ff]/20 via-[#ff003c]/20 to-[#00f3ff]/20">
+                <div className="bg-[#020610] p-6 rounded-lg text-left">
+                  <h3 className="font-mono text-sm text-white mb-2 flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-[#00f3ff]" /> Join the Red Team Network
+                  </h3>
+                  <p className="text-xs text-slate-400 mb-4">
+                    Get early access to new attack scenarios and AI exploits.
+                  </p>
+                  <form onSubmit={handleCaptureLead} className="flex gap-2">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="ENTER_EMAIL_ADDR"
+                      className="flex-1 bg-black/50 border border-white/10 rounded px-3 py-2 text-sm font-mono focus:border-[#00f3ff] outline-none transition-colors"
+                      required
+                    />
+                    <CyberButton variant="cyan" type="submit" disabled={capturing}>
+                      {capturing ? "..." : "JOIN"}
+                    </CyberButton>
+                  </form>
+                </div>
               </div>
             </div>
           </motion.div>

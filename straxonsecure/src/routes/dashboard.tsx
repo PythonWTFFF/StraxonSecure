@@ -51,9 +51,22 @@ import {
   PieChart,
   Pie,
   Cell,
+  ScatterChart,
+  Scatter,
+  ZAxis,
 } from "recharts";
-import { AttackGlobe, type AttackEvent } from "@/components/dashboard/AttackGlobe";
+import type { AttackEvent } from "@/components/dashboard/AttackGlobe";
+import { CyberCard } from "@/components/cyber/CyberCard";
+import { CyberButton } from "@/components/cyber/CyberButton";
+import { lazy, Suspense } from "react";
+
+const AttackGlobe = lazy(() =>
+  import("@/components/dashboard/AttackGlobe").then((m) => ({ default: m.AttackGlobe })),
+);
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AIAnalystPanel } from "@/components/cyber/AIAnalystPanel";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -386,7 +399,7 @@ function GlitchHeadline() {
       <div className="flex items-center gap-2">
         <ShieldAlert className="h-5 w-5 text-cyan-400 shrink-0" />
         <h1
-          className="soc-glitch soc-rgb text-xl font-bold text-cyan-400 tracking-tight font-mono select-none"
+          className="soc-rgb text-xl font-bold text-cyan-400 tracking-tight font-mono select-none"
           data-text="STRAXON OVERWATCH"
         >
           STRAXON OVERWATCH
@@ -972,6 +985,8 @@ function useThreatEngine(paused: boolean, mounted: boolean) {
 // MAIN DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 function Dashboard() {
+  const { user } = useAuth();
+  const alertedIdsRef = useRef(new Set<string>());
   const [mounted, setMounted] = useState(false);
   const [paused, setPaused] = useState(false);
   const [tab, setTab] = useState<TabKey>("globe");
@@ -988,6 +1003,59 @@ function Dashboard() {
 
   const { events, blockedIPs, blockedSet, blockIP, unblockIP, flagEvent, liveOps, rtConnected } =
     useThreatEngine(paused, mounted);
+
+  // ML Engine Integration
+  const [mlAnomalies, setMlAnomalies] = useState<any[]>([]);
+  useEffect(() => {
+    if (!mounted || paused || events.length === 0) return;
+    const interval = setInterval(async () => {
+      try {
+        const payload = events.slice(0, 20);
+        const mlUrl = import.meta.env.VITE_ML_ENGINE_URL || "http://localhost:8082";
+        const res = await fetch(`${mlUrl}/api/ml/anomaly-detect`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ events: payload }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.anomalies && data.anomalies.length > 0) {
+            setMlAnomalies((prev) => {
+              const newMap = new Map(prev.map((a: any) => [a.event_id, a]));
+              data.anomalies.forEach((a: any) => {
+                newMap.set(a.event_id, a);
+
+                // Webhook Alerting Logic
+                const webhookUrl = user?.user_metadata?.slack_webhook_url;
+                if (
+                  (a.severity === "critical" || a.anomaly_score > 0.85) &&
+                  !alertedIdsRef.current.has(a.event_id) &&
+                  webhookUrl
+                ) {
+                  alertedIdsRef.current.add(a.event_id);
+                  const payload = {
+                    content: `🚨 **STRAXON SECURE: CRITICAL ANOMALY DETECTED** 🚨\n**Type:** ${a.attack_type || "Unknown"}\n**Confidence:** ${Math.round(a.anomaly_score * 100)}%\n**Details:** ${a.reason}`,
+                    text: `🚨 *STRAXON SECURE: CRITICAL ANOMALY DETECTED* 🚨\n*Type:* ${a.attack_type || "Unknown"}\n*Confidence:* ${Math.round(a.anomaly_score * 100)}%\n*Details:* ${a.reason}`,
+                  };
+                  fetch(webhookUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                  }).catch(console.error);
+                }
+              });
+              return Array.from(newMap.values())
+                .sort((a: any, b: any) => b.anomaly_score - a.anomaly_score)
+                .slice(0, 20);
+            });
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [mounted, paused, events]);
 
   // Auto-block
   useEffect(() => {
@@ -1314,10 +1382,10 @@ function Dashboard() {
 
         {/* ── MAIN GRID ───────────────────────────────────────────────── */}
         <div
-          className={`flex-1 grid gap-3 min-h-0 ${sideOpen ? "xl:grid-cols-[280px_1fr_260px]" : "xl:grid-cols-[280px_1fr]"}`}
+          className={`flex-1 grid gap-3 min-h-0 overflow-y-auto p-4 xl:p-0 xl:overflow-hidden ${sideOpen ? "xl:grid-cols-[280px_1fr_260px]" : "xl:grid-cols-[280px_1fr]"}`}
         >
           {/* ── COL 1: Metrics (desktop only) ──────────────────────────── */}
-          <div className="hidden xl:flex flex-col gap-3 min-h-0">
+          <div className="flex flex-col gap-3 min-h-0 w-full xl:w-auto">
             {/* Stat cards */}
             <div className="grid grid-cols-2 gap-2 shrink-0">
               {[
@@ -1362,7 +1430,6 @@ function Dashboard() {
                 </>
               }
               className="shrink-0"
-              style={{ height: 190 }}
             >
               <div style={{ height: 155, padding: "6px 0" }}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -1396,7 +1463,6 @@ function Dashboard() {
               }
               titleRight="60s"
               className="shrink-0"
-              style={{ height: 140 }}
             >
               <div style={{ height: 106, padding: "4px 0" }}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -1485,7 +1551,7 @@ function Dashboard() {
           </div>
 
           {/* ── COL 2: Main tabbed area ────────────────────────────────── */}
-          <div className="flex flex-col gap-3 min-h-0">
+          <div className="flex flex-col gap-3 min-h-0 w-full xl:w-auto">
             {/* Tabs */}
             <div className="flex items-center gap-0 bg-slate-900/50 border border-slate-800 rounded-lg overflow-x-auto cs shrink-0">
               {TABS.map(({ key, label, icon: Icon }) => (
@@ -1524,11 +1590,21 @@ function Dashboard() {
               {tab === "globe" && (
                 <div className="flex-1 flex flex-col min-h-0">
                   <div className="relative" style={{ height: "clamp(260px, 45vh, 420px)" }}>
-                    <AttackGlobe
-                      attacks={globeArcs}
-                      selectedEvent={selectedEvent as any}
-                      paused={paused}
-                    />
+                    <ErrorBoundary>
+                      <Suspense
+                        fallback={
+                          <div className="h-full w-full flex items-center justify-center text-slate-500 font-mono text-xs">
+                            Initializing 3D Globe...
+                          </div>
+                        }
+                      >
+                        <AttackGlobe
+                          attacks={globeArcs}
+                          selectedEvent={selectedEvent as any}
+                          paused={paused}
+                        />
+                      </Suspense>
+                    </ErrorBoundary>
                     <div className="absolute top-3 left-4 z-10 flex items-center gap-2 pointer-events-none">
                       <Globe className="h-3.5 w-3.5 text-cyan-500" />
                       <span className="text-[9px] font-mono text-cyan-500 uppercase tracking-widest">
@@ -1881,7 +1957,10 @@ function Dashboard() {
                     </span>
                   </div>
 
-                  <div className="grid lg:grid-cols-2 gap-4">
+                  <div className="grid lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-1">
+                      <AIAnalystPanel />
+                    </div>
                     <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-4 flex flex-col gap-3">
                       <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                         Behavioral Drift
@@ -1967,7 +2046,7 @@ function Dashboard() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="hidden xl:flex"
+                className="flex flex-col w-full xl:w-auto xl:w-[260px]"
               >
                 <Panel
                   title={

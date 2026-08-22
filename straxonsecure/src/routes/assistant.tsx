@@ -15,6 +15,7 @@ import {
   BookOpen,
   Copy,
   Check,
+  Terminal,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/assistant")({
 });
 
 type Msg = { role: "user" | "assistant"; content: string };
-type Mode = "chat" | "explain" | "architect";
+type Mode = "chat" | "explain" | "architect" | "responder" | "compliance" | "reverse";
 
 const MODES: { key: Mode; label: string; icon: React.ReactNode; color: string; desc: string }[] = [
   {
@@ -57,6 +58,27 @@ const MODES: { key: Mode; label: string; icon: React.ReactNode; color: string; d
     color: "text-purple-400",
     desc: "Reviews security architecture",
   },
+  {
+    key: "responder",
+    label: "Incident Responder",
+    icon: <Crosshair className="h-4 w-4" />,
+    color: "text-orange-500",
+    desc: "Analyzes logs & plans containment",
+  },
+  {
+    key: "compliance",
+    label: "Auditor Mode",
+    icon: <Check className="h-4 w-4" />,
+    color: "text-emerald-400",
+    desc: "Reviews for SOC2/ISO27001 gaps",
+  },
+  {
+    key: "reverse",
+    label: "Reverse Engineer",
+    icon: <Terminal className="h-4 w-4" />,
+    color: "text-yellow-400",
+    desc: "Analyzes malware capabilities",
+  },
 ];
 
 const QUICK_PROMPTS: Record<Mode, string[]> = {
@@ -77,6 +99,24 @@ const QUICK_PROMPTS: Record<Mode, string[]> = {
     "How do I secure a microservices architecture?",
     "Design a zero-trust network for 50 remote employees",
     "What security controls should every API have?",
+  ],
+  responder: [
+    "Analyze this suspicious Nginx access log",
+    "What are the immediate containment steps for ransomware?",
+    "How do I hunt for Cobalt Strike beacons?",
+    "Investigate a sudden spike in outbound DNS traffic",
+  ],
+  compliance: [
+    "What are the key SOC2 requirements for access control?",
+    "How do I achieve ISO27001 compliance for a SaaS?",
+    "Review this architecture for HIPAA compliance gaps",
+    "What evidence is required for a disaster recovery audit?",
+  ],
+  reverse: [
+    "What does this suspicious PowerShell script do?",
+    "Explain how reflective DLL injection works",
+    "How can I deobfuscate this JavaScript payload?",
+    "Identify persistence mechanisms in this malware report",
   ],
 };
 
@@ -158,7 +198,7 @@ function Assistant() {
             className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-mono transition-all ${
               mode === m.key
                 ? "bg-white/8 border-white/25 text-white"
-                : "border-white/8 text-slate-500 hover:border-white/15 hover:text-slate-300"
+                : "border-white/8 text-slate-400 hover:border-white/15 hover:text-slate-300"
             }`}
           >
             <span className={mode === m.key ? m.color : ""}>{m.icon}</span>
@@ -177,19 +217,19 @@ function Assistant() {
               <span className={`font-mono text-sm font-bold ${currentMode.color}`}>
                 {currentMode.label}
               </span>
-              <span className="text-[10px] font-mono text-slate-500 ml-2">// online</span>
+              <span className="text-[10px] font-mono text-slate-400 ml-2">// online</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {messages.length > 0 && (
-              <span className="text-[10px] font-mono text-slate-500">
+              <span className="text-[10px] font-mono text-slate-400">
                 {messages.length} messages
               </span>
             )}
             {messages.length > 0 && (
               <button
                 onClick={() => setMessages([])}
-                className="p-1.5 rounded hover:bg-white/5 text-slate-500 hover:text-red-400 transition-colors"
+                className="p-1.5 rounded hover:bg-white/5 text-slate-400 hover:text-red-400 transition-colors"
                 title="Clear conversation"
               >
                 <Trash2 className="h-4 w-4" />
@@ -209,7 +249,7 @@ function Assistant() {
               </div>
               <div>
                 <p className="text-slate-300 font-mono text-sm">{currentMode.desc}</p>
-                <p className="text-slate-500 text-xs mt-1">
+                <p className="text-slate-400 text-xs mt-1">
                   Shift+Enter for new line, Enter to send
                 </p>
               </div>

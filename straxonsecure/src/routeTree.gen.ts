@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as CtfRouteImport } from './routes/ctf'
+import { Route as DarkwebRouteImport } from './routes/darkweb'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as EasmRouteImport } from './routes/easm'
@@ -25,26 +26,36 @@ import { Route as LabsRouteImport } from './routes/labs'
 import { Route as LearningRouteImport } from './routes/learning'
 import { Route as PacketAnalyzerRouteImport } from './routes/packet-analyzer'
 import { Route as PentestRouteImport } from './routes/pentest'
+import { Route as PhishingRouteImport } from './routes/phishing'
 import { Route as PostureRouteImport } from './routes/posture'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PtaasRouteImport } from './routes/ptaas'
 import { Route as ReplayRouteImport } from './routes/replay'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ScannerRouteImport } from './routes/scanner'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SocSimulatorRouteImport } from './routes/soc-simulator'
+import { Route as SupplyChainRouteImport } from './routes/supply-chain'
 import { Route as TeamsRouteImport } from './routes/teams'
 import { Route as ThreatIntelRouteImport } from './routes/threat-Intel'
 import { Route as WarroomRouteImport } from './routes/warroom'
 import { Route as LabsIndexRouteImport } from './routes/labs.index'
+import { Route as LabsAdNetworkRouteImport } from './routes/labs.ad-network'
 import { Route as LabsBruteRouteImport } from './routes/labs.brute'
 import { Route as LabsCsrfRouteImport } from './routes/labs.csrf'
 import { Route as LabsDdosRouteImport } from './routes/labs.ddos'
+import { Route as LabsIamPrivescRouteImport } from './routes/labs.iam-privesc'
 import { Route as LabsIdorRouteImport } from './routes/labs.idor'
+import { Route as LabsJuiceshopRouteImport } from './routes/labs.juiceshop'
 import { Route as LabsJwtRouteImport } from './routes/labs.jwt'
 import { Route as LabsLfiRouteImport } from './routes/labs.lfi'
 import { Route as LabsMisconfigRouteImport } from './routes/labs.misconfig'
+import { Route as LabsPhishingPayloadRouteImport } from './routes/labs.phishing-payload'
+import { Route as LabsRansomwareRouteImport } from './routes/labs.ransomware'
 import { Route as LabsRceRouteImport } from './routes/labs.rce'
 import { Route as LabsSqliRouteImport } from './routes/labs.sqli'
 import { Route as LabsSsrfRouteImport } from './routes/labs.ssrf'
+import { Route as LabsTerminalRouteImport } from './routes/labs.terminal'
 import { Route as LabsXssRouteImport } from './routes/labs.xss'
 import { Route as LabsXxeRouteImport } from './routes/labs.xxe'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
@@ -84,6 +95,11 @@ const ComplianceRoute = ComplianceRouteImport.update({
 const CtfRoute = CtfRouteImport.update({
   id: '/ctf',
   path: '/ctf',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DarkwebRoute = DarkwebRouteImport.update({
+  id: '/darkweb',
+  path: '/darkweb',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -131,6 +147,11 @@ const PentestRoute = PentestRouteImport.update({
   path: '/pentest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PhishingRoute = PhishingRouteImport.update({
+  id: '/phishing',
+  path: '/phishing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PostureRoute = PostureRouteImport.update({
   id: '/posture',
   path: '/posture',
@@ -139,6 +160,11 @@ const PostureRoute = PostureRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PtaasRoute = PtaasRouteImport.update({
+  id: '/ptaas',
+  path: '/ptaas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReplayRoute = ReplayRouteImport.update({
@@ -161,6 +187,16 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SocSimulatorRoute = SocSimulatorRouteImport.update({
+  id: '/soc-simulator',
+  path: '/soc-simulator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupplyChainRoute = SupplyChainRouteImport.update({
+  id: '/supply-chain',
+  path: '/supply-chain',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeamsRoute = TeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
@@ -181,6 +217,11 @@ const LabsIndexRoute = LabsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LabsRoute,
 } as any)
+const LabsAdNetworkRoute = LabsAdNetworkRouteImport.update({
+  id: '/ad-network',
+  path: '/ad-network',
+  getParentRoute: () => LabsRoute,
+} as any)
 const LabsBruteRoute = LabsBruteRouteImport.update({
   id: '/brute',
   path: '/brute',
@@ -196,9 +237,19 @@ const LabsDdosRoute = LabsDdosRouteImport.update({
   path: '/ddos',
   getParentRoute: () => LabsRoute,
 } as any)
+const LabsIamPrivescRoute = LabsIamPrivescRouteImport.update({
+  id: '/iam-privesc',
+  path: '/iam-privesc',
+  getParentRoute: () => LabsRoute,
+} as any)
 const LabsIdorRoute = LabsIdorRouteImport.update({
   id: '/idor',
   path: '/idor',
+  getParentRoute: () => LabsRoute,
+} as any)
+const LabsJuiceshopRoute = LabsJuiceshopRouteImport.update({
+  id: '/juiceshop',
+  path: '/juiceshop',
   getParentRoute: () => LabsRoute,
 } as any)
 const LabsJwtRoute = LabsJwtRouteImport.update({
@@ -216,6 +267,16 @@ const LabsMisconfigRoute = LabsMisconfigRouteImport.update({
   path: '/misconfig',
   getParentRoute: () => LabsRoute,
 } as any)
+const LabsPhishingPayloadRoute = LabsPhishingPayloadRouteImport.update({
+  id: '/phishing-payload',
+  path: '/phishing-payload',
+  getParentRoute: () => LabsRoute,
+} as any)
+const LabsRansomwareRoute = LabsRansomwareRouteImport.update({
+  id: '/ransomware',
+  path: '/ransomware',
+  getParentRoute: () => LabsRoute,
+} as any)
 const LabsRceRoute = LabsRceRouteImport.update({
   id: '/rce',
   path: '/rce',
@@ -229,6 +290,11 @@ const LabsSqliRoute = LabsSqliRouteImport.update({
 const LabsSsrfRoute = LabsSsrfRouteImport.update({
   id: '/ssrf',
   path: '/ssrf',
+  getParentRoute: () => LabsRoute,
+} as any)
+const LabsTerminalRoute = LabsTerminalRouteImport.update({
+  id: '/terminal',
+  path: '/terminal',
   getParentRoute: () => LabsRoute,
 } as any)
 const LabsXssRoute = LabsXssRouteImport.update({
@@ -266,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof BillingRoute
   '/compliance': typeof ComplianceRoute
   '/ctf': typeof CtfRoute
+  '/darkweb': typeof DarkwebRoute
   '/dashboard': typeof DashboardRoute
   '/developer': typeof DeveloperRoute
   '/easm': typeof EasmRoute
@@ -275,25 +342,35 @@ export interface FileRoutesByFullPath {
   '/learning': typeof LearningRoute
   '/packet-analyzer': typeof PacketAnalyzerRoute
   '/pentest': typeof PentestRoute
+  '/phishing': typeof PhishingRoute
   '/posture': typeof PostureRoute
   '/pricing': typeof PricingRoute
+  '/ptaas': typeof PtaasRoute
   '/replay': typeof ReplayRoute
   '/reports': typeof ReportsRoute
   '/scanner': typeof ScannerRoute
   '/settings': typeof SettingsRoute
+  '/soc-simulator': typeof SocSimulatorRoute
+  '/supply-chain': typeof SupplyChainRoute
   '/teams': typeof TeamsRoute
   '/threat-Intel': typeof ThreatIntelRoute
   '/warroom': typeof WarroomRoute
+  '/labs/ad-network': typeof LabsAdNetworkRoute
   '/labs/brute': typeof LabsBruteRoute
   '/labs/csrf': typeof LabsCsrfRoute
   '/labs/ddos': typeof LabsDdosRoute
+  '/labs/iam-privesc': typeof LabsIamPrivescRoute
   '/labs/idor': typeof LabsIdorRoute
+  '/labs/juiceshop': typeof LabsJuiceshopRoute
   '/labs/jwt': typeof LabsJwtRoute
   '/labs/lfi': typeof LabsLfiRoute
   '/labs/misconfig': typeof LabsMisconfigRoute
+  '/labs/phishing-payload': typeof LabsPhishingPayloadRoute
+  '/labs/ransomware': typeof LabsRansomwareRoute
   '/labs/rce': typeof LabsRceRoute
   '/labs/sqli': typeof LabsSqliRoute
   '/labs/ssrf': typeof LabsSsrfRoute
+  '/labs/terminal': typeof LabsTerminalRoute
   '/labs/xss': typeof LabsXssRoute
   '/labs/xxe': typeof LabsXxeRoute
   '/labs/': typeof LabsIndexRoute
@@ -309,6 +386,7 @@ export interface FileRoutesByTo {
   '/billing': typeof BillingRoute
   '/compliance': typeof ComplianceRoute
   '/ctf': typeof CtfRoute
+  '/darkweb': typeof DarkwebRoute
   '/dashboard': typeof DashboardRoute
   '/developer': typeof DeveloperRoute
   '/easm': typeof EasmRoute
@@ -317,25 +395,35 @@ export interface FileRoutesByTo {
   '/learning': typeof LearningRoute
   '/packet-analyzer': typeof PacketAnalyzerRoute
   '/pentest': typeof PentestRoute
+  '/phishing': typeof PhishingRoute
   '/posture': typeof PostureRoute
   '/pricing': typeof PricingRoute
+  '/ptaas': typeof PtaasRoute
   '/replay': typeof ReplayRoute
   '/reports': typeof ReportsRoute
   '/scanner': typeof ScannerRoute
   '/settings': typeof SettingsRoute
+  '/soc-simulator': typeof SocSimulatorRoute
+  '/supply-chain': typeof SupplyChainRoute
   '/teams': typeof TeamsRoute
   '/threat-Intel': typeof ThreatIntelRoute
   '/warroom': typeof WarroomRoute
+  '/labs/ad-network': typeof LabsAdNetworkRoute
   '/labs/brute': typeof LabsBruteRoute
   '/labs/csrf': typeof LabsCsrfRoute
   '/labs/ddos': typeof LabsDdosRoute
+  '/labs/iam-privesc': typeof LabsIamPrivescRoute
   '/labs/idor': typeof LabsIdorRoute
+  '/labs/juiceshop': typeof LabsJuiceshopRoute
   '/labs/jwt': typeof LabsJwtRoute
   '/labs/lfi': typeof LabsLfiRoute
   '/labs/misconfig': typeof LabsMisconfigRoute
+  '/labs/phishing-payload': typeof LabsPhishingPayloadRoute
+  '/labs/ransomware': typeof LabsRansomwareRoute
   '/labs/rce': typeof LabsRceRoute
   '/labs/sqli': typeof LabsSqliRoute
   '/labs/ssrf': typeof LabsSsrfRoute
+  '/labs/terminal': typeof LabsTerminalRoute
   '/labs/xss': typeof LabsXssRoute
   '/labs/xxe': typeof LabsXxeRoute
   '/labs': typeof LabsIndexRoute
@@ -352,6 +440,7 @@ export interface FileRoutesById {
   '/billing': typeof BillingRoute
   '/compliance': typeof ComplianceRoute
   '/ctf': typeof CtfRoute
+  '/darkweb': typeof DarkwebRoute
   '/dashboard': typeof DashboardRoute
   '/developer': typeof DeveloperRoute
   '/easm': typeof EasmRoute
@@ -361,25 +450,35 @@ export interface FileRoutesById {
   '/learning': typeof LearningRoute
   '/packet-analyzer': typeof PacketAnalyzerRoute
   '/pentest': typeof PentestRoute
+  '/phishing': typeof PhishingRoute
   '/posture': typeof PostureRoute
   '/pricing': typeof PricingRoute
+  '/ptaas': typeof PtaasRoute
   '/replay': typeof ReplayRoute
   '/reports': typeof ReportsRoute
   '/scanner': typeof ScannerRoute
   '/settings': typeof SettingsRoute
+  '/soc-simulator': typeof SocSimulatorRoute
+  '/supply-chain': typeof SupplyChainRoute
   '/teams': typeof TeamsRoute
   '/threat-Intel': typeof ThreatIntelRoute
   '/warroom': typeof WarroomRoute
+  '/labs/ad-network': typeof LabsAdNetworkRoute
   '/labs/brute': typeof LabsBruteRoute
   '/labs/csrf': typeof LabsCsrfRoute
   '/labs/ddos': typeof LabsDdosRoute
+  '/labs/iam-privesc': typeof LabsIamPrivescRoute
   '/labs/idor': typeof LabsIdorRoute
+  '/labs/juiceshop': typeof LabsJuiceshopRoute
   '/labs/jwt': typeof LabsJwtRoute
   '/labs/lfi': typeof LabsLfiRoute
   '/labs/misconfig': typeof LabsMisconfigRoute
+  '/labs/phishing-payload': typeof LabsPhishingPayloadRoute
+  '/labs/ransomware': typeof LabsRansomwareRoute
   '/labs/rce': typeof LabsRceRoute
   '/labs/sqli': typeof LabsSqliRoute
   '/labs/ssrf': typeof LabsSsrfRoute
+  '/labs/terminal': typeof LabsTerminalRoute
   '/labs/xss': typeof LabsXssRoute
   '/labs/xxe': typeof LabsXxeRoute
   '/labs/': typeof LabsIndexRoute
@@ -397,6 +496,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/compliance'
     | '/ctf'
+    | '/darkweb'
     | '/dashboard'
     | '/developer'
     | '/easm'
@@ -406,25 +506,35 @@ export interface FileRouteTypes {
     | '/learning'
     | '/packet-analyzer'
     | '/pentest'
+    | '/phishing'
     | '/posture'
     | '/pricing'
+    | '/ptaas'
     | '/replay'
     | '/reports'
     | '/scanner'
     | '/settings'
+    | '/soc-simulator'
+    | '/supply-chain'
     | '/teams'
     | '/threat-Intel'
     | '/warroom'
+    | '/labs/ad-network'
     | '/labs/brute'
     | '/labs/csrf'
     | '/labs/ddos'
+    | '/labs/iam-privesc'
     | '/labs/idor'
+    | '/labs/juiceshop'
     | '/labs/jwt'
     | '/labs/lfi'
     | '/labs/misconfig'
+    | '/labs/phishing-payload'
+    | '/labs/ransomware'
     | '/labs/rce'
     | '/labs/sqli'
     | '/labs/ssrf'
+    | '/labs/terminal'
     | '/labs/xss'
     | '/labs/xxe'
     | '/labs/'
@@ -440,6 +550,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/compliance'
     | '/ctf'
+    | '/darkweb'
     | '/dashboard'
     | '/developer'
     | '/easm'
@@ -448,25 +559,35 @@ export interface FileRouteTypes {
     | '/learning'
     | '/packet-analyzer'
     | '/pentest'
+    | '/phishing'
     | '/posture'
     | '/pricing'
+    | '/ptaas'
     | '/replay'
     | '/reports'
     | '/scanner'
     | '/settings'
+    | '/soc-simulator'
+    | '/supply-chain'
     | '/teams'
     | '/threat-Intel'
     | '/warroom'
+    | '/labs/ad-network'
     | '/labs/brute'
     | '/labs/csrf'
     | '/labs/ddos'
+    | '/labs/iam-privesc'
     | '/labs/idor'
+    | '/labs/juiceshop'
     | '/labs/jwt'
     | '/labs/lfi'
     | '/labs/misconfig'
+    | '/labs/phishing-payload'
+    | '/labs/ransomware'
     | '/labs/rce'
     | '/labs/sqli'
     | '/labs/ssrf'
+    | '/labs/terminal'
     | '/labs/xss'
     | '/labs/xxe'
     | '/labs'
@@ -482,6 +603,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/compliance'
     | '/ctf'
+    | '/darkweb'
     | '/dashboard'
     | '/developer'
     | '/easm'
@@ -491,25 +613,35 @@ export interface FileRouteTypes {
     | '/learning'
     | '/packet-analyzer'
     | '/pentest'
+    | '/phishing'
     | '/posture'
     | '/pricing'
+    | '/ptaas'
     | '/replay'
     | '/reports'
     | '/scanner'
     | '/settings'
+    | '/soc-simulator'
+    | '/supply-chain'
     | '/teams'
     | '/threat-Intel'
     | '/warroom'
+    | '/labs/ad-network'
     | '/labs/brute'
     | '/labs/csrf'
     | '/labs/ddos'
+    | '/labs/iam-privesc'
     | '/labs/idor'
+    | '/labs/juiceshop'
     | '/labs/jwt'
     | '/labs/lfi'
     | '/labs/misconfig'
+    | '/labs/phishing-payload'
+    | '/labs/ransomware'
     | '/labs/rce'
     | '/labs/sqli'
     | '/labs/ssrf'
+    | '/labs/terminal'
     | '/labs/xss'
     | '/labs/xxe'
     | '/labs/'
@@ -526,6 +658,7 @@ export interface RootRouteChildren {
   BillingRoute: typeof BillingRoute
   ComplianceRoute: typeof ComplianceRoute
   CtfRoute: typeof CtfRoute
+  DarkwebRoute: typeof DarkwebRoute
   DashboardRoute: typeof DashboardRoute
   DeveloperRoute: typeof DeveloperRoute
   EasmRoute: typeof EasmRoute
@@ -535,12 +668,16 @@ export interface RootRouteChildren {
   LearningRoute: typeof LearningRoute
   PacketAnalyzerRoute: typeof PacketAnalyzerRoute
   PentestRoute: typeof PentestRoute
+  PhishingRoute: typeof PhishingRoute
   PostureRoute: typeof PostureRoute
   PricingRoute: typeof PricingRoute
+  PtaasRoute: typeof PtaasRoute
   ReplayRoute: typeof ReplayRoute
   ReportsRoute: typeof ReportsRoute
   ScannerRoute: typeof ScannerRoute
   SettingsRoute: typeof SettingsRoute
+  SocSimulatorRoute: typeof SocSimulatorRoute
+  SupplyChainRoute: typeof SupplyChainRoute
   TeamsRoute: typeof TeamsRoute
   ThreatIntelRoute: typeof ThreatIntelRoute
   WarroomRoute: typeof WarroomRoute
@@ -598,6 +735,13 @@ declare module '@tanstack/react-router' {
       path: '/ctf'
       fullPath: '/ctf'
       preLoaderRoute: typeof CtfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/darkweb': {
+      id: '/darkweb'
+      path: '/darkweb'
+      fullPath: '/darkweb'
+      preLoaderRoute: typeof DarkwebRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -663,6 +807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PentestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/phishing': {
+      id: '/phishing'
+      path: '/phishing'
+      fullPath: '/phishing'
+      preLoaderRoute: typeof PhishingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/posture': {
       id: '/posture'
       path: '/posture'
@@ -675,6 +826,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ptaas': {
+      id: '/ptaas'
+      path: '/ptaas'
+      fullPath: '/ptaas'
+      preLoaderRoute: typeof PtaasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/replay': {
@@ -705,6 +863,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/soc-simulator': {
+      id: '/soc-simulator'
+      path: '/soc-simulator'
+      fullPath: '/soc-simulator'
+      preLoaderRoute: typeof SocSimulatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/supply-chain': {
+      id: '/supply-chain'
+      path: '/supply-chain'
+      fullPath: '/supply-chain'
+      preLoaderRoute: typeof SupplyChainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/teams': {
       id: '/teams'
       path: '/teams'
@@ -733,6 +905,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabsIndexRouteImport
       parentRoute: typeof LabsRoute
     }
+    '/labs/ad-network': {
+      id: '/labs/ad-network'
+      path: '/ad-network'
+      fullPath: '/labs/ad-network'
+      preLoaderRoute: typeof LabsAdNetworkRouteImport
+      parentRoute: typeof LabsRoute
+    }
     '/labs/brute': {
       id: '/labs/brute'
       path: '/brute'
@@ -754,11 +933,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabsDdosRouteImport
       parentRoute: typeof LabsRoute
     }
+    '/labs/iam-privesc': {
+      id: '/labs/iam-privesc'
+      path: '/iam-privesc'
+      fullPath: '/labs/iam-privesc'
+      preLoaderRoute: typeof LabsIamPrivescRouteImport
+      parentRoute: typeof LabsRoute
+    }
     '/labs/idor': {
       id: '/labs/idor'
       path: '/idor'
       fullPath: '/labs/idor'
       preLoaderRoute: typeof LabsIdorRouteImport
+      parentRoute: typeof LabsRoute
+    }
+    '/labs/juiceshop': {
+      id: '/labs/juiceshop'
+      path: '/juiceshop'
+      fullPath: '/labs/juiceshop'
+      preLoaderRoute: typeof LabsJuiceshopRouteImport
       parentRoute: typeof LabsRoute
     }
     '/labs/jwt': {
@@ -782,6 +975,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabsMisconfigRouteImport
       parentRoute: typeof LabsRoute
     }
+    '/labs/phishing-payload': {
+      id: '/labs/phishing-payload'
+      path: '/phishing-payload'
+      fullPath: '/labs/phishing-payload'
+      preLoaderRoute: typeof LabsPhishingPayloadRouteImport
+      parentRoute: typeof LabsRoute
+    }
+    '/labs/ransomware': {
+      id: '/labs/ransomware'
+      path: '/ransomware'
+      fullPath: '/labs/ransomware'
+      preLoaderRoute: typeof LabsRansomwareRouteImport
+      parentRoute: typeof LabsRoute
+    }
     '/labs/rce': {
       id: '/labs/rce'
       path: '/rce'
@@ -801,6 +1008,13 @@ declare module '@tanstack/react-router' {
       path: '/ssrf'
       fullPath: '/labs/ssrf'
       preLoaderRoute: typeof LabsSsrfRouteImport
+      parentRoute: typeof LabsRoute
+    }
+    '/labs/terminal': {
+      id: '/labs/terminal'
+      path: '/terminal'
+      fullPath: '/labs/terminal'
+      preLoaderRoute: typeof LabsTerminalRouteImport
       parentRoute: typeof LabsRoute
     }
     '/labs/xss': {
@@ -842,32 +1056,44 @@ declare module '@tanstack/react-router' {
 }
 
 interface LabsRouteChildren {
+  LabsAdNetworkRoute: typeof LabsAdNetworkRoute
   LabsBruteRoute: typeof LabsBruteRoute
   LabsCsrfRoute: typeof LabsCsrfRoute
   LabsDdosRoute: typeof LabsDdosRoute
+  LabsIamPrivescRoute: typeof LabsIamPrivescRoute
   LabsIdorRoute: typeof LabsIdorRoute
+  LabsJuiceshopRoute: typeof LabsJuiceshopRoute
   LabsJwtRoute: typeof LabsJwtRoute
   LabsLfiRoute: typeof LabsLfiRoute
   LabsMisconfigRoute: typeof LabsMisconfigRoute
+  LabsPhishingPayloadRoute: typeof LabsPhishingPayloadRoute
+  LabsRansomwareRoute: typeof LabsRansomwareRoute
   LabsRceRoute: typeof LabsRceRoute
   LabsSqliRoute: typeof LabsSqliRoute
   LabsSsrfRoute: typeof LabsSsrfRoute
+  LabsTerminalRoute: typeof LabsTerminalRoute
   LabsXssRoute: typeof LabsXssRoute
   LabsXxeRoute: typeof LabsXxeRoute
   LabsIndexRoute: typeof LabsIndexRoute
 }
 
 const LabsRouteChildren: LabsRouteChildren = {
+  LabsAdNetworkRoute: LabsAdNetworkRoute,
   LabsBruteRoute: LabsBruteRoute,
   LabsCsrfRoute: LabsCsrfRoute,
   LabsDdosRoute: LabsDdosRoute,
+  LabsIamPrivescRoute: LabsIamPrivescRoute,
   LabsIdorRoute: LabsIdorRoute,
+  LabsJuiceshopRoute: LabsJuiceshopRoute,
   LabsJwtRoute: LabsJwtRoute,
   LabsLfiRoute: LabsLfiRoute,
   LabsMisconfigRoute: LabsMisconfigRoute,
+  LabsPhishingPayloadRoute: LabsPhishingPayloadRoute,
+  LabsRansomwareRoute: LabsRansomwareRoute,
   LabsRceRoute: LabsRceRoute,
   LabsSqliRoute: LabsSqliRoute,
   LabsSsrfRoute: LabsSsrfRoute,
+  LabsTerminalRoute: LabsTerminalRoute,
   LabsXssRoute: LabsXssRoute,
   LabsXxeRoute: LabsXxeRoute,
   LabsIndexRoute: LabsIndexRoute,
@@ -883,6 +1109,7 @@ const rootRouteChildren: RootRouteChildren = {
   BillingRoute: BillingRoute,
   ComplianceRoute: ComplianceRoute,
   CtfRoute: CtfRoute,
+  DarkwebRoute: DarkwebRoute,
   DashboardRoute: DashboardRoute,
   DeveloperRoute: DeveloperRoute,
   EasmRoute: EasmRoute,
@@ -892,12 +1119,16 @@ const rootRouteChildren: RootRouteChildren = {
   LearningRoute: LearningRoute,
   PacketAnalyzerRoute: PacketAnalyzerRoute,
   PentestRoute: PentestRoute,
+  PhishingRoute: PhishingRoute,
   PostureRoute: PostureRoute,
   PricingRoute: PricingRoute,
+  PtaasRoute: PtaasRoute,
   ReplayRoute: ReplayRoute,
   ReportsRoute: ReportsRoute,
   ScannerRoute: ScannerRoute,
   SettingsRoute: SettingsRoute,
+  SocSimulatorRoute: SocSimulatorRoute,
+  SupplyChainRoute: SupplyChainRoute,
   TeamsRoute: TeamsRoute,
   ThreatIntelRoute: ThreatIntelRoute,
   WarroomRoute: WarroomRoute,

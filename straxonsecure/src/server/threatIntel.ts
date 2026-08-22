@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireRequestId } from "@/server/security/requestId";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 interface CveItem {
@@ -13,69 +15,100 @@ interface CveItem {
   cached_at?: string;
 }
 
+import { withSpan } from "@/server/telemetry";
+import { sharedCache } from "@/server/utils/cache";
+
 // ─── Fetch & Cache CVEs from NVD ─────────────────────────────────────────────
 
-export const fetchThreatIntel = createServerFn({ method: "GET" }).handler(async () => {
-  // Try cached first (10 min TTL)
-  const { data: cached } = await supabaseAdmin
-    .from("threat_intel")
-    .select("*")
-    .order("published_at", { ascending: false })
-    .limit(50);
+export const fetchThreatIntel = createServerFn({ method: "GET" })
+  .middleware([requireRequestId, requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    return withSpan("fetchThreatIntel", async (span) => {
+      if ((context as any).requestId as string)
+        span.setAttribute("requestId", (context as any).requestId as string);
 
-  if (cached && cached.length > 0) {
-    const newest = new Date((cached[0] as CveItem).cached_at ?? 0).getTime();
-    if (Date.now() - newest < 10 * 60 * 1000) {
-      return { items: cached, cached: true, error: null };
-    }
-  }
+      // In-process cache first (60s TTL)
+      const memCached = sharedCache.get<any>("threat_intel_cves");
+      if (memCached) {
+        return memCached;
+      }
 
-  try {
-    const res = await fetch(
-      "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=50&noRejected",
-      { headers: { "User-Agent": "StraxonSecure/3.0" } },
-    );
-    if (!res.ok) {
-      return { items: cached ?? [], cached: true, error: `NVD ${res.status}` };
-    }
-    const json = await res.json();
-    const items: CveItem[] = (json.vulnerabilities ?? []).map((v: any) => {
-      const cve = v.cve;
-      const metric =
-        cve.metrics?.cvssMetricV31?.[0]?.cvssData ||
-        cve.metrics?.cvssMetricV30?.[0]?.cvssData ||
-        cve.metrics?.cvssMetricV2?.[0]?.cvssData;
-      const desc = cve.descriptions?.find((d: any) => d.lang === "en")?.value ?? "";
-      return {
-        cve_id: cve.id,
-        severity: (metric?.baseSeverity ?? "UNKNOWN").toUpperCase(),
-        cvss_score: metric?.baseScore ?? null,
-        title: cve.id,
-        description: desc.slice(0, 600),
-        published_at: cve.published,
-        source_url: `https://nvd.nist.gov/vuln/detail/${cve.id}`,
-      };
+      // Try DB cached next (10 min TTL)
+      const { data: cached } = await supabaseAdmin
+        .from("threat_intel")
+        .select("*")
+        .order("published_at", { ascending: false })
+        .limit(50);
+
+      if (cached && cached.length > 0) {
+        const newest = new Date((cached[0] as CveItem).cached_at ?? 0).getTime();
+        if (Date.now() - newest < 10 * 60 * 1000) {
+          const result = { items: cached, cached: true, error: null };
+          sharedCache.set("threat_intel_cves", result, 60000);
+          return result;
+        }
+      }
+
+      try {
+        const res = await fetch(
+          "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=50&noRejected",
+          { headers: { "User-Agent": "StraxonSecure/3.0" } },
+        );
+        if (!res.ok) {
+          return { items: cached ?? [], cached: true, error: `NVD ${res.status}` };
+        }
+        const json = await res.json();
+        const items: CveItem[] = (json.vulnerabilities ?? []).map((v: any) => {
+          const cve = v.cve;
+          const metric =
+            cve.metrics?.cvssMetricV31?.[0]?.cvssData ||
+            cve.metrics?.cvssMetricV30?.[0]?.cvssData ||
+            cve.metrics?.cvssMetricV2?.[0]?.cvssData;
+          const desc = cve.descriptions?.find((d: any) => d.lang === "en")?.value ?? "";
+          return {
+            cve_id: cve.id,
+            severity: (metric?.baseSeverity ?? "UNKNOWN").toUpperCase(),
+            cvss_score: metric?.baseScore ?? null,
+            title: cve.id,
+            description: desc.slice(0, 600),
+            published_at: cve.published,
+            source_url: `https://nvd.nist.gov/vuln/detail/${cve.id}`,
+          };
+        });
+
+        if (items.length > 0) {
+          try {
+            await supabaseAdmin.from("threat_intel").upsert(
+              items.map((i) => ({ ...i, cached_at: new Date().toISOString() })),
+              { onConflict: "cve_id" },
+            );
+          } catch (e) {
+            // ignore supabase error
+          }
+        }
+        const result = {
+          items: items,
+          cached: false,
+          error: items.length === 0 ? "No items returned from NVD" : null,
+        };
+        sharedCache.set("threat_intel_cves", result, 60000);
+        return result;
+      } catch (e) {
+        const errorResult = {
+          items: cached && cached.length > 0 ? cached : [],
+          cached: true,
+          error: e instanceof Error ? e.message : "fetch failed",
+        };
+        sharedCache.set("threat_intel_cves", errorResult, 60000);
+        return errorResult;
+      }
     });
-
-    if (items.length > 0) {
-      await supabaseAdmin.from("threat_intel").upsert(
-        items.map((i) => ({ ...i, cached_at: new Date().toISOString() })),
-        { onConflict: "cve_id" },
-      );
-    }
-    return { items, cached: false, error: null };
-  } catch (e) {
-    return {
-      items: cached ?? [],
-      cached: true,
-      error: e instanceof Error ? e.message : "fetch failed",
-    };
-  }
-});
+  });
 
 // ─── AI Analyze a Specific CVE ────────────────────────────────────────────────
 
 export const analyzeCVE = createServerFn({ method: "POST" })
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -126,6 +159,7 @@ Be concise, technical, and actionable. Max 400 words.`;
 // ─── Search CVEs ──────────────────────────────────────────────────────────────
 
 export const searchCVEs = createServerFn({ method: "POST" })
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({

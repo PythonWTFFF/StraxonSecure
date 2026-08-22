@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireRequestId } from "@/server/security/requestId";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { checkFeatureUsage, logFeatureUsage } from "./usage";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -53,7 +55,7 @@ const LAB_POINTS: Record<string, number> = {
 
 // ─── Start Lab Session ───────────────────────────────────────────────────────
 export const startLabSession = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -63,17 +65,29 @@ export const startLabSession = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    // Usage Enforcement
+    await checkFeatureUsage((context as any).userId as string, "lab_session");
+    await logFeatureUsage(
+      (context as any).userId as string,
+      "lab_session",
+      { labId: data.labId, mode: data.mode },
+      (context as any).requestId as string,
+    );
+
     // Project Titan: Call Python Docker Orchestrator
     let containerPort = 0;
     try {
       const LAB_IMAGES: Record<string, string> = {
         sqli: "nginxdemos/hello",
         rce: "nginxdemos/hello", // In a real scenario, use actual vulnerable images like bkimminich/juice-shop
+        ad_network: "vulnerables/cve-2020-1472", // Simulated ZeroLogon AD
+        ransomware: "kasmweb/core-ubuntu-focal", // Isolated container for ransomware execution
       };
       const image = LAB_IMAGES[data.labId] || "nginxdemos/hello";
       containerPort = Math.floor(Math.random() * (9000 - 8100 + 1)) + 8100;
 
-      const res = await fetch("http://localhost:8082/api/labs/launch", {
+      const mlUrl = import.meta.env.VITE_ML_ENGINE_URL || "http://localhost:8082";
+      const res = await fetch(`${mlUrl}/api/labs/launch`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image, port: containerPort }),
@@ -90,7 +104,7 @@ export const startLabSession = createServerFn({ method: "POST" })
     const { data: session, error } = await supabaseAdmin
       .from("lab_sessions")
       .insert({
-        user_id: context.userId,
+        user_id: (context as any).userId as string,
         lab_id: data.labId,
         mode: data.mode,
       })
@@ -103,7 +117,7 @@ export const startLabSession = createServerFn({ method: "POST" })
 
 // ─── Submit CTF Flag ────────────────────────────────────────────────────────
 export const submitLabFlag = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({ labId: z.string(), flag: z.string().max(500), sessionId: z.string().uuid() })
@@ -125,20 +139,20 @@ export const submitLabFlag = createServerFn({ method: "POST" })
           flags_captured: [data.flag],
         })
         .eq("id", data.sessionId)
-        .eq("user_id", context.userId);
+        .eq("user_id", (context as any).userId as string);
 
       // Update security posture labs score
-      await supabaseAdmin
-        .rpc("increment_posture_labs", {
-          p_user_id: context.userId,
-          p_points: LAB_POINTS[data.labId] ?? 100,
-        })
-        .maybeSingle();
+      // await supabaseAdmin
+      //   .rpc("increment_posture_labs", {
+      //     p_user_id: ((context as any).userId as string),
+      //     p_points: LAB_POINTS[data.labId] ?? 100,
+      //   })
+      //   .maybeSingle();
 
       // Update lesson_progress
       await supabaseAdmin.from("lesson_progress").upsert(
         {
-          user_id: context.userId,
+          user_id: (context as any).userId as string,
           lesson_slug: `lab-${data.labId}`,
           completed: true,
         },
@@ -157,12 +171,12 @@ export const submitLabFlag = createServerFn({ method: "POST" })
 
 // ─── Get User Lab Progress ───────────────────────────────────────────────────
 export const getUserLabProgress = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await supabaseAdmin
       .from("lesson_progress")
       .select("lesson_slug, completed")
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .like("lesson_slug", "lab-%");
 
     const completed = new Set(
@@ -173,18 +187,18 @@ export const getUserLabProgress = createServerFn({ method: "GET" })
 
 // ─── CTF: Get Challenges ─────────────────────────────────────────────────────
 export const getCTFChallenges = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const [{ data: challenges }, { data: solves }, { data: hints }] = await Promise.all([
       supabaseAdmin.from("ctf_challenges").select("*").eq("is_active", true).order("points"),
       supabaseAdmin
         .from("ctf_solves")
         .select("challenge_id, solved_at, points_earned, hints_used")
-        .eq("user_id", context.userId),
+        .eq("user_id", (context as any).userId as string),
       supabaseAdmin
         .from("ctf_hint_usage")
         .select("challenge_id, hint_index")
-        .eq("user_id", context.userId),
+        .eq("user_id", (context as any).userId as string),
     ]);
 
     const solvedIds = new Set((solves ?? []).map((s) => s.challenge_id));
@@ -208,7 +222,7 @@ export const getCTFChallenges = createServerFn({ method: "GET" })
 
 // ─── CTF: Submit Flag ────────────────────────────────────────────────────────
 export const submitCTFFlag = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z.object({ challengeId: z.string().uuid(), flag: z.string().max(500) }).parse(d),
   )
@@ -225,7 +239,7 @@ export const submitCTFFlag = createServerFn({ method: "POST" })
     const { data: existing } = await supabaseAdmin
       .from("ctf_solves")
       .select("id")
-      .eq("user_id", context.userId)
+      .eq("user_id", (context as any).userId as string)
       .eq("challenge_id", data.challengeId)
       .maybeSingle();
 
@@ -237,7 +251,7 @@ export const submitCTFFlag = createServerFn({ method: "POST" })
       const hintsUsed = await supabaseAdmin
         .from("ctf_hint_usage")
         .select("id")
-        .eq("user_id", context.userId)
+        .eq("user_id", (context as any).userId as string)
         .eq("challenge_id", data.challengeId);
 
       const hintCount = hintsUsed.data?.length ?? 0;
@@ -248,7 +262,7 @@ export const submitCTFFlag = createServerFn({ method: "POST" })
 
       await Promise.all([
         supabaseAdmin.from("ctf_solves").insert({
-          user_id: context.userId,
+          user_id: (context as any).userId as string,
           challenge_id: data.challengeId,
           hints_used: hintCount,
           points_earned: pointsEarned,
@@ -257,17 +271,17 @@ export const submitCTFFlag = createServerFn({ method: "POST" })
           .from("ctf_challenges")
           .update({ solve_count: challenge.solve_count + 1 })
           .eq("id", data.challengeId),
-        supabaseAdmin
-          .from("security_posture")
-          .upsert({ user_id: context.userId }, { onConflict: "user_id" })
-          .then(() =>
-            supabaseAdmin
-              .rpc("increment_posture_ctf", {
-                p_user_id: context.userId,
-                p_points: pointsEarned,
-              })
-              .maybeSingle(),
-          ),
+        // supabaseAdmin
+        //  .from("security_posture")
+        //  .upsert({ user_id: ((context as any).userId as string) }, { onConflict: "user_id" })
+        //  .then(() =>
+        //    supabaseAdmin
+        //      .rpc("increment_posture_ctf", {
+        //        p_user_id: ((context as any).userId as string),
+        //        p_points: pointsEarned,
+        //      })
+        //      .maybeSingle(),
+        //  ),
       ]);
 
       return {
@@ -282,7 +296,7 @@ export const submitCTFFlag = createServerFn({ method: "POST" })
 
 // ─── CTF: Use Hint ───────────────────────────────────────────────────────────
 export const useCTFHint = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({ challengeId: z.string().uuid(), hintIndex: z.number().int().min(0).max(5) })
@@ -302,7 +316,7 @@ export const useCTFHint = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("ctf_hint_usage").upsert(
       {
-        user_id: context.userId,
+        user_id: (context as any).userId as string,
         challenge_id: data.challengeId,
         hint_index: data.hintIndex,
       },

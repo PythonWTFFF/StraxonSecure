@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { forwardRef, useState, useRef, type HTMLAttributes } from "react";
 
 interface CyberCardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: "cyan" | "magenta" | "plain";
+  variant?: "cyan" | "magenta" | "plain" | (string & {});
   glow?: boolean;
   glitchContent?: boolean; // Makes internal text glitch
 }
@@ -29,7 +29,7 @@ export const CyberCard = forwardRef<HTMLDivElement, CyberCardProps>(
     };
 
     // Advanced Cyber Theme Mapping - Using pure neon HEX values for bloom
-    const themeColors = {
+    const themeColors: Record<string, any> = {
       cyan: {
         border: "border-cyan-500/30 group-hover:border-[#00f3ff]",
         spotlight: "radial-gradient(400px circle at x y, rgba(0, 243, 255, 0.15), transparent 60%)",
@@ -73,6 +73,10 @@ export const CyberCard = forwardRef<HTMLDivElement, CyberCardProps>(
             30% { clip: rect(80px, 450px, 85px, 0); }
             100% { clip: rect(0, 450px, 100px, 0); }
           }
+          @keyframes glare {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(300%); }
+          }
           @keyframes glitch-skew {
             0% { transform: skew(0deg); }
             2% { transform: skew(3deg); }
@@ -105,6 +109,8 @@ export const CyberCard = forwardRef<HTMLDivElement, CyberCardProps>(
             "[clip-path:polygon(16px_0,100%_0,100%_calc(100%-16px),calc(100%-16px)_100%,0_100%,0_16px)]",
             theme.border,
             glow && theme.shadow,
+            glow && variant === "cyan" && "cyber-hover",
+            glow && variant === "magenta" && "cyber-hover-magenta",
             className,
           )}
           {...props}
@@ -120,6 +126,13 @@ export const CyberCard = forwardRef<HTMLDivElement, CyberCardProps>(
                   .replace("y", mousePosition.y.toString()),
               }}
             />
+          )}
+
+          {/* Cyber Glare Effect */}
+          {glow && (
+            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10 overflow-hidden mix-blend-overlay">
+              <div className="absolute top-0 left-[-100%] w-[30%] h-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg] group-hover:animate-[glare_2.5s_ease-in-out_infinite]" />
+            </div>
           )}
 
           {/* CRT Scanline Texture Background */}

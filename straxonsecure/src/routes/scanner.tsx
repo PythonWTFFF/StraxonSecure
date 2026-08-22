@@ -121,7 +121,7 @@ function RiskGauge({ score }: { score: number }) {
     <div className="flex items-center gap-3">
       <div className={`font-display text-4xl font-bold ${color}`}>{score}</div>
       <div className="flex-1">
-        <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-1">
+        <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-1">
           Risk Score
         </div>
         <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
@@ -176,7 +176,9 @@ function ScannerRunner() {
     try {
       const res = await getScanHistory();
       setHistory(res.scans ?? []);
-    } catch {}
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const runScan = async () => {
@@ -274,7 +276,7 @@ function ScannerRunner() {
               className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${
                 scanType === t.key
                   ? "bg-[#00f3ff]/10 border-[#00f3ff]/40 text-[#00f3ff]"
-                  : "border-white/10 text-slate-500 hover:border-white/20 hover:text-slate-300"
+                  : "border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-300"
               }`}
             >
               {t.label}
@@ -289,7 +291,7 @@ function ScannerRunner() {
         />
         <button
           onClick={() => setShowHistory(!showHistory)}
-          className="ml-auto flex items-center gap-1.5 text-xs font-mono text-slate-500 hover:text-[#00f3ff] transition-colors"
+          className="ml-auto flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-[#00f3ff] transition-colors"
         >
           <History className="h-3.5 w-3.5" />
           History ({history.length})
@@ -299,13 +301,13 @@ function ScannerRunner() {
       {/* Scan History */}
       {showHistory && history.length > 0 && (
         <CyberCard variant="plain" className="p-4">
-          <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">
+          <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-3">
             Recent Scans
           </div>
           <div className="space-y-2">
             {history.slice(0, 5).map((s: any) => (
               <div key={s.id} className="flex items-center gap-3 text-xs font-mono text-slate-400">
-                <span className="text-slate-500">
+                <span className="text-slate-400">
                   {new Date(s.created_at).toLocaleDateString()}
                 </span>
                 <span className="text-slate-300">{s.filename}</span>
@@ -325,7 +327,7 @@ function ScannerRunner() {
         <CyberCard variant="cyan" className="p-0 overflow-hidden">
           <div className="px-4 py-2 border-b border-white/8 flex items-center justify-between">
             <span className="text-xs font-mono text-[#00f3ff]">// SOURCE CODE</span>
-            <span className="text-[10px] font-mono text-slate-500">
+            <span className="text-[10px] font-mono text-slate-400">
               {code.split("\n").length} lines
             </span>
           </div>
@@ -394,13 +396,13 @@ function ScannerRunner() {
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <div className={`font-display text-xl font-bold ${s.color}`}>{s.val}</div>
-                    <div className="text-[9px] font-mono text-slate-500 uppercase">{s.label}</div>
+                    <div className="text-[9px] font-mono text-slate-400 uppercase">{s.label}</div>
                   </div>
                 ))}
               </div>
               {summary.owaspCategories.length > 0 && (
                 <div>
-                  <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-1">
+                  <div className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-1">
                     OWASP Categories
                   </div>
                   <div className="flex flex-wrap gap-1">
@@ -497,7 +499,7 @@ function ScannerRunner() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-mono font-bold uppercase">{f.severity}</span>
                         <span className="text-sm font-mono text-slate-200">{f.title}</span>
-                        <span className="text-[10px] font-mono text-slate-500">line {f.line}</span>
+                        <span className="text-[10px] font-mono text-slate-400">line {f.line}</span>
                         {f.owasp && (
                           <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-current/30 bg-current/5">
                             {f.owasp}
@@ -506,9 +508,9 @@ function ScannerRunner() {
                       </div>
                     </div>
                     {isOpen ? (
-                      <ChevronUp className="h-4 w-4 shrink-0 text-slate-500" />
+                      <ChevronUp className="h-4 w-4 shrink-0 text-slate-400" />
                     ) : (
-                      <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                      <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
                     )}
                   </button>
                   {isOpen && (
@@ -530,7 +532,7 @@ function ScannerRunner() {
                           href={`https://cwe.mitre.org/data/definitions/${f.cwe.replace("CWE-", "")}.html`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-[9px] font-mono text-slate-500 hover:text-[#00f3ff] underline"
+                          className="text-[9px] font-mono text-slate-400 hover:text-[#00f3ff] underline"
                         >
                           {f.cwe} ↗
                         </a>

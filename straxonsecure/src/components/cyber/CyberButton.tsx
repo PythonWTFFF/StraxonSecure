@@ -2,8 +2,9 @@ import { cn } from "@/lib/utils";
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 
 interface CyberButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "cyan" | "magenta" | "ghost" | "danger";
+  variant?: "cyan" | "magenta" | "ghost" | "danger" | (string & {});
   size?: "sm" | "md" | "lg";
+  loading?: boolean;
 }
 
 export const CyberButton = forwardRef<HTMLButtonElement, CyberButtonProps>(
@@ -15,7 +16,7 @@ export const CyberButton = forwardRef<HTMLButtonElement, CyberButtonProps>(
     };
 
     // The animated outer gradient border
-    const gradientWrappers = {
+    const gradientWrappers: Record<string, string> = {
       cyan: "bg-gradient-to-r from-[#00f3ff] via-[#0277ff] to-[#8a2be2] hover:shadow-[0_0_25px_rgba(0,243,255,0.6)]",
       magenta:
         "bg-gradient-to-r from-[#ff003c] via-[#d946ef] to-[#ff8a00] hover:shadow-[0_0_25px_rgba(255,0,60,0.6)]",
@@ -26,7 +27,7 @@ export const CyberButton = forwardRef<HTMLButtonElement, CyberButtonProps>(
     };
 
     // The text colors
-    const textColors = {
+    const textColors: Record<string, string> = {
       cyan: "text-cyan-300 group-hover:text-white",
       magenta: "text-pink-300 group-hover:text-white",
       ghost: "text-slate-300 group-hover:text-white",

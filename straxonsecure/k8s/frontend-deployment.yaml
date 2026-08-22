@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: straxon-frontend
+  labels:
+    app: straxon-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: straxon-frontend
+  template:
+    metadata:
+      labels:
+        app: straxon-frontend
+    spec:
+      containers:
+      - name: straxon-frontend
+        image: straxon/frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        envFrom:
+        - configMapRef:
+            name: straxon-config
+        - secretRef:
+            name: straxon-secrets
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: straxon-frontend-service
+spec:
+  selector:
+    app: straxon-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
