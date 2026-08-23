@@ -1,0 +1,52 @@
+services:
+  # The unified Node Server + Vite Frontend
+  - type: web
+    name: straxon-command-center
+    env: docker
+    dockerfilePath: ./Dockerfile.prod
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: straxon-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: straxon-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false # Requires manual entry in dashboard
+
+  # The Go WebSocket Microservice
+  - type: web
+    name: straxon-pulse
+    env: docker
+    rootDir: ./straxon-pulse
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: straxon-redis
+          property: connectionString
+
+  # Redis for Socket.io and Pub/Sub
+  - type: redis
+    name: straxon-redis
+    plan: free
+    ipAllowList: []
+
+databases:
+  # Postgres with pgvector
+  - name: straxon-db
+    plan: free
+    databaseName: straxon
+    user: admin

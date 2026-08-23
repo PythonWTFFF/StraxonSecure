@@ -4,6 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 import { logAudit } from "@/server/security/audit";
+import Stripe from "stripe";
+import { createRateLimiter } from "@/server/security/rateLimit";
 
 const PLANS = {
   pro_monthly: { amount_cents: 1900, currency: "usd", label: "Pro Monthly" },
@@ -12,15 +14,20 @@ const PLANS = {
 
 type PlanKey = keyof typeof PLANS;
 
+// Initialize Stripe if we have the key
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : null;
+
 // ===== STRIPE CHECKOUT =====
 export const createStripeCheckout = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(5, 60, "rate_limit:checkout")])
   .validator((d) => z.object({ plan: z.enum(["pro_monthly", "pro_yearly"]) }).parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const origin = process.env.SITE_URL || "http://localhost:8080";
-    const key = process.env.STRIPE_SECRET_KEY;
-    if (!key) {
+    
+    if (!stripe) {
       // Simulate checkout flow if no key exists by upgrading their subscription immediately
       const periodEnd = new Date();
       if (data.plan === "pro_yearly") periodEnd.setFullYear(periodEnd.getFullYear() + 1);
@@ -49,6 +56,7 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
         url: `${origin}/billing?success=1&simulated=true`,
       };
     }
+    
     const priceId =
       data.plan === "pro_monthly"
         ? process.env.STRIPE_PRICE_MONTHLY
@@ -60,47 +68,94 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
       };
     }
 
-    const resOrigin = process.env.SITE_URL || "http://localhost:8080";
-    const params = new URLSearchParams();
-    params.append("mode", "subscription");
-    params.append("line_items[0][price]", priceId);
-    params.append("line_items[0][quantity]", "1");
-    params.append("success_url", `${resOrigin}/billing?success=1`);
-    params.append("cancel_url", `${resOrigin}/pricing?canceled=1`);
-    params.append("client_reference_id", userId);
-    params.append("metadata[user_id]", userId);
-    params.append("metadata[plan]", data.plan);
-    params.append("subscription_data[metadata][user_id]", userId);
-    params.append("subscription_data[metadata][plan]", data.plan);
+    try {
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        success_url: `${origin}/billing?success=1`,
+        cancel_url: `${origin}/pricing?canceled=1`,
+        client_reference_id: userId,
+        metadata: {
+          user_id: userId,
+          plan: data.plan,
+        },
+        subscription_data: {
+          metadata: {
+            user_id: userId,
+            plan: data.plan,
+          },
+        },
+      });
 
-    const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      return { error: json.error?.message || "Stripe error", url: null };
+      await logAudit({
+        requestId: ((context as any).requestId as string) ?? "unknown",
+        actorUserId: (context as any).userId as string,
+        orgId: "00000000-0000-0000-0000-000000000000",
+        action: "billing.checkout_created",
+        serverFn: "createStripeCheckout",
+        metadata: { plan: data.plan, provider: "stripe", sessionId: session.id },
+      });
+
+      return { url: session.url, error: null };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Stripe error", url: null };
+    }
+  });
+
+// ===== STRIPE CUSTOMER PORTAL =====
+export const createPortalSession = createServerFn({ method: "POST" })
+  .middleware([requireRequestId, requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const origin = process.env.SITE_URL || "http://localhost:8080";
+
+    if (!stripe) {
+      return {
+        error: "Stripe not configured. (In simulated mode, manage subscriptions manually).",
+        url: null,
+      };
     }
 
-    await logAudit({
-      requestId: ((context as any).requestId as string) ?? "unknown",
-      actorUserId: (context as any).userId as string,
-      orgId: "00000000-0000-0000-0000-000000000000",
-      action: "billing.checkout_created",
-      serverFn: "createStripeCheckout",
-      metadata: { plan: data.plan, provider: "stripe" },
-    });
+    try {
+      const { data: sub } = await supabaseAdmin
+        .from("subscriptions")
+        .select("provider_customer_id")
+        .eq("user_id", userId)
+        .single();
 
-    return { url: json.url as string, error: null };
+      if (!sub || !sub.provider_customer_id) {
+        return { error: "No Stripe customer found for this user", url: null };
+      }
+
+      const session = await stripe.billingPortal.sessions.create({
+        customer: sub.provider_customer_id,
+        return_url: `${origin}/billing`,
+      });
+
+      await logAudit({
+        requestId: ((context as any).requestId as string) ?? "unknown",
+        actorUserId: (context as any).userId as string,
+        orgId: "00000000-0000-0000-0000-000000000000",
+        action: "billing.portal_created",
+        serverFn: "createPortalSession",
+      });
+
+      return { url: session.url, error: null };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Stripe error", url: null };
+    }
   });
+
 
 // ===== RAZORPAY ORDER =====
 export const createRazorpayOrder = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(5, 60, "rate_limit:checkout")])
   .validator((d) => z.object({ plan: z.enum(["pro_monthly", "pro_yearly"]) }).parse(d))
   .handler(async ({ data, context }) => {
     const keyId = process.env.RAZORPAY_KEY_ID;
@@ -247,16 +302,6 @@ export const developerBypass = createServerFn({ method: "POST" })
       provider_subscription_id: `dev_${Date.now()}`,
       current_period_end: periodEnd.toISOString(),
       cancel_at_period_end: false,
-    });
-
-    await supabaseAdmin.from("payments").insert({
-      user_id: (context as any).userId as string,
-      provider: "developer_override",
-      provider_payment_id: `dev_pay_${Date.now()}`,
-      amount_cents: 0,
-      currency: "usd",
-      status: "succeeded",
-      description: "Developer Pro Override",
     });
 
     await logAudit({

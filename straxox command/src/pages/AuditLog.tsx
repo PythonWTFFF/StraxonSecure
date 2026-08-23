@@ -9,8 +9,11 @@ import {
   CheckCircle2, Info, Wifi, WifiOff, Trash2, Copy,
   Eye, Clock, Globe, Lock, Zap, Activity
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAuditLogs } from "@/lib/api";
+import { TerminalLogPanel } from "@/components/TerminalLogPanel";
 
-// ─── AUDIT STORE (singleton so other pages can push events) ──────────────────
+// ─── AUDIT STORE (legacy exported helper just in case) ──────────────────
 
 const STORE_KEY = "straxon_audit_log";
 
@@ -550,63 +553,30 @@ function AnomalyLogPanel({ logs }) {
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function AuditLog() {
-  // Initialise from sessionStorage or seed
-  const [systemLogs, setSystemLogs] = useState(() => {
-    const stored = loadStore();
-    return stored?.systemLogs ?? SEED_SYSTEM;
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["audit"],
+    queryFn: fetchAuditLogs,
+    refetchInterval: 30000,
   });
-  const [anomalyLogs, setAnomalyLogs] = useState(() => {
-    const stored = loadStore();
-    return stored?.anomalyLogs ?? SEED_ANOMALY;
-  });
+
+  const systemLogs = data?.systemLogs || [];
+  const anomalyLogs = data?.anomalyLogs || [];
 
   const [isLive, setIsLive]       = useState(true);
   const [cleared, setCleared]     = useState(false);
-  const intervalRef               = useRef(null);
-
-  // Persist to sessionStorage on every change
-  useEffect(() => {
-    saveStore(systemLogs, anomalyLogs);
-  }, [systemLogs, anomalyLogs]);
-
-  // Live event simulation
-  const startLive = useCallback(() => {
-    intervalRef.current = setInterval(() => {
-      // Random system event every ~8s
-      if (Math.random() > 0.4) {
-        const tpl = LIVE_SYSTEM_POOL[Math.floor(Math.random() * LIVE_SYSTEM_POOL.length)];
-        setSystemLogs(prev => [{
-          id: Date.now(),
-          time: nowStr(),
-          ...tpl,
-        }, ...prev].slice(0, 200));
-      }
-      // Random anomaly event every ~20s (lower probability)
-      if (Math.random() > 0.75) {
-        const tpl = LIVE_ANOMALY_POOL[Math.floor(Math.random() * LIVE_ANOMALY_POOL.length)];
-        setAnomalyLogs(prev => [{
-          id: Date.now(),
-          time: nowStr(),
-          ...tpl,
-        }, ...prev].slice(0, 100));
-      }
-    }, 7000);
-  }, []);
-
-  const stopLive = useCallback(() => {
-    clearInterval(intervalRef.current);
-  }, []);
-
-  useEffect(() => {
-    if (isLive) startLive(); else stopLive();
-    return stopLive;
-  }, [isLive, startLive, stopLive]);
-
-  const handleClearSystem = () => {
-    setSystemLogs([]);
+  const handleClear = () => {
     setCleared(true);
     setTimeout(() => setCleared(false), 2000);
   };
+  
+  const handleRefresh = () => {
+    setCleared(false);
+    refetch();
+  };
+
+  if (isLoading) {
+    return <div className="flex h-[400px] items-center justify-center text-slate-500 font-mono text-xs">Loading Audit Vault...</div>;
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 bg-slate-950 min-h-screen">
@@ -645,7 +615,7 @@ export default function AuditLog() {
 
           {/* Clear system logs */}
           <button
-            onClick={handleClearSystem}
+            onClick={handleClear}
             className="flex items-center gap-2 text-[10px] font-mono px-3.5 py-2 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-500 hover:text-rose-400 hover:border-rose-900/50 transition-all"
           >
             {cleared ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Trash2 className="w-3.5 h-3.5" />}
@@ -688,6 +658,13 @@ export default function AuditLog() {
             IP & Anomaly
             <span className="ml-2 text-[8px] bg-rose-500/20 text-rose-500 px-1.5 py-0.5 rounded font-bold">{anomalyLogs.length}</span>
           </TabsTrigger>
+          <TabsTrigger
+            value="terminal"
+            className="text-[10px] font-mono uppercase tracking-widest data-[state=active]:bg-violet-500/10 data-[state=active]:text-violet-400 data-[state=active]:border-violet-500/20 rounded-lg px-5 py-2 transition-all"
+          >
+            <Terminal className="w-3 h-3 mr-1.5 inline" />
+            Interactive Terminal
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="system">
@@ -696,6 +673,10 @@ export default function AuditLog() {
 
         <TabsContent value="anomaly">
           <AnomalyLogPanel logs={anomalyLogs} />
+        </TabsContent>
+
+        <TabsContent value="terminal">
+          <TerminalLogPanel logs={[...systemLogs, ...anomalyLogs]} isLive={isLive} />
         </TabsContent>
       </Tabs>
     </div>

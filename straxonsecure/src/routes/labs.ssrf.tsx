@@ -35,7 +35,7 @@ const INTERNAL_RESPONSES: Record<string, { status: number; body: string; sensiti
   "http://169.254.169.254/latest/meta-data/iam/security-credentials/straxon-prod-role": {
     status: 200,
     sensitive: true,
-    body: `{\n  "Code": "Success",\n  "Type": "AWS-HMAC",\n  "AccessKeyId": "ASIAIOSFODNN7EXAMPLE",\n  "SecretAccessKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",\n  "Token": "AQoXnyc4lcK4w4//////////...[TOKEN]",\n  "Expiration": "2026-08-05T18:06:00Z"\n}`,
+    body: `{\n  "Code": "Success",\n  "Type": "AWS-HMAC",\n  "AccessKeyId": "ASIA_MOCK_AWS_KEY_123",\n  "SecretAccessKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",\n  "Token": "AQoXnyc4lcK4w4//////////...[TOKEN]",\n  "Expiration": "2026-08-05T18:06:00Z"\n}`,
   },
   "http://169.254.169.254/latest/user-data": {
     status: 200,

@@ -8,8 +8,11 @@ import jsPDF from "jspdf";
 import {
   Save, Download, FileText, ClipboardList, ChevronRight, Loader2,
   CheckCircle2, Plus, Trash2, ChevronDown, AlertTriangle, Settings,
-  Users, Calendar, Cpu, BarChart3, Shield, Target,
+  Users, Calendar, Cpu, BarChart3, Shield, Target, Wand2,
 } from "lucide-react";
+import { saveProposal } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import straxonLogoAsset  from "@/assets/straxonlogo.png";
 import secureIconAsset   from "@/assets/secure.svg";
@@ -662,6 +665,44 @@ function AccordionSection({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function DocumentEngine() {
+  const queryClient = useQueryClient();
+  const saveMutation = useMutation({
+    mutationFn: saveProposal,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["proposals"] });
+      toast.success(`Proposal saved: ${data.proposal.refNum}`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to save: ${error.message}`);
+    }
+  });
+
+  const aiDraftMutation = useMutation({
+    mutationFn: async (dealId: string) => {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/v1/ai/proposals/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ dealId }),
+      });
+      if (!res.ok) throw new Error("Failed to generate draft");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      const d = data.draft;
+      if (d.executiveSummary) setValue("executiveSummary", d.executiveSummary);
+      if (d.systemScope) setValue("systemScope", d.systemScope);
+      if (d.objectives) setValue("objectives", d.objectives);
+      if (d.techStack) setValue("techStack", d.techStack);
+      if (d.budgetTotal) setValue("budgetTotal", String(d.budgetTotal));
+      if (d.nextSteps) setValue("nextSteps", d.nextSteps);
+      toast.success("AI draft generated successfully!");
+    },
+    onError: (err: any) => {
+      toast.error(err.message);
+    }
+  });
+
   const [docType, setDocType]     = useState<DocType>("SRS");
   const [isExporting, setExport]  = useState(false);
   const [exportDone, setDone]     = useState(false);
@@ -693,7 +734,7 @@ export default function DocumentEngine() {
   const toggleSec  = (k: string) => setOpenSec(p => ({ ...p, [k]: !p[k] }));
   const cfg        = CFG[docType];
 
-  const { register, watch } = useForm<FormValues>({
+  const { register, watch, setValue } = useForm<FormValues>({
     defaultValues: {
       clientName: "Global Aquatics Inc.", projectName: "Fish World Platform",
       author: "Swaraj Panti", version: "2.0.4",
@@ -732,6 +773,18 @@ export default function DocumentEngine() {
   const addRisk  = () => setRisks(p => [...p, { description: "", level: "Medium", mitigation: "" }]);
   const updRisk  = (i: number, k: keyof Risk, val: string) => setRisks(p => p.map((r, idx) => idx === i ? { ...r, [k]: val } : r));
   const remRisk  = (i: number) => setRisks(p => p.filter((_, idx) => idx !== i));
+
+  const handleSave = () => {
+    saveMutation.mutate({
+      ...v,
+      docType,
+      refNum,
+      reqs,
+      milestones,
+      team,
+      risks,
+    });
+  };
 
   // ── PDF Export ──
   const handleExport = async () => {
@@ -1032,8 +1085,24 @@ export default function DocumentEngine() {
 
           {/* Export actions */}
           <div className="flex gap-3 pt-2">
-            <button className="flex-1 flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs uppercase tracking-widest font-bold py-3.5 rounded-xl transition-all duration-200">
-              <Save className="w-4 h-4" /> Save
+            <button 
+              onClick={() => {
+                const did = window.prompt("Enter a Deal ID to draft from:");
+                if (did) aiDraftMutation.mutate(did);
+              }}
+              disabled={aiDraftMutation.isPending}
+              className="flex-1 flex items-center justify-center gap-2 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 text-purple-300 text-xs uppercase tracking-widest font-bold py-3.5 rounded-xl transition-all duration-200 disabled:opacity-50"
+            >
+              {aiDraftMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} 
+              AI Draft
+            </button>
+            <button 
+              onClick={handleSave} 
+              disabled={saveMutation.isPending}
+              className="flex-1 flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs uppercase tracking-widest font-bold py-3.5 rounded-xl transition-all duration-200 disabled:opacity-50"
+            >
+              {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
+              {saveMutation.isPending ? "Saving..." : "Save"}
             </button>
             <motion.button
               onClick={handleExport}

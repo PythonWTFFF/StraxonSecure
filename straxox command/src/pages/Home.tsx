@@ -13,8 +13,10 @@ import {
   Shield, Activity, ArrowRight, Cpu,
   Lock, Layers, ChevronRight, Globe,
   TrendingUp, Database, Bell, GitBranch,
-  Wifi, Zap,
+  Wifi, Zap, KanbanSquare, DollarSign
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { authFetch } from "@/lib/api";
 
 import straxonLogo  from "@/assets/straxonlogo.png";
 import secureIcon   from "@/assets/secure.svg";
@@ -37,63 +39,48 @@ const T = {
   success:     "#10b981",
 };
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-
-const NAV_STATS = [
-  { label: "Uptime",  value: "99.98%", icon: Wifi,       accent: true  },
-  { label: "Clients", value: "28",     icon: Users,      accent: false },
-  { label: "Revenue", value: "$84.2k", icon: TrendingUp, accent: false },
-  { label: "DB",      value: "1.2 GB", icon: Database,   accent: false },
-];
-
-const METRICS = [
-  { label: "Invoices",  value: "142",   note: "+12 this week",   icon: FileText   },
-  { label: "MRR",       value: "$7.1k", note: "↑ 12.4% MoM",    icon: TrendingUp },
-  { label: "Projects",  value: "18",    note: "4 in progress",   icon: GitBranch  },
-  { label: "Proposals", value: "7",     note: "2 awaiting sign", icon: Bell       },
-];
-
-const FEATURES = [
+// ─── FEATURES CONFIG ────────────────────────────────────────────────────────
+const FEATURES_CONFIG = [
   {
     icon: FileText,  label: "Invoice Generator",
     desc: "Create and export branded PDF invoices in seconds.",
-    route: "/dashboard",  tag: "PDF ENGINE",
-    stat: "142", statLabel: "generated",
+    route: "/invoices",  tag: "PDF ENGINE",
+    statKey: "invoiceCount", statLabel: "generated",
     rgb: "6,182,212",  hex: "#06b6d4",
   },
   {
     icon: Users,     label: "Client Vault",
     desc: "Centralised CRM for clients, contacts and projects.",
     route: "/clients",    tag: "CRM",
-    stat: "28",  statLabel: "active clients",
+    statKey: "clientCount",  statLabel: "active clients",
     rgb: "167,139,250", hex: "#a78bfa",
   },
   {
-    icon: BarChart3, label: "Financial HUD",
+    icon: KanbanSquare, label: "Deals Pipeline",
     desc: "Live MRR, revenue breakdowns and performance metrics.",
-    route: "/dashboard",  tag: "LIVE DATA",
-    stat: "↑12%", statLabel: "MoM growth",
+    route: "/deals",  tag: "SALES",
+    statKey: "dealCount", statLabel: "active deals",
     rgb: "52,211,153",  hex: "#34d399",
   },
   {
     icon: Terminal,  label: "Audit Ledger",
     desc: "Immutable event trail — every action, timestamped.",
     route: "/audit-log",  tag: "FORENSICS",
-    stat: "3.8k", statLabel: "events logged",
+    statKey: "auditCount", statLabel: "events logged",
     rgb: "251,191,36",  hex: "#fbbf24",
   },
   {
     icon: Shield,    label: "Proposals",
     desc: "Generate, send and track polished project proposals.",
     route: "/proposals",  tag: "DOCS",
-    stat: "7",   statLabel: "pending review",
+    statKey: "proposalCount",   statLabel: "pending review",
     rgb: "251,113,133", hex: "#fb7185",
   },
   {
-    icon: Activity,  label: "Watchlist",
-    desc: "Configure KPI thresholds and receive system alerts.",
-    route: "/dashboard",  tag: "KPI MONITOR",
-    stat: "5",   statLabel: "active alerts",
+    icon: Zap,  label: "Automations",
+    desc: "Configure visual workflows and system alerts.",
+    route: "/automations",  tag: "WORKFLOWS",
+    statKey: "automationCount",   statLabel: "active workflows",
     rgb: "56,189,248",  hex: "#38bdf8",
   },
 ];
@@ -167,7 +154,7 @@ function Background() {
 
 // ─── FEATURE CARD ─────────────────────────────────────────────────────────────
 
-function FeatureCard({ feat, index }: { feat: typeof FEATURES[0]; index: number }) {
+function FeatureCard({ feat, index }: { feat: any; index: number }) {
   const navigate  = useNavigate();
   const [hov, setHov] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -315,6 +302,53 @@ export default function Home() {
   const [time, setTime]       = useState(new Date());
   const [session]             = useState(() => Math.random().toString(36).slice(2, 11).toUpperCase());
   const [mounted, setMounted] = useState(false);
+
+  // Fetch real data from the backend
+  const { data: stats } = useQuery({
+    queryKey: ["dashboard-home"],
+    queryFn: async () => {
+      const res = await authFetch("/api/v1/dashboard");
+      if (!res.ok) throw new Error("Failed to fetch dashboard");
+      return res.json();
+    },
+    refetchInterval: 60000,
+  });
+
+  const fmtCurrency = (n: number) => {
+    if (!n) return "$0";
+    if (n >= 1000) return `$${(n / 1000).toFixed(1)}k`;
+    return `$${n}`;
+  };
+
+  const totalRevenue = stats?.totalRevenue || 0;
+  const pipelineValue = stats?.totalPipelineValue || 0;
+  const clientCount = stats?.clientCount || 0;
+  
+  const NAV_STATS = [
+    { label: "Uptime",  value: "99.98%", icon: Wifi,       accent: true  },
+    { label: "Clients", value: clientCount.toString(), icon: Users, accent: false },
+    { label: "Revenue", value: fmtCurrency(totalRevenue), icon: TrendingUp, accent: false },
+    { label: "DB",      value: "1.2 GB", icon: Database,   accent: false },
+  ];
+
+  const METRICS = [
+    { label: "Invoices",  value: (stats?.recentInvoices?.length || 0).toString(), note: "Active recent", icon: FileText },
+    { label: "Pipeline",  value: fmtCurrency(pipelineValue), note: "Total potential", icon: TrendingUp },
+    { label: "Projects",  value: (stats?.activeProjects || 0).toString(), note: "In progress", icon: GitBranch },
+    { label: "Overdue",   value: (stats?.overdueInvoicesCount || 0).toString(), note: "Requires action", icon: Bell },
+  ];
+
+  const FEATURES = FEATURES_CONFIG.map(f => {
+    let statValue = "0";
+    if (f.statKey === "invoiceCount") statValue = (stats?.recentInvoices?.length || 0).toString();
+    if (f.statKey === "clientCount") statValue = clientCount.toString();
+    if (f.statKey === "dealCount") statValue = (stats?.dealCount || 0).toString();
+    if (f.statKey === "auditCount") statValue = "1.2k"; // Static placeholder if not in stats
+    if (f.statKey === "proposalCount") statValue = "3"; // Static placeholder
+    if (f.statKey === "automationCount") statValue = "5"; // Static placeholder
+    
+    return { ...f, stat: statValue };
+  });
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => {

@@ -204,6 +204,8 @@ function SettingsPage() {
                 <div className="flex items-center gap-3 px-3 py-2 bg-black/20 border border-primary/30 rounded-lg focus-within:border-primary transition-colors">
                   <User className="h-4 w-4 text-primary/50" />
                   <input
+                    id="displayName"
+                    name="displayName"
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
@@ -219,6 +221,8 @@ function SettingsPage() {
                 </label>
                 <div className="flex items-center gap-3 px-3 py-2 bg-black/20 border border-primary/30 rounded-lg focus-within:border-primary transition-colors">
                   <input
+                    id="avatarUrl"
+                    name="avatarUrl"
                     type="url"
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
@@ -272,6 +276,8 @@ function SettingsPage() {
                 </label>
                 <div className="flex items-center gap-3 px-3 py-2 bg-black/20 border border-[#ff00ff]/30 rounded-lg focus-within:border-[#ff00ff] transition-colors">
                   <input
+                    id="webhookUrl"
+                    name="webhookUrl"
                     type="url"
                     value={webhookUrl}
                     onChange={(e) => setWebhookUrl(e.target.value)}
@@ -305,6 +311,8 @@ function SettingsPage() {
                 <div className="relative">
                   <Database className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                   <input
+                    id="splunkHec"
+                    name="splunkHec"
                     type="url"
                     value={splunkHec}
                     onChange={(e) => setSplunkHec(e.target.value)}
@@ -321,7 +329,10 @@ function SettingsPage() {
                 <div className="relative">
                   <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                   <input
+                    id="splunkToken"
+                    name="splunkToken"
                     type="password"
+                    autoComplete="off"
                     value={splunkToken}
                     onChange={(e) => setSplunkToken(e.target.value)}
                     placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"

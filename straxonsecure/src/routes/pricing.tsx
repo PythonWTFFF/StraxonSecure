@@ -22,7 +22,7 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "7-day free trial. $19/mo or $190/yr for full access to advanced labs, replay theatre, and PDF reports.",
+          "7-day free trial. Hobby, Pro, and Enterprise tiers for advanced labs, replay theatre, and SOC features.",
       },
     ],
   }),
@@ -35,7 +35,7 @@ declare global {
   }
 }
 
-const FEATURES_FREE = [
+const FEATURES_HOBBY = [
   "Basic attack labs (SQLi, XSS, Brute Force)",
   "SOC dashboard (read-only)",
   "Learning hub",
@@ -44,15 +44,23 @@ const FEATURES_FREE = [
 ];
 
 const FEATURES_PRO = [
-  "Everything in Free",
+  "Everything in Hobby",
   "Advanced labs: DDoS, Misconfig, all replay scenarios",
   "Attack Replay Theatre with playback controls",
-  "PDF report generation (Scanner, Architecture, Replay)",
+  "PDF report generation",
   "Save unlimited architectures to the cloud",
   "Compliance checker (OWASP/NIST)",
   "Live CVE Threat Intel feed",
+];
+
+const FEATURES_ENTERPRISE = [
+  "Everything in Pro",
+  "Custom dedicated instances",
   "Team workspaces & leaderboards",
   "Priority AI assistant (Gemini Pro)",
+  "SSO & Directory Sync",
+  "Dedicated Success Manager",
+  "White-labeled PDF reports",
 ];
 
 function loadRazorpayScript(): Promise<boolean> {
@@ -252,26 +260,26 @@ function PricingPage() {
         </div>
 
         {/* PRICING CARDS */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* FREE TIER */}
-          <CyberCard variant="plain" className="p-8 md:p-10 border-white/10 shadow-none">
-            <div className="text-xs font-mono tracking-widest text-[#00f3ff] uppercase mb-4">
-              Base Protocol
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {/* HOBBY TIER */}
+          <CyberCard variant="plain" className="p-6 md:p-8 border-white/10 shadow-none flex flex-col">
+            <div className="text-[10px] font-mono tracking-widest text-[#00f3ff] uppercase mb-4">
+              Hobby
             </div>
             <div className="mb-6 flex items-baseline gap-2">
-              <span className="font-display text-5xl font-bold text-white">$0</span>
-              <span className="text-slate-500 font-mono text-xs uppercase tracking-widest">
+              <span className="font-display text-4xl font-bold text-white">$0</span>
+              <span className="text-slate-500 font-mono text-[10px] uppercase tracking-widest">
                 /forever
               </span>
             </div>
-            <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+            <p className="text-xs text-slate-400 mb-8 leading-relaxed flex-1">
               Essential access to get a feel for the platform.
             </p>
 
-            <ul className="space-y-4 mb-10 text-sm text-slate-300">
-              {FEATURES_FREE.map((f) => (
+            <ul className="space-y-4 mb-10 text-xs text-slate-300">
+              {FEATURES_HOBBY.map((f) => (
                 <li key={f} className="flex gap-3 items-start">
-                  <Check className="h-5 w-5 text-[#00f3ff] shrink-0" />{" "}
+                  <Check className="h-4 w-4 text-[#00f3ff] shrink-0" />{" "}
                   <span className="leading-relaxed">{f}</span>
                 </li>
               ))}
@@ -281,7 +289,7 @@ function PricingPage() {
               <Link to="/auth">
                 <CyberButton
                   variant="ghost"
-                  className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300"
+                  className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300 text-xs"
                 >
                   Current Plan
                 </CyberButton>
@@ -293,39 +301,39 @@ function PricingPage() {
           <CyberCard
             variant="magenta"
             glow
-            className="p-8 md:p-10 border-[#ff003c]/40 shadow-[0_0_40px_rgba(255,0,60,0.1)] relative"
+            className="p-6 md:p-8 border-[#ff003c]/40 shadow-[0_0_40px_rgba(255,0,60,0.1)] relative flex flex-col transform md:-translate-y-4"
           >
             {/* Background Glow */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#ff003c]/5 to-transparent pointer-events-none" />
 
             <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="text-xs font-mono tracking-widest text-[#ff003c] uppercase font-bold">
+              <div className="text-[10px] font-mono tracking-widest text-[#ff003c] uppercase font-bold">
                 Pro Protocol
               </div>
-              <span className="text-[9px] font-mono px-2.5 py-1 rounded bg-[#ff003c]/10 text-[#ff003c] border border-[#ff003c]/30 tracking-widest">
-                7-DAY FREE TRIAL
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#ff003c]/10 text-[#ff003c] border border-[#ff003c]/30 tracking-widest">
+                POPULAR
               </span>
             </div>
 
             <div className="mb-4 flex items-baseline gap-2 relative z-10">
-              <span className="font-display text-5xl font-bold text-white drop-shadow-[0_0_10px_rgba(255,0,60,0.3)]">
+              <span className="font-display text-4xl font-bold text-white drop-shadow-[0_0_10px_rgba(255,0,60,0.3)]">
                 ${priceUsd}
               </span>
-              <span className="text-slate-400 font-mono text-xs uppercase tracking-widest">
+              <span className="text-slate-400 font-mono text-[10px] uppercase tracking-widest">
                 /{billing === "monthly" ? "mo" : "yr"}
               </span>
             </div>
-            <div className="text-xs text-[#ff003c]/80 mb-6 font-mono tracking-wider relative z-10">
+            <div className="text-[10px] text-[#ff003c]/80 mb-6 font-mono tracking-wider relative z-10">
               ≈ ₹{priceInr.toLocaleString("en-IN")} via Razorpay
             </div>
-            <p className="text-sm text-slate-300 mb-8 leading-relaxed relative z-10">
+            <p className="text-xs text-slate-300 mb-8 leading-relaxed relative z-10 flex-1">
               Advanced capabilities for serious operators and security teams.
             </p>
 
-            <ul className="space-y-4 mb-10 text-sm text-slate-200 relative z-10">
+            <ul className="space-y-4 mb-10 text-xs text-slate-200 relative z-10">
               {FEATURES_PRO.map((f) => (
                 <li key={f} className="flex gap-3 items-start">
-                  <Sparkles className="h-5 w-5 text-[#ff003c] shrink-0" />{" "}
+                  <Sparkles className="h-4 w-4 text-[#ff003c] shrink-0" />{" "}
                   <span className="leading-relaxed">{f}</span>
                 </li>
               ))}
@@ -334,34 +342,68 @@ function PricingPage() {
             <div className="space-y-3 mt-auto relative z-10">
               <CyberButton
                 variant="magenta"
-                className="w-full"
-                size="lg"
+                className="w-full text-xs"
+                size="sm"
                 onClick={startStripe}
                 disabled={busy !== null}
               >
-                <CreditCard className="h-4 w-4 mr-2" />{" "}
+                <CreditCard className="h-3 w-3 mr-2" />{" "}
                 {busy === "stripe" ? "Redirecting..." : "Pay with Stripe"}
               </CyberButton>
               <CyberButton
                 variant="cyan"
-                className="w-full"
-                size="lg"
+                className="w-full text-xs"
+                size="sm"
                 onClick={startRazorpay}
                 disabled={busy !== null}
               >
-                <IndianRupee className="h-4 w-4 mr-2" />{" "}
+                <IndianRupee className="h-3 w-3 mr-2" />{" "}
                 {busy === "razorpay" ? "Loading..." : "Pay with Razorpay"}
               </CyberButton>
               {import.meta.env.DEV && (
                 <CyberButton
                   variant="ghost"
-                  className="w-full mt-4 text-slate-400 hover:text-white border-dashed"
+                  className="w-full mt-4 text-slate-400 hover:text-white border-dashed text-xs"
                   onClick={startDeveloperBypass}
                   disabled={busy !== null}
                 >
                   {busy === "dev" ? "Activating..." : "[DEV TEST] Override Pro Tier"}
                 </CyberButton>
               )}
+            </div>
+          </CyberCard>
+
+          {/* ENTERPRISE TIER */}
+          <CyberCard variant="plain" className="p-6 md:p-8 border-white/10 shadow-none flex flex-col">
+            <div className="text-[10px] font-mono tracking-widest text-[#00f3ff] uppercase mb-4">
+              Enterprise
+            </div>
+            <div className="mb-6 flex items-baseline gap-2">
+              <span className="font-display text-4xl font-bold text-white">Custom</span>
+            </div>
+            <p className="text-xs text-slate-400 mb-8 leading-relaxed flex-1">
+              For large organizations needing dedicated infrastructure and white-glove support.
+            </p>
+
+            <ul className="space-y-4 mb-10 text-xs text-slate-300">
+              {FEATURES_ENTERPRISE.map((f) => (
+                <li key={f} className="flex gap-3 items-start">
+                  <Check className="h-4 w-4 text-[#00f3ff] shrink-0" />{" "}
+                  <span className="leading-relaxed">{f}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-auto">
+              <CyberButton
+                variant="ghost"
+                className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300 text-xs"
+                onClick={() => {
+                  window.location.href = "mailto:sales@straxon.io";
+                }}
+              >
+                Contact Sales
+              </CyberButton>
             </div>
           </CyberCard>
         </div>

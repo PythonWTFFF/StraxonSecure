@@ -3,6 +3,7 @@ import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { checkFeatureUsage, logFeatureUsage } from "@/server/usage";
 import { logAudit } from "@/server/security/audit";
+import { createRateLimiter } from "@/server/security/rateLimit";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -26,7 +27,7 @@ const SYSTEM_PROMPTS: Record<string, string> = {
 };
 
 export const askAI = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(15, 60, "rate_limit:ask_ai")])
   .validator((input: AskAIInput) => {
     if (!input || !Array.isArray(input.messages)) {
       throw new Error("Invalid input: messages required");

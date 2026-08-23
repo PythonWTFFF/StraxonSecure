@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { InvoicePreview } from "@/components/InvoicePreview";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { generateInvoicePDF, type InvoiceData } from "@/lib/generateInvoicePDF";
-import { addSavedInvoice, getSavedInvoices, cloneInvoice } from "@/lib/mockApi";
+import { fetchInvoices, saveInvoice, cloneInvoiceApi } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { debugLog } from "@/components/DebugConsole";
 import { useWorkspace } from "@/lib/workspaces";
 import { toast } from "sonner";
@@ -58,7 +59,34 @@ type InvoiceForm = z.infer<typeof invoiceSchema>;
 export default function Invoices() {
   const [showPreview, setShowPreview] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
-  const [savedInvoices, setSavedInvoices] = useState(getSavedInvoices());
+  
+  const queryClient = useQueryClient();
+  const { data: savedInvoices = [], isLoading } = useQuery({
+    queryKey: ["invoices"],
+    queryFn: fetchInvoices
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: saveInvoice,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success(`Invoice ${data.invoice.invoiceNumber} saved`);
+      debugLog("info", `Invoice saved: ${data.invoice.invoiceNumber}`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Save failed: ${error.message}`);
+      debugLog("error", `Save failed: ${error.message}`);
+    }
+  });
+  
+  const cloneMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: any }) => cloneInvoiceApi(id, data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success(`Cloned → ${data.invoice.invoiceNumber}`);
+    }
+  });
+
   const { workspace } = useWorkspace();
   const lastSaveRef = useRef<string>("");
 
@@ -217,19 +245,30 @@ export default function Invoices() {
       );
       return;
     }
-    const saved = addSavedInvoice(watchedValues);
-    setSavedInvoices(getSavedInvoices());
-    toast.success(`Invoice ${saved.invoiceNumber} saved`);
-    debugLog("info", `Invoice saved: ${saved.invoiceNumber}`);
-  }, [watchedValues]);
+    saveMutation.mutate(watchedValues);
+  }, [watchedValues, saveMutation]);
 
-  const handleClone = useCallback((id: string) => {
-    const cloned = cloneInvoice(id);
-    if (cloned) {
-      setSavedInvoices(getSavedInvoices());
-      toast.success(`Cloned → ${cloned.invoiceNumber}`);
+  const handleClone = useCallback((inv: any) => {
+    cloneMutation.mutate({ id: inv.id, data: inv });
+  }, [cloneMutation]);
+
+  const handleSendInvoice = useCallback(async (invoiceId: string) => {
+    const toastId = toast.loading("Sending invoice...");
+    try {
+      const res = await authFetch("/api/v1/communications/send-invoice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ invoiceId })
+      });
+      if (!res.ok) throw new Error("Failed to send");
+      toast.success("Invoice sent via email", { id: toastId });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    } catch (e: any) {
+      toast.error(e.message, { id: toastId });
     }
-  }, []);
+  }, [queryClient]);
 
   const fieldError = (name: string): string | undefined => {
     const parts = name.split(".");
@@ -692,11 +731,23 @@ export default function Invoices() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleClone(inv.id)}
+                  onClick={() => handleClone(inv)}
                   className="text-muted-foreground hover:text-primary p-1"
+                  title="Clone Invoice"
                 >
                   <Copy className="w-3.5 h-3.5" />
                 </Button>
+                {inv.status !== "paid" && inv.status !== "sent" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSendInvoice(inv.id)}
+                    className="text-muted-foreground hover:text-indigo-400 p-1"
+                    title="Send via Email"
+                  >
+                    <Activity className="w-3.5 h-3.5" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>

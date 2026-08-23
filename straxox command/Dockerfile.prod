@@ -1,0 +1,48 @@
+# Stage 1: Build Frontend (Vite)
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Stage 2: Build Backend (Node.js)
+FROM node:20-alpine AS backend-builder
+WORKDIR /app
+RUN apk add --no-cache python3 make g++
+COPY server/package*.json ./
+RUN npm ci --legacy-peer-deps
+COPY server/ ./
+# Prisma generate
+RUN npx prisma generate
+RUN npm run build
+
+# Stage 3: Production Server
+FROM node:20-alpine
+WORKDIR /app
+
+# Add build tools for native dependencies like argon2
+RUN apk add --no-cache python3 make g++
+
+# Install dependencies (only production)
+COPY server/package*.json ./
+RUN npm ci --omit=dev --legacy-peer-deps
+
+# Copy backend built files
+COPY --from=backend-builder /app/dist ./dist
+# Copy prisma files
+COPY --from=backend-builder /app/prisma ./prisma
+COPY --from=backend-builder /app/prisma.config.ts ./
+# Generate prisma client in production image
+RUN npx prisma generate
+
+# Copy frontend built files to the root level `dist` folder 
+# (this is where app.ts expects them: path.join(__dirname, "../../dist"))
+COPY --from=frontend-builder /app/dist /dist
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npx prisma db seed && node dist/index.js"]

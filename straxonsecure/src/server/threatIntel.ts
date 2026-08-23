@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
+import { createRateLimiter } from "@/server/security/rateLimit";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -17,6 +18,7 @@ interface CveItem {
 
 import { withSpan } from "@/server/telemetry";
 import { sharedCache } from "@/server/utils/cache";
+import { getCache, setCache } from "@/server/redis";
 
 // ─── Fetch & Cache CVEs from NVD ─────────────────────────────────────────────
 
@@ -108,7 +110,7 @@ export const fetchThreatIntel = createServerFn({ method: "GET" })
 // ─── AI Analyze a Specific CVE ────────────────────────────────────────────────
 
 export const analyzeCVE = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(10, 60, "rate_limit:ai_cve")])
   .validator((d) =>
     z
       .object({
@@ -120,6 +122,12 @@ export const analyzeCVE = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
+    const cacheKey = `cve-analysis:${data.cveId}`;
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return { analysis: cached };
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("AI not configured");
 
@@ -153,7 +161,14 @@ Be concise, technical, and actionable. Max 400 words.`;
 
     if (!res.ok) throw new Error("AI analysis failed");
     const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    return { analysis: json.choices?.[0]?.message?.content ?? "" };
+    const analysis = json.choices?.[0]?.message?.content ?? "";
+    
+    // Cache for 24 hours
+    if (analysis) {
+      await setCache(cacheKey, analysis, 86400);
+    }
+    
+    return { analysis };
   });
 
 // ─── Search CVEs ──────────────────────────────────────────────────────────────

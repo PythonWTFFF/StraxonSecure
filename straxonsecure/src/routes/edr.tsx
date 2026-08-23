@@ -140,7 +140,7 @@ function AgentDashboard() {
             </CyberCard>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
-              {allowedAgents.map((agent) => (
+              {allowedAgents.map((agent: any) => (
                 <CyberCard
                   key={agent.agent_id}
                   variant={agent.risk_score > 5 ? "magenta" : "teal"}

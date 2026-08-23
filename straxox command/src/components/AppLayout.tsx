@@ -4,6 +4,10 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DebugConsole } from "@/components/DebugConsole";
 import { useWorkspace } from "@/lib/workspaces";
 import { useState, useEffect } from "react";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { Keyboard } from "lucide-react";
+import { CommandCenterCopilot } from "@/components/CommandCenterCopilot";
+import { LivePresence } from "@/components/LivePresence";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { workspace } = useWorkspace();
@@ -36,6 +40,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="w-2 h-2 rounded-full bg-success animate-pulse-glow" />
               <span className="text-xs font-mono text-muted-foreground">SYS:ONLINE</span>
               <span className="text-[10px] font-mono text-muted-foreground/50 hidden sm:inline">· {workspace.name}</span>
+              <div className="w-px h-4 bg-border/50 mx-1" />
+              <LivePresence />
+              <button
+                onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
+                className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700"
+              >
+                <Keyboard className="w-3 h-3" />
+                <span>⌘K</span>
+              </button>
+              <NotificationBell />
             </div>
           </header>
           <main className="flex-1 p-6 grid-bg overflow-auto">
@@ -45,6 +59,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+      <CommandCenterCopilot />
       <DebugConsole />
     </SidebarProvider>
   );

@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
@@ -75,28 +75,29 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/60 backdrop-blur-xl border border-border/50 rounded-xl;
-    box-shadow: 0 0 30px -10px hsl(185 100% 50% / 0.05),
-                inset 0 1px 0 0 hsl(215 25% 18% / 0.3);
+    @apply bg-card/40 backdrop-blur-2xl border border-border/40 rounded-xl;
+    box-shadow: 0 4px 30px -10px hsl(185 100% 50% / 0.05),
+                inset 0 1px 0 0 hsl(215 25% 18% / 0.4);
   }
 
   .glass-card-hover {
-    @apply glass-card transition-all duration-300;
+    @apply glass-card transition-all duration-500 ease-out;
   }
   .glass-card-hover:hover {
-    box-shadow: 0 0 40px -10px hsl(185 100% 50% / 0.1),
-                inset 0 1px 0 0 hsl(215 25% 18% / 0.5);
-    border-color: hsl(185 100% 50% / 0.2);
+    @apply bg-card/60 border-cyan-500/30;
+    box-shadow: 0 10px 40px -10px hsl(185 100% 50% / 0.15),
+                inset 0 1px 0 0 hsl(215 25% 18% / 0.6);
+    transform: translateY(-2px);
   }
 
   .glow-text-cyan {
     color: hsl(185 100% 50%);
-    text-shadow: 0 0 20px hsl(185 100% 50% / 0.3);
+    text-shadow: 0 0 20px hsl(185 100% 50% / 0.4);
   }
 
   .glow-text-purple {
     color: hsl(270 80% 60%);
-    text-shadow: 0 0 20px hsl(270 80% 60% / 0.3);
+    text-shadow: 0 0 20px hsl(270 80% 60% / 0.4);
   }
 
   .font-mono {
@@ -104,9 +105,11 @@
   }
 
   .grid-bg {
-    background-image: linear-gradient(hsl(215 25% 15% / 0.3) 1px, transparent 1px),
-                       linear-gradient(90deg, hsl(215 25% 15% / 0.3) 1px, transparent 1px);
+    background-image: linear-gradient(hsl(215 25% 15% / 0.2) 1px, transparent 1px),
+                       linear-gradient(90deg, hsl(215 25% 15% / 0.2) 1px, transparent 1px);
     background-size: 40px 40px;
+    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
   }
 
   .gradient-cyan-purple {

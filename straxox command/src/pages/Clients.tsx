@@ -9,6 +9,8 @@ import {
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { fetchClients, saveClient } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -51,52 +53,7 @@ interface AddClientForm {
   invoiceDue: string;
 }
 
-// ─── Seed data ────────────────────────────────────────────────────────────────
-
-const SEED_CLIENTS: Client[] = [
-  {
-    id: "ACM-001",
-    name: "Acme Corporation",
-    email: "contact@acme.com",
-    ltv: 1240000,
-    projects: 4,
-    health: 98,
-    status: "active",
-    lastActivity: "2 hours ago",
-    industry: "Enterprise SaaS",
-    color: "#06b6d4",
-    assets: { ip: "192.168.1.42", repo: "github.com/acme/web", figma: "figma.com/acme", env: "PROD_KEY=sk_live_xxx" },
-    invoiceDue: null,
-  },
-  {
-    id: "TEC-002",
-    name: "TechStart Inc",
-    email: "admin@techstart.io",
-    ltv: 680000,
-    projects: 2,
-    health: 74,
-    status: "active",
-    lastActivity: "1 day ago",
-    industry: "FinTech",
-    color: "#a78bfa",
-    assets: { ip: "10.0.0.55", repo: "github.com/techstart/app", figma: "figma.com/techstart", env: "DB_URL=postgres://xxx" },
-    invoiceDue: "₹45,000 overdue",
-  },
-  {
-    id: "EDU-003",
-    name: "EduLearn Platform",
-    email: "ops@edulearn.dev",
-    ltv: 920000,
-    projects: 3,
-    health: 91,
-    status: "active",
-    lastActivity: "5 hours ago",
-    industry: "EdTech",
-    color: "#34d399",
-    assets: { ip: "172.16.0.12", repo: "github.com/edulearn/lms", figma: "figma.com/edulearn", env: "API_SECRET=abc123def" },
-    invoiceDue: null,
-  },
-];
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCENT_COLORS = [
   "#06b6d4", "#a78bfa", "#34d399", "#f59e0b",
@@ -624,7 +581,26 @@ function AddClientModal({
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function Clients() {
-  const [clients, setClients]     = useState<Client[]>(SEED_CLIENTS);
+  const queryClient = useQueryClient();
+  
+  const { data: clients = [], isLoading } = useQuery({
+    queryKey: ["clients"],
+    queryFn: fetchClients
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: saveClient,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(`${data.client.name} added to vault`, {
+        description: `${data.client.id} · ${data.client.industry}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to add client: ${error.message}`);
+    }
+  });
+
   const [unmasked, setUnmasked]   = useState<Record<string, boolean>>({});
   const [expanded, setExpanded]   = useState<Record<string, boolean>>({});
   const [drm, setDrm]             = useState<Record<string, DrmSettings>>({});
@@ -645,7 +621,7 @@ export default function Clients() {
     [clients, search]
   );
 
-  const addClient = (c: Client) => setClients((p) => [c, ...p]);
+  const addClient = (c: Client) => saveMutation.mutate(c);
 
   const toggle       = (id: string) => setUnmasked((p) => ({ ...p, [id]: !p[id] }));
   const toggleExpand = (id: string) => setExpanded((p) => ({ ...p, [id]: !p[id] }));

@@ -2,3 +2,10 @@ node_modules/
 __pycache__/
 venv/
 .env
+create_admin.mjs
+patch.py
+fix_patch.py
+bypass_token.py
+terraform/tfplan
+*.tfstate
+*.tfstate.*

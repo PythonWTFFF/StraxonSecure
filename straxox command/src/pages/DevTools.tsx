@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePulseStore } from "@/stores/pulse.store";
+import { authFetch } from "@/lib/api";
 import {
   Key, Webhook, Copy, Check, Zap, Send, Loader2, Trash2,
   Eye, EyeOff, RefreshCw, Terminal, Shield, Clock, Globe,
@@ -13,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { InfrastructureMap } from "@/components/layout/InfrastructureMap";
 
 // ─── SELF-CONTAINED MOCK API (no external import needed) ─────────────────────
 
@@ -23,21 +26,27 @@ async function mockGenerateApiKey() {
   return `stx_live_${seg(8)}_${seg(8)}_${seg(8)}`;
 }
 
-async function mockFireWebhook(event, { url }) {
-  await new Promise(r => setTimeout(r, 600 + Math.random() * 900));
-  // Simulate realistic success/failure rates
-  const ok = url.startsWith("https://") && Math.random() > 0.2;
-  return {
-    ok,
-    status: ok ? 200 : (Math.random() > 0.5 ? 500 : 422),
-    latency: Math.round(80 + Math.random() * 340),
-    payload: {
+async function realFireWebhook(event, { url, customPayload }) {
+  const t0 = Date.now();
+  try {
+    const body = JSON.stringify({
       event,
       timestamp: new Date().toISOString(),
       version: "v1",
-      data: { id: `evt_${Math.random().toString(36).substr(2, 9)}`, source: "straxon-labs" },
-    },
-  };
+      data: customPayload ? JSON.parse(customPayload) : { source: "straxon-labs" },
+    });
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Straxon-Event": event },
+      body,
+      signal: AbortSignal.timeout(10000),
+    });
+    const latency = Date.now() - t0;
+    return { ok: res.ok, status: res.status, latency, payload: JSON.parse(body) };
+  } catch (err: any) {
+    const latency = Date.now() - t0;
+    return { ok: false, status: 0, latency, payload: { error: err.message } };
+  }
 }
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
@@ -273,6 +282,12 @@ const ENV_CHECKS = [
   { id: "queue", label: "Event Queue",       url: "queue.straxonlabs.com"  },
 ];
 
+  const ENV_CHECKS_REAL = [
+  { id: "backend", label: "Node.js API",      url: "/api/v1/health",            internal: true  },
+  { id: "pulse",   label: "Go Pulse WS",      url: "http://localhost:8081/health", internal: false },
+  { id: "redis",   label: "Redis Bus",        url: "/api/v1/health",            internal: true  },
+];
+
 function EnvHealthPanel({ toast }) {
   const [results, setResults] = useState({});
   const [running, setRunning] = useState(false);
@@ -280,11 +295,19 @@ function EnvHealthPanel({ toast }) {
   const runChecks = async () => {
     setRunning(true);
     setResults({});
-    for (const chk of ENV_CHECKS) {
-      await new Promise(r => setTimeout(r, 300 + Math.random() * 500));
-      const ok      = Math.random() > 0.15;
-      const latency = Math.round(12 + Math.random() * 180);
-      setResults(prev => ({ ...prev, [chk.id]: { ok, latency } }));
+
+    // Check real internal services
+    for (const chk of ENV_CHECKS_REAL) {
+      const t0 = Date.now();
+      try {
+        const res = chk.internal
+          ? await authFetch(chk.url)
+          : await fetch(chk.url, { signal: AbortSignal.timeout(4000) });
+        const latency = Date.now() - t0;
+        setResults(prev => ({ ...prev, [chk.id]: { ok: res.ok, latency } }));
+      } catch {
+        setResults(prev => ({ ...prev, [chk.id]: { ok: false, latency: Date.now() - t0 } }));
+      }
     }
     setRunning(false);
     toast.success("Health checks complete");
@@ -342,6 +365,71 @@ function EnvHealthPanel({ toast }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ─── LIVE REQUEST LOG (subscribes to pulse.store) ────────────────────────────
+
+function LiveRequestLog() {
+  const { metrics, isConnected } = usePulseStore();
+  const [log, setLog] = useState<{ id: number; ts: string; rps: number; lat: number; mem: number; cpu: number }[]>([]);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isConnected) return;
+    const entry = {
+      id:  Date.now(),
+      ts:  new Date().toLocaleTimeString("en-US", { hour12: false }),
+      rps: metrics.requestsPerSecond,
+      lat: metrics.latencyMs,
+      mem: metrics.memoryUsage,
+      cpu: metrics.cpuUsage,
+    };
+    setLog(prev => [...prev.slice(-49), entry]); // keep last 50
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [metrics.lastUpdated]);
+
+  return (
+    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+            <Activity className="w-3.5 h-3.5 text-cyan-400" />
+          </div>
+          <div>
+            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest">Live Request Log</h3>
+            <p className="text-[9px] font-mono text-slate-600 mt-0.5">Real-time stream from Straxon Pulse</p>
+          </div>
+        </div>
+        <span className={`text-[9px] font-mono px-2 py-1 rounded border flex items-center gap-1.5 ${
+          isConnected ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10" : "text-slate-600 border-slate-800"
+        }`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-slate-600"}`} />
+          {isConnected ? `${metrics.requestsPerSecond} req/s` : "No signal"}
+        </span>
+      </div>
+      <div className="font-mono text-[10px] max-h-[220px] overflow-y-auto">
+        <div className="grid grid-cols-5 gap-2 px-4 py-2 text-slate-600 uppercase tracking-widest text-[8px] border-b border-slate-800/50 sticky top-0 bg-slate-900">
+          <span>Time</span><span>Req/s</span><span>Latency</span><span>CPU</span><span>Mem</span>
+        </div>
+        {log.length === 0 ? (
+          <div className="flex items-center justify-center py-8 text-slate-600">
+            {isConnected ? "Waiting for data…" : "Connect Pulse to see live logs"}
+          </div>
+        ) : (
+          log.map(e => (
+            <div key={e.id} className="grid grid-cols-5 gap-2 px-4 py-1.5 border-b border-slate-800/30 hover:bg-slate-800/20 transition-colors">
+              <span className="text-slate-500">{e.ts}</span>
+              <span className="text-cyan-400 font-bold">{e.rps}</span>
+              <span className={e.lat > 100 ? "text-amber-400" : "text-emerald-400"}>{e.lat.toFixed(1)}ms</span>
+              <span className={e.cpu > 80 ? "text-rose-400" : "text-slate-300"}>{e.cpu.toFixed(1)}%</span>
+              <span className={e.mem > 80 ? "text-rose-400" : "text-slate-300"}>{e.mem.toFixed(1)}%</span>
+            </div>
+          ))
+        )}
+        <div ref={bottomRef} />
       </div>
     </div>
   );
@@ -468,11 +556,11 @@ export default function DevTools() {
     toast.success("Keys exported (masked)");
   };
 
-  // ── Fire webhook ──
+  // ── Fire webhook (real POST) ──
   const handleFireWebhook = async () => {
     if (!webhookUrl.trim()) { toast.error("Enter a webhook URL"); return; }
     setFiring(true);
-    const result = await mockFireWebhook(selectedEvent, { url: webhookUrl });
+    const result = await realFireWebhook(selectedEvent, { url: webhookUrl, customPayload: showPayload ? customPayload : null });
     const entry = {
       id:      Date.now(),
       event:   selectedEvent,
@@ -487,7 +575,7 @@ export default function DevTools() {
     if (result.ok) {
       toast.success(`${selectedEvent} → ${result.status} OK (${result.latency}ms)`);
     } else {
-      toast.error(`${selectedEvent} → ${result.status} FAILED`);
+      toast.error(`${selectedEvent} → ${result.status || "Network Error"} FAILED`);
     }
   };
 
@@ -549,6 +637,15 @@ export default function DevTools() {
             <span className="text-slate-600 uppercase tracking-widest">Avg Latency</span>
           </div>
         </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="mb-6"
+      >
+        <InfrastructureMap />
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -812,6 +909,11 @@ export default function DevTools() {
           {/* ── Rate Limits ── */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <RateLimitPanel />
+          </motion.div>
+
+          {/* ── Live Request Log ── */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+            <LiveRequestLog />
           </motion.div>
         </div>
 

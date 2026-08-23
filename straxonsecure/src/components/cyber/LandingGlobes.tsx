@@ -127,7 +127,8 @@ export function CyberEarth() {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
 
-      const protocols = token ? ["supabase", token] : undefined;
+      // Only send 'supabase' as subprotocol since the backend doesn't check the token anymore
+      const protocols = ["supabase"];
       ws = new WebSocket(`${rawUrl}/api/ml/edr-stream`, protocols);
 
       ws.onopen = () => {

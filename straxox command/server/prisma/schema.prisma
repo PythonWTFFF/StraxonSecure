@@ -1,0 +1,322 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [vector]
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      User[]
+  clients    Client[]
+  invoices   Invoice[]
+  proposals  Proposal[]
+  deals      Deal[]
+  projects   Project[]
+  tasks      Task[]
+  aiInsights AIInsight[]
+  threads    Thread[]
+  messages   Message[]
+  outboundWebhooks OutboundWebhook[]
+  dataSubjectRequests DataSubjectRequest[]
+  retentionPolicies RetentionPolicy[]
+  consentRecords ConsentRecord[]
+}
+
+model User {
+  id             String       @id @default(uuid())
+  email          String       @unique
+  name           String
+  passwordHash   String
+  role           String       @default("Employee")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  sessions Session[]
+  tasks    Task[]
+  pushSubscriptions PushSubscription[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AuditLogEntry {
+  id             String   @id @default(uuid())
+  userId         String
+  action         String
+  entityType     String
+  entityId       String
+  metadata       Json
+  prevHash       String?
+  hash           String?
+  organizationId String
+  createdAt      DateTime @default(now())
+}
+
+model Invoice {
+  id                    String       @id @default(uuid())
+  invoiceNumber         String
+  clientName            String
+  clientEmail           String
+  dueDate               String
+  currency              String       @default("INR")
+  taxRate               Float        @default(18)
+  discountType          String       @default("percentage")
+  discountValue         Float        @default(0)
+  paymentLink           String?
+  notes                 String?
+  status                String       @default("draft")
+  stripePaymentIntentId String?
+  paymentDate           DateTime?
+  isRecurring           Boolean      @default(false)
+  recurrenceInterval    String?
+  paymentStatus         String       @default("unpaid")
+  amountPaid            Float        @default(0)
+  organizationId        String
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  lineItems LineItem[]
+
+  @@unique([organizationId, invoiceNumber])
+}
+
+model LineItem {
+  id          String  @id @default(uuid())
+  description String
+  category    String
+  quantity    Int
+  rate        Float
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Client {
+  id             String       @id @default(uuid())
+  name           String
+  email          String
+  ltv            Float
+  projects       Int
+  health         Int          @default(100)
+  status         String       @default("active")
+  lastActivity   String       @default("just now")
+  industry       String
+  color          String
+  ip             String?
+  repo           String?
+  figma          String?
+  env            String?
+  invoiceDue     String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  deals                Deal[]
+  projectList          Project[]
+  clientPortalSessions ClientPortalSession[]
+  threads              Thread[]
+}
+
+model Proposal {
+  id               String       @id @default(uuid())
+  docType          String
+  refNum           String
+  clientName       String
+  projectName      String
+  author           String
+  version          String
+  date             String
+  industry         String
+  contactEmail     String
+  executiveSummary String
+  systemScope      String?
+  objectives       String?
+  techStack        String?
+  nfReqs           String?
+  apiNotes         String?
+  progressBody     String?
+  budgetTotal      String?
+  budgetSpent      String?
+  nextSteps        String?
+  reqs             Json         @default("[]")
+  milestones       Json         @default("[]")
+  team             Json         @default("[]")
+  risks            Json         @default("[]")
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([organizationId, refNum])
+}
+
+model Deal {
+  id                String       @id @default(uuid())
+  clientId          String
+  client            Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  stage             String       @default("Lead")
+  value             Float        @default(0)
+  expectedCloseDate String?
+  notes             String?
+  probability       Int?
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model Project {
+  id             String       @id @default(uuid())
+  clientId       String
+  client         Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name           String
+  status         String       @default("active")
+  repoUrl        String?
+  figmaUrl       String?
+  envUrl         String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  tasks Task[]
+}
+
+model Task {
+  id             String       @id @default(uuid())
+  projectId      String
+  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title          String
+  status         String       @default("todo") // todo, in-progress, blocked, review, completed
+  assigneeId     String?
+  assignee       User?        @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  dueDate        String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model ClientPortalSession {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AIInsight {
+  id             String                       @id @default(uuid())
+  sourceType     String // e.g., "proposal", "client", "task"
+  sourceId       String // The ID of the original entity
+  content        String // Text chunk to be embedded
+  embedding      Unsupported("vector(1536)")? // OpenAI embedding size
+  organizationId String
+  organization   Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime                     @default(now())
+}
+
+model Thread {
+  id             String    @id @default(uuid())
+  clientId       String
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  subject        String
+  status         String    @default("open")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  messages       Message[]
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  threadId       String
+  thread         Thread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderType     String    // "agency" or "client"
+  senderId       String?
+  content        String
+  resendMessageId String?
+  status         String    @default("sent") // sent, delivered, read
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+}
+
+model OutboundWebhook {
+  id             String   @id @default(uuid())
+  organizationId String
+  event          String   // e.g. "deal.won", "invoice.paid", or "*"
+  url            String
+  secret         String?  // for signing payloads
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model DataSubjectRequest {
+  id          String    @id @default(uuid())
+  requestType String    // export | erase | rectify
+  subjectType String    // client | user
+  subjectId   String
+  status      String    @default("pending") // pending | processing | completed | rejected
+  requestedAt DateTime  @default(now())
+  completedAt DateTime?
+  requestedBy String
+  exportUrl   String?
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model RetentionPolicy {
+  id            String @id @default(uuid())
+  entityType    String // Deal, Invoice, AuditLogEntry, Session, etc.
+  retentionDays Int
+  onExpiry      String // anonymize | delete
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model ConsentRecord {
+  id            String    @id @default(uuid())
+  subjectType   String    // client | user
+  subjectId     String
+  consentType   String
+  policyVersion String
+  grantedAt     DateTime
+  revokedAt     DateTime?
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint       String
+  p256dh         String
+  auth           String
+  deviceType     String    @default("web")
+  createdAt      DateTime  @default(now())
+}

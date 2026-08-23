@@ -12,8 +12,26 @@ import { useAuth } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { SplashScreen } from "@/components/SplashScreen";
+import { BottomNav } from "@/components/cyber/BottomNav";
 import { getSecurityHeaders } from "@/server/security/headers";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as Sentry from "@sentry/react";
+import { analytics } from "@/lib/analytics";
+
+// Initialize Sentry
+if (typeof window !== "undefined") {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN || "",
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+    tracesSampleRate: 1.0,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+    enabled: !!import.meta.env.VITE_SENTRY_DSN
+  });
+}
 
 const queryClient = new QueryClient();
 
@@ -25,6 +43,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Track pageviews
+    analytics.track("$pageview", { path: location.pathname });
+
     if (!loading && !user && !PUBLIC_ROUTES.includes(location.pathname)) {
       navigate({ to: "/auth", replace: true });
     }
@@ -72,7 +93,8 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#020610" },
       { title: "Straxon Secure — Cyber Attack Simulation & Defense Platform" },
       {
         name: "description",
@@ -91,8 +113,9 @@ export const Route = createRootRoute({
       { name: "twitter:image", content: "https://straxonlabs.vercel.app/straxonlogo.jpeg" },
     ],
     links: [
+      { rel: "manifest", href: "/manifest.json" },
       { rel: "icon", type: "image/jpeg", href: "/straxonlogo.jpeg" },
-      { rel: "apple-touch-icon", href: "/straxonlogo.jpeg" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
       { rel: "stylesheet", href: appCss },
       {
         rel: "stylesheet",
@@ -121,6 +144,29 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").then(
+          (registration) => console.log("SW registered:", registration.scope),
+          (error) => console.log("SW registration failed:", error)
+        );
+      });
+    }
+    
+    // iOS specific install prompt logic could go here
+    const isIos = () => {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      return /iphone|ipad|ipod/.test(userAgent);
+    };
+    const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator as any).standalone;
+    
+    if (isIos() && !isInStandaloneMode()) {
+      console.log("Recommend user to add to home screen");
+      // Could show a toast here instructing iOS users to add to home screen
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <SplashScreen />
@@ -128,6 +174,7 @@ function RootComponent() {
         <AppShell>
           <Outlet />
         </AppShell>
+        <BottomNav />
       </ProtectedRoute>
       <Toaster />
     </QueryClientProvider>

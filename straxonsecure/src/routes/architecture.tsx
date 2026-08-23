@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useCallback, useState, useRef, useEffect } from "react";
 import ReactFlow, {
   Background,
@@ -492,7 +492,7 @@ function nextId() {
 
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 function Architecture() {
-  const { hasAccess } = useSubscription();
+  const { hasAccess, loading: subLoading } = useSubscription();
   const { user } = useAuth();
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [nodes, setNodes] = useState<Node[]>([
@@ -883,6 +883,10 @@ Connections: ${edges
       return next;
     });
   };
+
+  if (!subLoading && !hasAccess) {
+    return <Navigate to="/pricing" replace />;
+  }
 
   return (
     <div className="px-4 lg:px-8 py-6 max-w-[1600px] mx-auto space-y-5">

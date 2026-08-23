@@ -7,8 +7,10 @@ import { SectionHeading } from "@/components/cyber/SectionHeading";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { getChallenges, submitFlag } from "@/server/ctf";
 import { callAuthed } from "@/lib/serverCall";
+import { Navigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/ctf")({
   head: () => ({
@@ -22,6 +24,7 @@ export const Route = createFileRoute("/ctf")({
 
 function CTFPage() {
   const { user, loading: authLoading } = useAuth();
+  const { hasAccess, loading: subLoading } = useSubscription();
   const [challenges, setChallenges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChal, setSelectedChal] = useState<any | null>(null);
@@ -40,9 +43,9 @@ function CTFPage() {
   };
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || subLoading || !hasAccess) return;
     loadChallenges();
-  }, [authLoading]);
+  }, [authLoading, subLoading, hasAccess]);
 
   // Helper to map category to MITRE ATT&CK
   const getMitreMapping = (category: string) => {
@@ -85,6 +88,10 @@ function CTFPage() {
         Sign in to access CTF challenges.
       </div>
     );
+  }
+
+  if (!subLoading && !hasAccess) {
+    return <Navigate to="/pricing" replace />;
   }
 
   return (

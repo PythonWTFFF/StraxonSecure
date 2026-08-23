@@ -89,7 +89,9 @@ function AuthPage() {
             </Label>
             <Input
               id="email"
+              name="email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -103,7 +105,9 @@ function AuthPage() {
             </Label>
             <Input
               id="password"
+              name="password"
               type="password"
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
               required
               minLength={6}
               value={password}

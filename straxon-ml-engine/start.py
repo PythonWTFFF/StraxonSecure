@@ -23,19 +23,22 @@ def main():
     print("=" * 60)
     
     # Check if requirements are installed
+    print("[*] Checking dependencies...")
     try:
-        import fastapi
-        import uvicorn
-    except ImportError:
-        print("[!] Missing dependencies. Installing...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-    
-    try:
-        import sklearn
-        print("[+] scikit-learn detected — Isolation Forest will be active")
-    except ImportError:
-        print("[!] scikit-learn not installed — falling back to heuristic detection")
-        print("    To enable ML: pip install scikit-learn numpy")
+        import pkg_resources
+        requirements = []
+        with open("requirements.txt", "r") as f:
+            for line in f:
+                line = line.strip()
+                # Handle standard lines, skip comments
+                if line and not line.startswith("#"):
+                    requirements.append(line)
+        pkg_resources.require(requirements)
+        print("[+] All core dependencies met.")
+    except Exception as e:
+        print(f"[!] Missing or outdated dependencies detected: {e}")
+        print("[*] Auto-installing from requirements.txt...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "--quiet"])
     
     try:
         import docker
