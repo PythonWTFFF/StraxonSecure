@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: straxon-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - secure.straxon.io
+    secretName: straxon-tls
+  rules:
+  - host: secure.straxon.io
+    http:
+      paths:
+      # Route /api/ml traffic to ML Engine
+      - path: /api/ml
+        pathType: Prefix
+        backend:
+          service:
+            name: straxon-ml-engine-service
+            port:
+              number: 8082
+      # Route /api/labs traffic to ML Engine
+      - path: /api/labs
+        pathType: Prefix
+        backend:
+          service:
+            name: straxon-ml-engine-service
+            port:
+              number: 8082
+      # Route all other traffic to Frontend
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: straxon-frontend-service
+            port:
+              number: 80
