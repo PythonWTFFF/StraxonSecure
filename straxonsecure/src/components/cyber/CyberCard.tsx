@@ -104,7 +104,7 @@ export const CyberCard = forwardRef<HTMLDivElement, CyberCardProps>(
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           className={cn(
-            "group relative p-5 bg-[#020610]/95 backdrop-blur-xl border transition-all duration-300 overflow-hidden",
+            "group relative p-5 bg-[#020610]/40 backdrop-blur-2xl border border-white/5 transition-all duration-300 overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]",
             // Cyberpunk Chamfered Corners
             "[clip-path:polygon(16px_0,100%_0,100%_calc(100%-16px),calc(100%-16px)_100%,0_100%,0_16px)]",
             theme.border,
