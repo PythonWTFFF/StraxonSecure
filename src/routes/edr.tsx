@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { CyberCard } from "@/components/cyber/CyberCard";
+import { PremiumOverlay } from "@/components/cyber/PremiumOverlay";
 import {
   Server,
   ShieldAlert,
@@ -49,7 +50,7 @@ function AgentDashboard() {
   const { data: agents = [] } = useQuery({
     queryKey: ["edr-agents"],
     queryFn: async () => {
-      const rawUrl = import.meta.env.VITE_ML_ENGINE_URL || "http://127.0.0.1:8082";
+      const rawUrl = import.meta.env.VITE_ML_ENGINE_URL || "http://localhost:8082";
       const res = await fetch(`${rawUrl}/api/ml/agents`);
       if (!res.ok) throw new Error("Failed to fetch agents");
       const data = await res.json();
@@ -62,7 +63,7 @@ function AgentDashboard() {
   useEffect(() => {
     if (!session?.access_token) return;
 
-    const rawUrl = import.meta.env.VITE_ML_ENGINE_URL || "http://127.0.0.1:8082";
+    const rawUrl = import.meta.env.VITE_ML_ENGINE_URL || "http://localhost:8082";
     const wsUrl =
       rawUrl.replace("http://", "ws://").replace("https://", "wss://") + "/api/ml/edr-stream";
 
@@ -240,65 +241,67 @@ function AgentDashboard() {
 
         {/* Right Column: Live Telemetry Matrix Feed */}
         <div className="lg:col-span-1 h-[600px] flex flex-col">
-          <CyberCard className="flex-1 flex flex-col overflow-hidden bg-[#020610]">
-            <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/40">
-              <div className="flex items-center gap-2">
-                <TerminalSquare className="h-4 w-4 text-teal-500" />
-                <h3 className="font-display font-bold text-white tracking-wide">LIVE TELEMETRY</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                </span>
-                <span className="text-[10px] font-mono text-teal-500 uppercase">Streaming</span>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-[10px] bg-black/60 custom-scrollbar">
-              {liveFeed.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-2">
-                  <Activity className="h-8 w-8 animate-pulse opacity-50" />
-                  <p>Awaiting process execution events...</p>
+          <PremiumOverlay featureName="Live Matrix Feed">
+            <CyberCard className="flex-1 flex flex-col overflow-hidden bg-[#020610] h-[600px]">
+              <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/40">
+                <div className="flex items-center gap-2">
+                  <TerminalSquare className="h-4 w-4 text-teal-500" />
+                  <h3 className="font-display font-bold text-white tracking-wide">LIVE TELEMETRY</h3>
                 </div>
-              ) : (
-                liveFeed.map((ev, i) => {
-                  const isAlert = ev.severity === "high" || ev.severity === "critical";
-                  return (
-                    <div
-                      key={ev.id + i}
-                      className={`p-2 rounded border border-white/5 bg-black/40 transition-all duration-300 animate-in fade-in slide-in-from-right-4 ${isAlert ? "border-fuchsia-500/30" : "border-teal-500/10"}`}
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span
-                          className={`font-bold ${isAlert ? "text-fuchsia-400" : "text-teal-400"}`}
-                        >
-                          {ev.processName}
-                        </span>
-                        <span className="text-slate-500">
-                          {new Date(ev.timestamp).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <div className="text-slate-400 truncate mb-1" title={ev.commandLine}>
-                        <span className="text-slate-600 mr-1">$</span>
-                        {ev.commandLine}
-                      </div>
-                      <div className="flex justify-between items-center text-[9px]">
-                        <span className="text-slate-500">{ev.hostname}</span>
-                        {isAlert && (
-                          <span className="flex items-center gap-1 text-fuchsia-500 bg-fuchsia-500/10 px-1.5 py-0.5 rounded">
-                            <AlertTriangle className="h-2.5 w-2.5" />
-                            {ev.type.toUpperCase()}
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                  </span>
+                  <span className="text-[10px] font-mono text-teal-500 uppercase">Streaming</span>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-[10px] bg-black/60 custom-scrollbar">
+                {liveFeed.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-2">
+                    <Activity className="h-8 w-8 animate-pulse opacity-50" />
+                    <p>Awaiting process execution events...</p>
+                  </div>
+                ) : (
+                  liveFeed.map((ev, i) => {
+                    const isAlert = ev.severity === "high" || ev.severity === "critical";
+                    return (
+                      <div
+                        key={ev.id + i}
+                        className={`p-2 rounded border border-white/5 bg-black/40 transition-all duration-300 animate-in fade-in slide-in-from-right-4 ${isAlert ? "border-fuchsia-500/30" : "border-teal-500/10"}`}
+                      >
+                        <div className="flex justify-between items-center mb-1">
+                          <span
+                            className={`font-bold ${isAlert ? "text-fuchsia-400" : "text-teal-400"}`}
+                          >
+                            {ev.processName}
                           </span>
-                        )}
+                          <span className="text-slate-500">
+                            {new Date(ev.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <div className="text-slate-400 truncate mb-1" title={ev.commandLine}>
+                          <span className="text-slate-600 mr-1">$</span>
+                          {ev.commandLine}
+                        </div>
+                        <div className="flex justify-between items-center text-[9px]">
+                          <span className="text-slate-500">{ev.hostname}</span>
+                          {isAlert && (
+                            <span className="flex items-center gap-1 text-fuchsia-500 bg-fuchsia-500/10 px-1.5 py-0.5 rounded">
+                              <AlertTriangle className="h-2.5 w-2.5" />
+                              {ev.type.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={feedEndRef} />
-            </div>
-          </CyberCard>
+                    );
+                  })
+                )}
+                <div ref={feedEndRef} />
+              </div>
+            </CyberCard>
+          </PremiumOverlay>
         </div>
       </div>
     </div>

@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/sheet";
 import { useSubscription } from "@/hooks/useSubscription";
 import { CommandPalette } from "./CommandPalette";
+import { motion } from "framer-motion";
 
 const NAV_GROUPS = [
   {
@@ -135,7 +136,7 @@ function Brand({ collapsed = false }: { collapsed?: boolean }) {
         <div className="flex flex-col leading-none overflow-hidden">
           <span className="font-display text-base font-bold tracking-widest neon-text">STRAXON</span>
           <span className="font-mono text-xs text-muted-foreground tracking-[0.3em] group-hover:text-primary transition-colors">
-            SECURE v2
+            SECURE v1
           </span>
         </div>
       )}
@@ -284,16 +285,43 @@ function SidebarFooter({ collapsed, paidActive }: { collapsed: boolean; paidActi
   return (
     <div className="shrink-0 border-t border-border/30 bg-black/20">
       {!paidActive && !collapsed && (
-        <Link
-          to="/pricing"
-          className="flex items-center gap-2 mx-3 my-2 px-3 py-2 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/50 transition-all group"
-        >
-          <Zap className="h-3.5 w-3.5 text-primary shrink-0 group-hover:drop-shadow-[0_0_6px_rgba(0,243,255,0.8)]" />
-          <div className="flex flex-col leading-tight">
-            <span className="text-[11px] font-mono font-bold text-primary">Upgrade to Pro</span>
-            <span className="text-[10px] text-muted-foreground">Unlock all features →</span>
-          </div>
-        </Link>
+        <div className="mx-3 my-4">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="relative overflow-hidden rounded-xl bg-gradient-to-br from-black/60 to-[#020610]/80 p-[1px] shadow-lg backdrop-blur-xl group cursor-pointer"
+          >
+            {/* Animated Gradient Border */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/40 via-purple-500/40 to-primary/40 opacity-50 group-hover:opacity-100 transition-opacity duration-500 rounded-xl" />
+            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(0,243,255,0.1)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] animate-scan" />
+            
+            <Link
+              to="/pricing"
+              className="relative flex flex-col items-start gap-2 rounded-xl bg-[#030917]/95 px-4 py-3 h-full z-10"
+            >
+              <div className="flex w-full items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/20 border border-primary/40 glow-cyan">
+                    <Zap className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-xs font-bold font-display text-white uppercase tracking-widest neon-text">
+                    Pro Access
+                  </span>
+                </div>
+              </div>
+              <p className="text-[10px] font-mono text-muted-foreground mt-1 mb-1 leading-relaxed">
+                Unlock full EDR telemetry, advanced ML anomaly detection, and priority support.
+              </p>
+              <div className="w-full h-[1px] bg-gradient-to-r from-primary/30 to-transparent my-1" />
+              <div className="flex items-center gap-1.5 w-full justify-between">
+                <span className="text-xs font-mono text-primary group-hover:glow-cyan transition-all">
+                  Upgrade Now
+                </span>
+                <ChevronRight className="w-3 h-3 text-primary group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          </motion.div>
+        </div>
       )}
       {!collapsed && (
         <div className="px-4 py-3 text-[10px] font-mono text-muted-foreground/60 leading-relaxed">
@@ -321,6 +349,7 @@ function SidebarFooter({ collapsed, paidActive }: { collapsed: boolean; paidActi
     </div>
   );
 }
+import { StraxonCopilot } from "@/components/cyber/StraxonCopilot";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -434,6 +463,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <MobileBottomNav />
       <CommandPalette />
+      <StraxonCopilot />
     </div>
   );
 }

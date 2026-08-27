@@ -23,6 +23,7 @@ import {
   Wifi,
   Mail,
   Ghost,
+  ShieldCheck,
 } from "lucide-react";
 import { CyberButton } from "@/components/cyber/CyberButton";
 import { useState, useEffect } from "react";
@@ -31,6 +32,7 @@ import { callAuthed } from "@/lib/serverCall";
 import { captureLead } from "@/server/leads";
 import { toast } from "sonner";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { TypewriterText } from "@/components/cyber/TypewriterText";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -267,30 +269,64 @@ function Index() {
               </span>
             </h1>
 
-            <p className="text-sm sm:text-base md:text-lg text-slate-400 max-w-xl leading-relaxed backdrop-blur-md bg-[#020610]/50 p-3 md:p-4 border border-white/5 shadow-xl [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)]">
-              The end-to-end cybersecurity playground. Run real attack simulations, design hardened
-              architectures, and operate a live SOC — all directly in your browser.
-            </p>
+            <div className="text-sm sm:text-base md:text-lg text-slate-400 max-w-xl leading-relaxed backdrop-blur-md bg-[#020610]/50 p-4 border border-white/5 shadow-xl [clip-path:polygon(12px_0,100%_0,100%_calc(100%-12px),calc(100%-12px)_100%,0_100%,0_12px)] min-h-[100px]">
+              <span className="text-[#00f3ff] font-mono mr-2">&gt;</span>
+              <TypewriterText 
+                strings={[
+                  "Execute SQLi & XSS simulations.",
+                  "Design hardened zero-trust architectures.",
+                  "Operate a live SOC in your browser.",
+                  "Automate DevSecOps vulnerability scanning.",
+                  "Defend against ransomware and DDoS.",
+                ]} 
+              />
+            </div>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2 md:pt-4">
               <Link to="/labs" className="w-full sm:w-auto">
                 <CyberButton
                   size="lg"
                   variant="cyan"
-                  className="w-full shadow-[0_0_30px_rgba(0,243,255,0.15)]"
+                  className="w-full shadow-[0_0_30px_rgba(0,243,255,0.15)] overflow-hidden group"
                 >
-                  <Zap className="h-4 w-4 mr-2" /> Launch Lab
+                  <Zap className="h-4 w-4 mr-2 group-hover:animate-pulse" /> Launch Lab
                 </CyberButton>
               </Link>
               <Link to="/dashboard" className="w-full sm:w-auto">
                 <CyberButton
                   size="lg"
                   variant="ghost"
-                  className="w-full bg-[#020610]/50 backdrop-blur-md hover:bg-[#020610]/80"
+                  className="w-full bg-[#020610]/50 backdrop-blur-md hover:bg-[#020610]/80 group"
                 >
-                  <Eye className="h-4 w-4 mr-2" /> Open SOC
+                  <Eye className="h-4 w-4 mr-2 group-hover:text-[#00f3ff]" /> Open SOC
                 </CyberButton>
               </Link>
+            </div>
+            
+            {/* TRUSTED BY STRIP */}
+            <div className="pt-8 border-t border-white/5">
+              <p className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-4">
+                Trusted by security teams at
+              </p>
+              <div className="flex flex-wrap gap-6 items-center opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                {/* Simulated company logos / badges */}
+                <div className="flex items-center gap-2 font-display font-bold text-slate-300 text-lg">
+                  <ScanLine className="h-5 w-5 text-indigo-400" />
+                  CypherLabs
+                </div>
+                <div className="flex items-center gap-2 font-display font-bold text-slate-300 text-lg">
+                  <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                  Sentinel
+                </div>
+                <div className="flex items-center gap-2 font-display font-bold text-slate-300 text-lg">
+                  <Network className="h-5 w-5 text-blue-400" />
+                  Apex Defense
+                </div>
+                <div className="flex items-center gap-2 font-display font-bold text-slate-300 text-lg">
+                  <Activity className="h-5 w-5 text-rose-400" />
+                  RedShift
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -557,6 +593,8 @@ function Index() {
                   </p>
                   <form onSubmit={handleCaptureLead} className="flex gap-2">
                     <input
+                      id="lead-email"
+                      name="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}

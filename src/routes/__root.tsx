@@ -18,6 +18,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Sentry from "@sentry/react";
 import { analytics } from "@/lib/analytics";
 import { PWAInstallBanner } from "@/components/layout/PWAInstallBanner";
+import { Cyber404 } from "@/components/cyber/Cyber404";
 
 // Initialize Sentry
 if (typeof window !== "undefined") {
@@ -79,30 +80,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 import appCss from "../styles.css?url";
 
-function NotFoundComponent() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-display neon-text animate-glitch" data-text="404">
-          404
-        </h1>
-        <h2 className="mt-4 text-xl font-display text-foreground">Signal Lost</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The endpoint you're scanning doesn't exist on this network.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 glow-cyan"
-          >
-            Return to Base
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 import { CyberError } from "@/components/CyberError";
 
 export const Route = createRootRoute({
@@ -154,7 +131,7 @@ export const Route = createRootRoute({
   }),
   shellComponent: RootShell,
   component: RootComponent,
-  notFoundComponent: NotFoundComponent,
+  notFoundComponent: Cyber404,
   errorComponent: CyberError,
 });
 

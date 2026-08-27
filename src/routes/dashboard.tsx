@@ -72,6 +72,9 @@ import { toast } from "sonner";
 // ─────────────────────────────────────────────────────────────────────────────
 // ROUTE
 // ─────────────────────────────────────────────────────────────────────────────
+import { PostureScoreWidget } from "@/components/cyber/PostureScoreWidget";
+import { PremiumOverlay } from "@/components/cyber/PremiumOverlay";
+
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
@@ -462,6 +465,12 @@ function DashboardContent() {
         className="px-2 lg:px-4 py-3 max-w-[1920px] mx-auto flex flex-col gap-3"
         style={{ minHeight: "calc(100vh - 60px)" }}
       >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="lg:col-span-2">
+              <PostureScoreWidget />
+            </div>
+          </div>
+        
         {/* Mobile stat strip */}
         <div className="flex gap-2 lg:hidden overflow-x-auto cs pb-1">
           {[
@@ -1051,20 +1060,21 @@ function DashboardContent() {
 
               {/* ANOMALIES TAB */}
               {tab === "anomalies" && (
-                <div className="flex-1 overflow-auto cs p-4 space-y-4 min-h-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono text-cyan-500 uppercase tracking-widest flex items-center gap-2">
-                      <Zap className="h-4 w-4" /> Machine Learning Anomaly Detection
-                    </span>
-                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest border border-slate-700 px-2 py-0.5 rounded">
-                      Model: STRAXON-ML-v2.1
-                    </span>
-                  </div>
-
-                  <div className="grid lg:grid-cols-3 gap-4">
-                    <div className="lg:col-span-1">
-                      <AIAnalystPanel />
+                <PremiumOverlay featureName="AI Anomaly Engine">
+                  <div className="flex-1 overflow-auto cs p-4 space-y-4 min-h-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-mono text-cyan-500 uppercase tracking-widest flex items-center gap-2">
+                        <Zap className="h-4 w-4" /> Machine Learning Anomaly Detection
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest border border-slate-700 px-2 py-0.5 rounded">
+                        Model: STRAXON-ML-v2.1
+                      </span>
                     </div>
+
+                    <div className="grid lg:grid-cols-3 gap-4">
+                      <div className="lg:col-span-1">
+                        <AIAnalystPanel />
+                      </div>
                     <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-4 flex flex-col gap-3">
                       <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                         Behavioral Drift
@@ -1136,8 +1146,9 @@ function DashboardContent() {
                         </button>
                       </div>
                     </div>
+                    </div>
                   </div>
-                </div>
+                </PremiumOverlay>
               )}
             </div>
           </div>

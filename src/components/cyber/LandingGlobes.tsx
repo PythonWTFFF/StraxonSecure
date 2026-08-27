@@ -118,17 +118,17 @@ export function CyberEarth() {
 
     const connect = async () => {
       // 1. Resolve URL with wss:// enforcement outside local dev
-      let rawUrl = import.meta.env.VITE_THREAT_ENGINE_WS_URL || "ws://127.0.0.1:8082";
+      let rawUrl = import.meta.env.VITE_THREAT_ENGINE_WS_URL || "ws://localhost:8082";
       if (!import.meta.env.DEV && rawUrl.startsWith("ws://")) {
         rawUrl = rawUrl.replace("ws://", "wss://");
       }
 
       // 2. JWT Handshake
       const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
+      const token = data.session?.access_token || "anonymous";
 
-      // Only send 'supabase' as subprotocol since the backend doesn't check the token anymore
-      const protocols = ["supabase"];
+      // Pass the token to match the expected format from edr.tsx
+      const protocols = ["supabase", token];
       ws = new WebSocket(`${rawUrl}/api/ml/edr-stream`, protocols);
 
       ws.onopen = () => {
