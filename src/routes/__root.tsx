@@ -17,6 +17,7 @@ import { getSecurityHeaders } from "@/server/security/headers";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Sentry from "@sentry/react";
 import { analytics } from "@/lib/analytics";
+import { PWAInstallBanner } from "@/components/layout/PWAInstallBanner";
 
 // Initialize Sentry
 if (typeof window !== "undefined") {
@@ -110,7 +111,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#020610" },
+      { name: "theme-color", content: "#00f3ff" },
       { title: "Straxon Secure — Cyber Attack Simulation & Defense Platform" },
       {
         name: "description",
@@ -118,6 +119,15 @@ export const Route = createRootRoute({
           "Interactive cybersecurity labs, SOC dashboard, architecture designer, and DevSecOps scanner. Learn attacks. Build defenses.",
       },
       { name: "author", content: "Straxon Secure" },
+      // iOS PWA support
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "StraxonSOC" },
+      { name: "application-name", content: "StraxonSOC" },
+      { name: "msapplication-TileColor", content: "#020610" },
+      { name: "msapplication-tap-highlight", content: "no" },
+      // OG / Social
       { property: "og:title", content: "Straxon Secure — Cyber Defense Platform" },
       {
         property: "og:description",
@@ -132,6 +142,9 @@ export const Route = createRootRoute({
       { rel: "manifest", href: "/manifest.json" },
       { rel: "icon", type: "image/jpeg", href: "/straxonlogo.jpeg" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
+      { rel: "apple-touch-icon", sizes: "152x152", href: "/icon-192.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/icon-192.png" },
+      { rel: "apple-touch-icon", sizes: "167x167", href: "/icon-192.png" },
       { rel: "stylesheet", href: appCss },
       {
         rel: "stylesheet",
@@ -222,6 +235,7 @@ function RootComponent() {
         </AppShell>
         <BottomNav />
       </ProtectedRoute>
+      <PWAInstallBanner />
       <Toaster />
     </QueryClientProvider>
   );

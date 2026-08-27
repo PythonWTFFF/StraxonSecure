@@ -517,3 +517,124 @@ select {
   animation: float 3s ease-in-out infinite;
 }
 
+/* ─── ACCESSIBILITY ─── */
+/* Respect user's motion preferences globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── TABLET RESPONSIVENESS (768px–1023px) ─── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .main-content {
+    padding-bottom: 0;
+  }
+}
+
+/* ─── TOUCH DEVICE OPTIMIZATIONS ─── */
+@media (pointer: coarse) {
+  /* Slightly larger tap areas on touch screens */
+  button, a, [role="button"] {
+    min-height: 44px;
+  }
+
+  /* Thinner scrollbar on touch devices */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
+
+/* Touch interaction feedback */
+* {
+  touch-action: manipulation;
+}
+
+/* ─── PERFORMANCE ─── */
+/* Use content-visibility for potentially off-screen heavy sections */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+/* ─── GRADIENTS & EFFECTS ─── */
+/* Animated gradient border for premium cards */
+@keyframes border-spin {
+  0% { --border-angle: 0turn; }
+  100% { --border-angle: 1turn; }
+}
+
+.gradient-border {
+  --border-angle: 0turn;
+  background-image: conic-gradient(
+    from var(--border-angle) at 50% 50%,
+    var(--neon-cyan) 0%,
+    var(--neon-magenta) 25%,
+    var(--neon-violet) 50%,
+    var(--neon-magenta) 75%,
+    var(--neon-cyan) 100%
+  );
+  animation: border-spin 4s linear infinite;
+  padding: 1px;
+}
+
+/* Counter animation support */
+@property --counter {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/* Stagger animation for list items */
+.stagger-children > * {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: stagger-in 0.4s ease forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
+
+@keyframes stagger-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Glowing border pulse for CTAs */
+@keyframes glow-border {
+  0%, 100% { box-shadow: 0 0 8px color-mix(in oklab, var(--neon-cyan) 40%, transparent), inset 0 0 8px color-mix(in oklab, var(--neon-cyan) 5%, transparent); }
+  50% { box-shadow: 0 0 20px color-mix(in oklab, var(--neon-cyan) 70%, transparent), inset 0 0 16px color-mix(in oklab, var(--neon-cyan) 10%, transparent); }
+}
+.animate-glow-border {
+  animation: glow-border 2.5s ease-in-out infinite;
+}
+
+/* Neon underline hover effect */
+.neon-underline {
+  position: relative;
+}
+.neon-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan);
+  transition: width 0.3s ease;
+}
+.neon-underline:hover::after {
+  width: 100%;
+}

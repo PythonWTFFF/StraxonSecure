@@ -1,28 +1,78 @@
 {
-  "name": "StraxonSecure Platform",
-  "short_name": "StraxonSecure",
-  "description": "Enterprise Attack Surface Management and PTaaS Platform",
+  "name": "Straxon Secure — Cyber Defense Platform",
+  "short_name": "StraxonSOC",
+  "description": "Enterprise SOC Dashboard, Attack Labs, AI-powered threat detection, and PTaaS for cybersecurity professionals.",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
   "background_color": "#020610",
   "theme_color": "#00f3ff",
-  "orientation": "portrait-primary",
+  "orientation": "any",
+  "lang": "en",
+  "categories": ["security", "productivity", "business"],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "SOC Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open the real-time SOC dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Attack Labs",
+      "short_name": "Labs",
+      "description": "Launch interactive attack labs",
+      "url": "/labs",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "CTF Challenges",
+      "short_name": "CTF",
+      "description": "Jump to CTF challenges",
+      "url": "/ctf",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "label": "Straxon Secure SOC Dashboard"
+    }
+  ],
+  "prefer_related_applications": false
 }

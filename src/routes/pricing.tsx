@@ -226,6 +226,30 @@ function PricingPage() {
           )}
         </div>
 
+        {/* LIVE STATS TICKER */}
+        <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-10">
+          {[
+            { value: "12,400+", label: "Labs Run Today" },
+            { value: "99.9%", label: "Uptime SLA" },
+            { value: "1,200+", label: "Pro Operators" },
+            { value: "<3s", label: "Avg Threat Detection" },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center px-4 py-2 rounded-xl bg-white/5 border border-white/10 min-w-[100px]">
+              <div className="font-display text-xl md:text-2xl font-bold text-[#00f3ff] drop-shadow-[0_0_10px_rgba(0,243,255,0.5)]">{stat.value}</div>
+              <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-0.5">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* TRUST BADGES */}
+        <div className="flex flex-wrap justify-center gap-3 mb-12">
+          {["🔐 SOC 2 Compliant", "🛡️ End-to-End Encrypted", "💳 Secure Checkout", "🔄 Cancel Anytime", "🌍 Global + India Payments"].map((badge) => (
+            <span key={badge} className="text-[11px] font-mono text-slate-400 border border-white/10 px-3 py-1 rounded-full bg-white/5">
+              {badge}
+            </span>
+          ))}
+        </div>
+
         {/* BILLING TOGGLE */}
         <div className="flex justify-center mb-10">
           <div className="bg-[#020610]/80 border border-white/10 backdrop-blur-md rounded-full p-1 inline-flex shadow-xl">
