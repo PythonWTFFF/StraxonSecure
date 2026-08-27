@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -5,12 +7,12 @@ import { z } from "zod";
 import { requireTeamAccess } from "@/server/security/authorization";
 
 export const getTeamMembers = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, requireTeamAccess])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth, requireTeamAccess])
   .validator((d) => z.object({ teamId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Fetch all members with their profile display name
-    const { data: members, error } = await (supabaseAdmin as any)
+    const { data: members, error } = await supabaseAdmin
       .from("team_members")
       .select(
         `
@@ -28,7 +30,7 @@ export const getTeamMembers = createServerFn({ method: "POST" })
   });
 
 export const updateMemberRole = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, requireTeamAccess])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth, requireTeamAccess])
   .validator((d) =>
     z
       .object({
@@ -41,14 +43,14 @@ export const updateMemberRole = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (
-      ((context as any).teamRole as string) !== "admin" &&
-      ((context as any).teamRole as string) !== "owner"
+      ((context as ServerContext).teamRole as string) !== "admin" &&
+      ((context as ServerContext).teamRole as string) !== "owner"
     ) {
       throw new Error("Unauthorized: Requires Admin privileges");
     }
 
     // Prevent demoting the actual team owner
-    const { data: team } = await (supabaseAdmin as any)
+    const { data: team } = await supabaseAdmin
       .from("teams")
       .select("owner_id")
       .eq("id", data.teamId)
@@ -58,7 +60,7 @@ export const updateMemberRole = createServerFn({ method: "POST" })
       throw new Error("Cannot change the role of the team owner");
     }
 
-    const { error } = await (supabaseAdmin as any)
+    const { error } = await supabaseAdmin
       .from("team_members")
       .update({ role: data.newRole })
       .eq("team_id", data.teamId)
@@ -69,7 +71,7 @@ export const updateMemberRole = createServerFn({ method: "POST" })
   });
 
 export const removeMember = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, requireTeamAccess])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth, requireTeamAccess])
   .validator((d) =>
     z
       .object({
@@ -81,13 +83,13 @@ export const removeMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (
-      ((context as any).teamRole as string) !== "admin" &&
-      ((context as any).teamRole as string) !== "owner"
+      ((context as ServerContext).teamRole as string) !== "admin" &&
+      ((context as ServerContext).teamRole as string) !== "owner"
     ) {
       throw new Error("Unauthorized: Requires Admin privileges");
     }
 
-    const { data: team } = await (supabaseAdmin as any)
+    const { data: team } = await supabaseAdmin
       .from("teams")
       .select("owner_id")
       .eq("id", data.teamId)
@@ -97,7 +99,7 @@ export const removeMember = createServerFn({ method: "POST" })
       throw new Error("Cannot remove the team owner");
     }
 
-    const { error } = await (supabaseAdmin as any)
+    const { error } = await supabaseAdmin
       .from("team_members")
       .delete()
       .eq("team_id", data.teamId)
@@ -108,17 +110,17 @@ export const removeMember = createServerFn({ method: "POST" })
   });
 
 export const createTeam = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ name: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const inviteCode = require("crypto").randomBytes(4).toString("hex").toUpperCase();
 
-    const { data: team, error } = await (supabaseAdmin as any)
+    const { data: team, error } = await supabaseAdmin
       .from("teams")
       .insert({
         name: data.name,
-        owner_id: (context as any).userId as string,
+        owner_id: (context as ServerContext).userId as string,
         invite_code: inviteCode,
       })
       .select()
@@ -126,9 +128,9 @@ export const createTeam = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
 
-    const { error: memberError } = await (supabaseAdmin as any)
+    const { error: memberError } = await supabaseAdmin
       .from("team_members")
-      .insert({ team_id: team.id, user_id: (context as any).userId as string, role: "owner" });
+      .insert({ team_id: team.id, user_id: (context as ServerContext).userId as string, role: "owner" });
 
     if (memberError) throw new Error(memberError.message);
 
@@ -136,11 +138,11 @@ export const createTeam = createServerFn({ method: "POST" })
   });
 
 export const joinTeam = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ code: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: team, error } = await (supabaseAdmin as any)
+    const { data: team, error } = await supabaseAdmin
       .from("teams")
       .select("id")
       .eq("invite_code", data.code)
@@ -148,9 +150,9 @@ export const joinTeam = createServerFn({ method: "POST" })
 
     if (error || !team) throw new Error("Invalid invite code");
 
-    const { error: memberError } = await (supabaseAdmin as any)
+    const { error: memberError } = await supabaseAdmin
       .from("team_members")
-      .insert({ team_id: team.id, user_id: (context as any).userId as string, role: "member" });
+      .insert({ team_id: team.id, user_id: (context as ServerContext).userId as string, role: "member" });
 
     if (memberError) {
       if (memberError.code === "23505") throw new Error("You are already in this team");
@@ -161,13 +163,13 @@ export const joinTeam = createServerFn({ method: "POST" })
   });
 
 export const getUserTeams = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await (supabaseAdmin as any)
+    const { data, error } = await supabaseAdmin
       .from("team_members")
       .select("team_id, role, teams(id, name, invite_code, owner_id)")
-      .eq("user_id", (context as any).userId as string);
+      .eq("user_id", (context as ServerContext).userId as string);
 
     if (error) throw new Error(error.message);
 

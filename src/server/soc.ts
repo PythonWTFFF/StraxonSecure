@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { z } from "zod";
@@ -8,7 +10,7 @@ import { sharedCache } from "@/server/utils/cache";
 // ─── Advanced SOC Analytics ──────────────────────────────────────────────────
 
 export const getSOCAnalytics = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async () => {
     const cached = sharedCache.get<any>("soc_analytics");
     if (cached) return cached;
@@ -105,7 +107,7 @@ export const getSOCAnalytics = createServerFn({ method: "GET" })
 // ─── Block IP ────────────────────────────────────────────────────────────────
 
 export const blockIP = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -120,13 +122,13 @@ export const blockIP = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Insert a SOC event as a block action
     const { error } = await supabaseAdmin.from("soc_events").insert({
-      user_id: (context as any).userId as string,
+      user_id: (context as ServerContext).userId as string,
       severity: "high",
       attack_type: "IP_BLOCK",
       source_ip: data.ip,
       message: `IP manually blocked: ${data.reason}`,
       response_action: "block",
-      analyst_notes: `Blocked by analyst ${(context as any).userId as string}`,
+      analyst_notes: `Blocked by analyst ${(context as ServerContext).userId as string}`,
     });
     if (error) throw new Error(error.message);
     return { ok: true, ip: data.ip };
@@ -135,7 +137,7 @@ export const blockIP = createServerFn({ method: "POST" })
 // ─── Mark Event False Positive ───────────────────────────────────────────────
 
 export const markFalsePositive = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ eventId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { error } = await supabaseAdmin
@@ -164,20 +166,20 @@ const threatEventSchema = z.object({
 });
 
 export const ingestThreatEvent = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => threatEventSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { data: event, error } = await supabaseAdmin
       .from("soc_events")
-      .insert({ ...data, user_id: (context as any).userId as string })
+      .insert({ ...data, user_id: (context as ServerContext).userId as string })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
 
-    // Update posture SOC score (Disabled for now as table structure changed)
-    // await supabaseAdmin
-    //  .from("posture_evaluations")
-    //  .upsert({ user_id: ((context as any).userId as string) }, { onConflict: "user_id" });
+    // Update posture SOC score
+    await supabaseAdmin
+      .from("posture_evaluations")
+      .upsert({ user_id: ((context as ServerContext).userId as string) }, { onConflict: "user_id" });
 
     return { eventId: event.id };
   });
@@ -185,7 +187,7 @@ export const ingestThreatEvent = createServerFn({ method: "POST" })
 // ─── Get Recent Events ───────────────────────────────────────────────────────
 
 export const getRecentSOCEvents = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async () => {
     const { data, error } = await supabaseAdmin
       .from("soc_events")
@@ -200,7 +202,7 @@ export const getRecentSOCEvents = createServerFn({ method: "GET" })
 // ─── Get ML Anomalies ───────────────────────────────────────────────────────
 
 export const getMLAnomalies = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async () => {
     const { data: events } = await supabaseAdmin
       .from("soc_events")

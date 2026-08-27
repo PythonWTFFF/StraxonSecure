@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -5,12 +7,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 
 export const getPlaybooks = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (supabaseAdmin as any)
+    const { data, error } = await supabaseAdmin
       .from("ir_playbooks")
       .select("*, author:profiles(display_name)")
-      .or(`is_public.eq.true,author_id.eq.${(context as any).userId as string}`)
+      .or(`is_public.eq.true,author_id.eq.${(context as ServerContext).userId as string}`)
       .order("created_at", { ascending: false });
 
     if (error) throw new Error("Failed to load playbooks");
@@ -18,7 +20,7 @@ export const getPlaybooks = createServerFn({ method: "GET" })
   });
 
 export const savePlaybook = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -33,7 +35,7 @@ export const savePlaybook = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (data.id) {
       // Update
-      const { error } = await (supabaseAdmin as any)
+      const { error } = await supabaseAdmin
         .from("ir_playbooks")
         .update({
           title: data.title,
@@ -42,16 +44,16 @@ export const savePlaybook = createServerFn({ method: "POST" })
           is_public: data.isPublic,
         })
         .eq("id", data.id)
-        .eq("author_id", (context as any).userId as string);
+        .eq("author_id", (context as ServerContext).userId as string);
       if (error) throw new Error("Failed to update playbook");
     } else {
       // Insert
-      const { error } = await (supabaseAdmin as any).from("ir_playbooks").insert({
+      const { error } = await supabaseAdmin.from("ir_playbooks").insert({
         title: data.title,
         description: data.description,
         steps: data.steps,
         is_public: data.isPublic,
-        author_id: (context as any).userId as string,
+        author_id: (context as ServerContext).userId as string,
       });
       if (error) throw new Error("Failed to create playbook");
     }
@@ -59,14 +61,14 @@ export const savePlaybook = createServerFn({ method: "POST" })
   });
 
 export const deletePlaybook = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await (supabaseAdmin as any)
+    const { error } = await supabaseAdmin
       .from("ir_playbooks")
       .delete()
       .eq("id", data.id)
-      .eq("author_id", (context as any).userId as string);
+      .eq("author_id", (context as ServerContext).userId as string);
 
     if (error) throw new Error("Failed to delete playbook");
     return { success: true };

@@ -64,6 +64,7 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
         supabase,
         userId: data.user.id,
         user: data.user,
+        orgId: data.user.user_metadata?.org_id,
       },
     });
   },

@@ -1,6 +1,9 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdmin } from "@/server/security/requireAdmin";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 import { logAudit } from "@/server/security/audit";
@@ -21,7 +24,7 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 // ===== STRIPE CHECKOUT =====
 export const createStripeCheckout = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(5, 60, "rate_limit:checkout")])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth, createRateLimiter(5, 60, "rate_limit:checkout")])
   .validator((d) => z.object({ plan: z.enum(["pro_monthly", "pro_yearly"]) }).parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -42,10 +45,7 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
         current_period_end: periodEnd.toISOString(),
       });
 
-      await logAudit({
-        requestId: ((context as any).requestId as string) ?? "unknown",
-        actorUserId: (context as any).userId as string,
-        orgId: "00000000-0000-0000-0000-000000000000",
+      await logAudit(context as ServerContext, {
         action: "billing.checkout_created",
         serverFn: "createStripeCheckout",
         metadata: { plan: data.plan, simulated: true },
@@ -93,10 +93,7 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
         },
       });
 
-      await logAudit({
-        requestId: ((context as any).requestId as string) ?? "unknown",
-        actorUserId: (context as any).userId as string,
-        orgId: "00000000-0000-0000-0000-000000000000",
+      await logAudit(context as ServerContext, {
         action: "billing.checkout_created",
         serverFn: "createStripeCheckout",
         metadata: { plan: data.plan, provider: "stripe", sessionId: session.id },
@@ -110,7 +107,7 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
 
 // ===== STRIPE CUSTOMER PORTAL =====
 export const createPortalSession = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
     const origin = process.env.SITE_URL || "http://localhost:8080";
@@ -138,10 +135,7 @@ export const createPortalSession = createServerFn({ method: "POST" })
         return_url: `${origin}/billing`,
       });
 
-      await logAudit({
-        requestId: ((context as any).requestId as string) ?? "unknown",
-        actorUserId: (context as any).userId as string,
-        orgId: "00000000-0000-0000-0000-000000000000",
+      await logAudit(context as ServerContext, {
         action: "billing.portal_created",
         serverFn: "createPortalSession",
       });
@@ -155,7 +149,7 @@ export const createPortalSession = createServerFn({ method: "POST" })
 
 // ===== RAZORPAY ORDER =====
 export const createRazorpayOrder = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(5, 60, "rate_limit:checkout")])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth, createRateLimiter(5, 60, "rate_limit:checkout")])
   .validator((d) => z.object({ plan: z.enum(["pro_monthly", "pro_yearly"]) }).parse(d))
   .handler(async ({ data, context }) => {
     const keyId = process.env.RAZORPAY_KEY_ID;
@@ -178,17 +172,14 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       body: JSON.stringify({
         amount: amountInr,
         currency: "INR",
-        receipt: `${((context as any).userId as string).slice(0, 8)}-${Date.now()}`,
-        notes: { user_id: (context as any).userId as string, plan: data.plan },
+        receipt: `${((context as ServerContext).userId as string).slice(0, 8)}-${Date.now()}`,
+        notes: { user_id: (context as ServerContext).userId as string, plan: data.plan },
       }),
     });
     const json = await res.json();
     if (!res.ok) return { error: json.error?.description || "Razorpay error", order: null };
 
-    await logAudit({
-      requestId: ((context as any).requestId as string) ?? "unknown",
-      actorUserId: (context as any).userId as string,
-      orgId: "00000000-0000-0000-0000-000000000000",
+    await logAudit(context as ServerContext, {
       action: "billing.order_created",
       serverFn: "createRazorpayOrder",
       metadata: { plan: data.plan, orderId: json.id, provider: "razorpay" },
@@ -204,7 +195,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
 // ===== RAZORPAY VERIFY (called after client-side success) =====
 export const verifyRazorpayPayment = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -242,10 +233,10 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
         provider_subscription_id: data.razorpay_payment_id,
         current_period_end: periodEnd.toISOString(),
       })
-      .eq("user_id", (context as any).userId as string);
+      .eq("user_id", (context as ServerContext).userId as string);
 
     await supabaseAdmin.from("payments").insert({
-      user_id: (context as any).userId as string,
+      user_id: (context as ServerContext).userId as string,
       provider: "razorpay",
       provider_payment_id: data.razorpay_payment_id,
       amount_cents: PLANS[data.plan as keyof typeof PLANS].amount_cents,
@@ -254,10 +245,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       description: PLANS[data.plan as keyof typeof PLANS].label,
     });
 
-    await logAudit({
-      requestId: ((context as any).requestId as string) ?? "unknown",
-      actorUserId: (context as any).userId as string,
-      orgId: "00000000-0000-0000-0000-000000000000",
+    await logAudit(context as ServerContext, {
       action: "billing.payment_verified",
       serverFn: "verifyRazorpayPayment",
       metadata: { plan: data.plan, provider: "razorpay", paymentId: data.razorpay_payment_id },
@@ -268,17 +256,14 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
 
 // ===== CANCEL =====
 export const cancelSubscription = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     await supabaseAdmin
       .from("subscriptions")
       .update({ cancel_at_period_end: true })
-      .eq("user_id", (context as any).userId as string);
+      .eq("user_id", (context as ServerContext).userId as string);
 
-    await logAudit({
-      requestId: ((context as any).requestId as string) ?? "unknown",
-      actorUserId: (context as any).userId as string,
-      orgId: "00000000-0000-0000-0000-000000000000",
+    await logAudit(context as ServerContext, {
       action: "billing.subscription_cancelled",
       serverFn: "cancelSubscription",
     });
@@ -286,16 +271,18 @@ export const cancelSubscription = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ===== DEVELOPER BYPASS =====
+// ===== DEVELOPER BYPASS (Admin only) =====
+// Grants the calling admin user a 10-year Pro subscription for testing.
+// Protected by requireAdmin — only users with profiles.role = "admin" can invoke this.
 export const developerBypass = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth, requireAdmin])
   .handler(async ({ context }) => {
     // Force a Pro Monthly subscription
     const periodEnd = new Date();
     periodEnd.setFullYear(periodEnd.getFullYear() + 10); // 10 years access
 
     await supabaseAdmin.from("subscriptions").upsert({
-      user_id: (context as any).userId as string,
+      user_id: (context as ServerContext).userId as string,
       plan: "pro_monthly",
       status: "active",
       provider: "developer_override",
@@ -304,10 +291,7 @@ export const developerBypass = createServerFn({ method: "POST" })
       cancel_at_period_end: false,
     });
 
-    await logAudit({
-      requestId: ((context as any).requestId as string) ?? "unknown",
-      actorUserId: (context as any).userId as string,
-      orgId: "00000000-0000-0000-0000-000000000000",
+    await logAudit(context as ServerContext, {
       action: "billing.developer_bypass",
       serverFn: "developerBypass",
       metadata: { plan: "pro_monthly" },

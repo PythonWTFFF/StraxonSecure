@@ -11,16 +11,7 @@ CREATE TABLE IF NOT EXISTS public.ctf_challenges (
 ALTER TABLE public.ctf_challenges ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Everyone can view CTF challenges" ON public.ctf_challenges FOR SELECT TO authenticated USING (true);
 
-CREATE TABLE IF NOT EXISTS public.ctf_submissions (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-  challenge_id uuid REFERENCES public.ctf_challenges(id) ON DELETE CASCADE NOT NULL,
-  submitted_at timestamptz DEFAULT now() NOT NULL,
-  UNIQUE(user_id, challenge_id)
-);
-ALTER TABLE public.ctf_submissions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own submissions" ON public.ctf_submissions FOR SELECT TO authenticated USING (user_id = auth.uid());
-
+-- 1. CTF Module (ctf_solves already exists in previous migration)
 
 -- 2. War Room Module
 CREATE TABLE IF NOT EXISTS public.warroom_sessions (
@@ -46,19 +37,11 @@ CREATE POLICY "Users can view warroom messages" ON public.warroom_messages FOR S
 CREATE POLICY "Users can insert warroom messages" ON public.warroom_messages FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 
 
--- 3. IR Playbooks Module
-CREATE TABLE IF NOT EXISTS public.ir_playbooks (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  title text NOT NULL,
-  description text NOT NULL,
-  author_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-  steps jsonb DEFAULT '[]'::jsonb,
-  is_public boolean DEFAULT false,
-  created_at timestamptz DEFAULT now() NOT NULL
-);
-ALTER TABLE public.ir_playbooks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view their own or public playbooks" ON public.ir_playbooks FOR SELECT TO authenticated USING (author_id = auth.uid() OR is_public = true);
-CREATE POLICY "Users can manage own playbooks" ON public.ir_playbooks FOR ALL TO authenticated USING (author_id = auth.uid());
+-- 3. IR Playbooks Module (Extend existing table instead of re-creating to prevent conflict)
+ALTER TABLE public.ir_playbooks ADD COLUMN IF NOT EXISTS is_public boolean DEFAULT false;
+
+-- Add new policies for the updated table structure
+CREATE POLICY "Users can view their own or public playbooks" ON public.ir_playbooks FOR SELECT TO authenticated USING (user_id = auth.uid() OR is_public = true);
 
 
 -- 4. Packet Analyzer Module
@@ -101,34 +84,28 @@ ALTER TABLE public.posture_evaluations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own posture evals" ON public.posture_evaluations FOR SELECT TO authenticated USING (user_id = auth.uid());
 
 -- INSERT INITIAL CTF CHALLENGES
-INSERT INTO public.ctf_challenges (title, description, category, flag_hash, points) VALUES
-('Baby Web', 'Find the hidden comment in the source code.', 'Web', 'flag{w3b_1s_3asy}', 50),
-('SQLi 101', 'Bypass the login prompt using classic SQL injection.', 'Web', 'flag{sql_m4st3r}', 100),
-('Reverse Me', 'Reverse engineer the provided binary to find the hardcoded key.', 'Rev', 'flag{r3v_3ng1n33r}', 200),
-('Crypto Madness', 'Decrypt the intercepted ciphertext.', 'Crypto', 'flag{cr7pt0_n1nj4}', 150);
+INSERT INTO public.ctf_challenges (slug, title, description, category, difficulty, flag_hash, points) VALUES
+('baby-web', 'Baby Web', 'Find the hidden comment in the source code.', 'web', 'easy', 'flag{w3b_1s_3asy}', 50),
+('sqli-101', 'SQLi 101', 'Bypass the login prompt using classic SQL injection.', 'web', 'medium', 'flag{sql_m4st3r}', 100),
+('reverse-me', 'Reverse Me', 'Reverse engineer the provided binary to find the hardcoded key.', 'reverse', 'hard', 'flag{r3v_3ng1n33r}', 200),
+('crypto-madness', 'Crypto Madness', 'Decrypt the intercepted ciphertext.', 'crypto', 'medium', 'flag{cr7pt0_n1nj4}', 150)
+ON CONFLICT (slug) DO NOTHING;
 
 -- Update soc_events with missing columns
 ALTER TABLE public.soc_events
-ADD COLUMN mitre_tactic TEXT,
-ADD COLUMN mitre_technique TEXT,
-ADD COLUMN raw_payload TEXT,
-ADD COLUMN ioc_hash TEXT,
-ADD COLUMN false_positive BOOLEAN DEFAULT false;
+ADD COLUMN IF NOT EXISTS mitre_tactic TEXT,
+ADD COLUMN IF NOT EXISTS mitre_technique TEXT,
+ADD COLUMN IF NOT EXISTS raw_payload TEXT,
+ADD COLUMN IF NOT EXISTS ioc_hash TEXT,
+ADD COLUMN IF NOT EXISTS false_positive BOOLEAN DEFAULT false;
 
 
 -- Update ctf_challenges
 ALTER TABLE public.ctf_challenges
-ADD COLUMN hints JSONB DEFAULT '[]'::jsonb,
-ADD COLUMN max_hints INTEGER DEFAULT 0,
-ADD COLUMN is_active BOOLEAN DEFAULT true,
-ADD COLUMN solve_count INTEGER DEFAULT 0;
-
--- Rename ctf_submissions to ctf_solves to match backend
-ALTER TABLE public.ctf_submissions RENAME TO ctf_solves;
-ALTER TABLE public.ctf_solves 
-ADD COLUMN hints_used INTEGER DEFAULT 0,
-ADD COLUMN points_earned INTEGER DEFAULT 0,
-RENAME COLUMN submitted_at TO solved_at;
+ADD COLUMN IF NOT EXISTS hints JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN IF NOT EXISTS max_hints INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS solve_count INTEGER DEFAULT 0;
 
 -- Create ctf_hint_usage
 CREATE TABLE IF NOT EXISTS public.ctf_hint_usage (
@@ -140,14 +117,7 @@ CREATE TABLE IF NOT EXISTS public.ctf_hint_usage (
   UNIQUE(user_id, challenge_id, hint_index)
 );
 
--- Create leads
-CREATE TABLE IF NOT EXISTS public.leads (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  email text NOT NULL,
-  company text,
-  interest text,
-  created_at timestamptz DEFAULT now() NOT NULL
-);
+-- Create leads moved to saas_leads migration
 
 -- Create lab_sessions
 CREATE TABLE IF NOT EXISTS public.lab_sessions (

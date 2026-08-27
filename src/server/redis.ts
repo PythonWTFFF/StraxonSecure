@@ -76,11 +76,17 @@ export async function invalidateCache(keyPrefix: string): Promise<void> {
   }
 
   try {
-    // Note: In a real production system, use SCAN instead of KEYS
-    const keys = await redisClient.keys(`${keyPrefix}*`);
-    if (keys.length > 0) {
-      await redisClient.del(...keys);
-    }
+    const stream = redisClient.scanStream({ match: `${keyPrefix}*`, count: 100 });
+    stream.on("data", async (keys) => {
+      if (keys.length > 0) {
+        await redisClient!.del(...keys);
+      }
+    });
+    
+    await new Promise((resolve, reject) => {
+      stream.on("end", resolve);
+      stream.on("error", reject);
+    });
   } catch {
     useLocalCache = true;
   }

@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -5,9 +7,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 
 export const getWarrooms = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: sessions, error } = await (supabaseAdmin as any)
+    const { data: sessions, error } = await supabaseAdmin
       .from("warroom_sessions")
       .select("*, owner:profiles(display_name)")
       .order("created_at", { ascending: false });
@@ -17,15 +19,15 @@ export const getWarrooms = createServerFn({ method: "GET" })
   });
 
 export const createWarroom = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ title: z.string(), scenario: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: session, error } = await (supabaseAdmin as any)
+    const { data: session, error } = await supabaseAdmin
       .from("warroom_sessions")
       .insert({
         title: data.title,
         scenario: data.scenario,
-        owner_id: (context as any).userId as string,
+        owner_id: (context as ServerContext).userId as string,
       })
       .select()
       .single();
@@ -35,10 +37,10 @@ export const createWarroom = createServerFn({ method: "POST" })
   });
 
 export const getMessages = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ sessionId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: messages, error } = await (supabaseAdmin as any)
+    const { data: messages, error } = await supabaseAdmin
       .from("warroom_messages")
       .select("*, profiles(display_name)")
       .eq("session_id", data.sessionId)
@@ -49,12 +51,12 @@ export const getMessages = createServerFn({ method: "GET" })
   });
 
 export const sendMessage = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ sessionId: z.string().uuid(), content: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await (supabaseAdmin as any).from("warroom_messages").insert({
+    const { error } = await supabaseAdmin.from("warroom_messages").insert({
       session_id: data.sessionId,
-      user_id: (context as any).userId as string,
+      user_id: (context as ServerContext).userId as string,
       content: data.content,
     });
 

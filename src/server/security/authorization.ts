@@ -1,3 +1,4 @@
+import type { ServerContext } from "@/server/context";
 import { createMiddleware } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
@@ -6,6 +7,9 @@ import { z } from "zod";
  * Middleware to enforce team-based authorization.
  * Ensures the authenticated user belongs to the specified team.
  * This should be layered after requireSupabaseAuth.
+ *
+ * IMPORTANT: No environment-based bypasses. All environments enforce real membership checks.
+ * For testing, create actual team memberships in your test setup.
  */
 export const requireTeamAccess = createMiddleware().server(async (opts) => {
   const data = (opts as any).data;
@@ -21,24 +25,13 @@ export const requireTeamAccess = createMiddleware().server(async (opts) => {
   // Dynamically import server-only code to prevent it from leaking into the client bundle
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  // Check if user is a member of the requested team
-  const { data: membership, error } = await (supabaseAdmin as any)
+  // Check if user is a member of the requested team — enforced in ALL environments
+  const { data: membership, error } = await supabaseAdmin
     .from("team_members")
     .select("role")
     .eq("team_id", teamId)
-    .eq("user_id", (context as any).userId)
+    .eq("user_id", (context as unknown as ServerContext).userId)
     .single();
-
-  // DEV BYPASS: Force admin access in development mode
-  if (process.env.NODE_ENV === "development" || process.env.NODE_ENV !== "production") {
-    return next({
-      context: {
-        ...(context as any),
-        teamId: teamId,
-        teamRole: "admin",
-      },
-    });
-  }
 
   if (error || !membership) {
     throw new Error(`Unauthorized: User does not have access to team ${teamId}`);
@@ -46,7 +39,7 @@ export const requireTeamAccess = createMiddleware().server(async (opts) => {
 
   return next({
     context: {
-      ...(context as any),
+      ...(context as unknown as ServerContext),
       teamId: teamId,
       teamRole: membership.role,
     },

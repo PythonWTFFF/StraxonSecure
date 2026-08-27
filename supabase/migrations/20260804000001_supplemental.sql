@@ -13,8 +13,7 @@ CREATE TABLE IF NOT EXISTS public.scan_results (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.scan_results ENABLE ROW LEVEL SECURITY;
-CREATE POLICY sr_own_all ON public.scan_results FOR ALL TO authenticated
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+-- Policy already exists in previous migration
 CREATE INDEX idx_scan_results_user ON public.scan_results(user_id);
 
 -- ── COMPLIANCE RUNS (if not present) ─────────────────────
@@ -29,8 +28,7 @@ CREATE TABLE IF NOT EXISTS public.compliance_runs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.compliance_runs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY cr_own_all ON public.compliance_runs FOR ALL TO authenticated
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+-- Policy already exists in previous migration
 CREATE INDEX idx_compliance_runs_user ON public.compliance_runs(user_id, framework);
 
 -- ── PROFILES (if not present) ─────────────────────────────
@@ -44,9 +42,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY profiles_select ON public.profiles FOR SELECT TO authenticated USING (true);
-CREATE POLICY profiles_own_update ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
-CREATE POLICY profiles_own_insert ON public.profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+-- Policies already exist in previous migration
 
 -- Auto-create profile on sign up
 CREATE OR REPLACE FUNCTION public.init_user_profile()
@@ -79,5 +75,4 @@ CREATE TABLE IF NOT EXISTS public.architectures (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.architectures ENABLE ROW LEVEL SECURITY;
-CREATE POLICY arch_own_all ON public.architectures FOR ALL TO authenticated
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+-- Policy already exists in previous migration

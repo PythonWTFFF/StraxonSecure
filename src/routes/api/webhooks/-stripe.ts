@@ -23,23 +23,24 @@ export const APIRoute = createAPIFileRoute("/api/webhooks/stripe")({
         case "checkout.session.completed":
           const session = event.data.object;
           
-          // Update the user's subscription in Supabase
+          // Update the user's role to PRO in Supabase profiles
           if (session.client_reference_id) {
             await supabaseAdmin
-              .from("subscriptions")
-              .upsert({
-                user_id: session.client_reference_id,
-                plan: "pro",
-                status: "active",
-                provider: "stripe",
-                updated_at: new Date().toISOString(),
-              }, { onConflict: "user_id" });
+              .from("profiles")
+              .update({ role: "pro" })
+              .eq("id", session.client_reference_id);
           }
           break;
           
         case "customer.subscription.deleted":
           const subscription = event.data.object;
           // Demote user
+          if (subscription.client_reference_id) {
+            await supabaseAdmin
+              .from("profiles")
+              .update({ role: "user" })
+              .eq("id", subscription.client_reference_id);
+          }
           break;
           
         default:

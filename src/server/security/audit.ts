@@ -1,29 +1,34 @@
+import type { ServerContext } from "@/server/context";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export interface AuditEvent {
-  requestId: string;
-  actorUserId: string;
-  orgId: string;
   action: string;
   target?: string;
-  serverFn: string;
-  ipAddress?: string;
   metadata?: Record<string, any>;
+  serverFn?: string;
+  ipAddress?: string;
+  requestId?: string;
+  actorUserId?: string;
+  orgId?: string;
 }
 
 /**
  * Appends an immutable audit log entry directly to the database using the
  * Supabase Service Role key (bypassing RLS insert restrictions).
  */
-export async function logAudit(event: AuditEvent) {
+export async function logAudit(context: ServerContext, event: AuditEvent) {
   try {
-    const { error } = await (supabaseAdmin as any).from("audit_log").insert({
-      request_id: event.requestId,
-      actor_user_id: event.actorUserId,
-      org_id: event.orgId,
+    const reqId = event.requestId || context.requestId || "unknown";
+    const userId = event.actorUserId || context.userId || "system";
+    const orgId = event.orgId || context.orgId || "00000000-0000-0000-0000-000000000000";
+
+    const { error } = await supabaseAdmin.from("audit_log").insert({
+      request_id: reqId,
+      actor_user_id: userId,
+      org_id: orgId,
       action: event.action,
       target: event.target,
-      server_fn: event.serverFn,
+      server_fn: event.serverFn || "unknown",
       ip_address: event.ipAddress,
       metadata: event.metadata ?? {},
     });

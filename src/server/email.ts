@@ -26,10 +26,7 @@ export async function sendWelcomeEmail(email: string, name: string = "User") {
       `,
     });
     
-    logAudit({
-      requestId: "system",
-      actorUserId: "00000000-0000-0000-0000-000000000000",
-      orgId: "system",
+    logAudit(context as ServerContext, {
       action: "email_sent",
       serverFn: "sendWelcomeEmail",
       metadata: { type: "welcome", to: email, id: data.data?.id }

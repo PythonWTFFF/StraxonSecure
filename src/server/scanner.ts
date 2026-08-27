@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { z } from "zod";
@@ -292,7 +294,7 @@ function checkSecrets(code: string): ScanFinding[] {
 // ─── Run Full Scan ───────────────────────────────────────────────────────────
 
 export const runFullScan = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({
@@ -304,12 +306,12 @@ export const runFullScan = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     // 1. Usage Enforcement
-    await checkFeatureUsage((context as any).userId as string, "code_scan");
+    await checkFeatureUsage((context as ServerContext).userId as string, "code_scan");
     await logFeatureUsage(
-      (context as any).userId as string,
+      (context as ServerContext).userId as string,
       "code_scan",
       { filename: data.filename, scanType: data.scanType },
-      (context as any).requestId as string,
+      (context as ServerContext).requestId as string,
     );
 
     const findings: ScanFinding[] = [];
@@ -341,7 +343,7 @@ export const runFullScan = createServerFn({ method: "POST" })
     const { data: saved } = await supabaseAdmin
       .from("scan_results")
       .insert({
-        user_id: (context as any).userId as string,
+        user_id: (context as ServerContext).userId as string,
         filename: data.filename,
         findings: unique as unknown as any,
       })
@@ -367,14 +369,14 @@ export const runFullScan = createServerFn({ method: "POST" })
 // ─── Generate SARIF Report ───────────────────────────────────────────────────
 
 export const generateSARIF = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ scanId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: scan } = await supabaseAdmin
       .from("scan_results")
       .select("*")
       .eq("id", data.scanId)
-      .eq("user_id", (context as any).userId as string)
+      .eq("user_id", (context as ServerContext).userId as string)
       .single();
 
     if (!scan) throw new Error("Scan not found");
@@ -430,12 +432,12 @@ export const generateSARIF = createServerFn({ method: "POST" })
 // ─── Scan History ────────────────────────────────────────────────────────────
 
 export const getScanHistory = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await supabaseAdmin
       .from("scan_results")
       .select("id, filename, created_at, findings")
-      .eq("user_id", (context as any).userId as string)
+      .eq("user_id", (context as ServerContext).userId as string)
       .order("created_at", { ascending: false })
       .limit(20);
 

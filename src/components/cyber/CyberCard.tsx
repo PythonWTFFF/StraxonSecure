@@ -55,9 +55,18 @@ export const CyberCard = forwardRef<HTMLDivElement, CyberCardProps>(
         shadow: "hover:shadow-[0_0_30px_rgba(148,163,184,0.05)]",
         textShadow: "none",
       },
+      ghost: {
+        border: "border-transparent group-hover:border-white/10",
+        spotlight:
+          "radial-gradient(400px circle at x y, rgba(255, 255, 255, 0.03), transparent 60%)",
+        corner: "border-white/20",
+        accent: "bg-white/20",
+        shadow: "none",
+        textShadow: "none",
+      },
     };
 
-    const theme = themeColors[variant];
+    const theme = themeColors[variant] || themeColors.plain;
 
     return (
       <>

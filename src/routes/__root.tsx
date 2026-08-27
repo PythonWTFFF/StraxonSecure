@@ -7,7 +7,7 @@ import {
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import { AppShell } from "@/components/layout/AppShell";
@@ -31,6 +31,13 @@ if (typeof window !== "undefined") {
     replaysOnErrorSampleRate: 1.0,
     enabled: !!import.meta.env.VITE_SENTRY_DSN
   });
+
+  // Suppress specific harmless Three.js warnings from polluting the console
+  const originalWarn = console.warn;
+  console.warn = (...args) => {
+    if (args[0] && typeof args[0] === 'string' && args[0].includes('THREE.Clock')) return;
+    originalWarn(...args);
+  };
 }
 
 const queryClient = new QueryClient({
@@ -152,6 +159,35 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function OfflineBanner() {
+  const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  if (!isOffline) return null;
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[100] bg-warning/90 text-warning-foreground py-1 text-center text-xs font-mono backdrop-blur-sm border-b border-warning">
+      <span className="flex justify-center items-center gap-2">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+        </span>
+        OFFLINE MODE — Working from local cache. Real-time updates paused.
+      </span>
+    </div>
+  );
+}
+
 function RootComponent() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -178,6 +214,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <OfflineBanner />
       <SplashScreen />
       <ProtectedRoute>
         <AppShell>

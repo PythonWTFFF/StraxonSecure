@@ -81,10 +81,9 @@ function SettingsPage() {
       // Upsert into profiles table (includes bio)
       const { error } = await supabase
         .from("profiles")
-        .upsert(
-          { id: user.id, display_name: displayName, avatar_url: avatarUrl, bio } as any,
-          { onConflict: "id" }
-        );
+        .upsert({ id: user.id, display_name: displayName, avatar_url: avatarUrl, bio } as any, {
+          onConflict: "id",
+        });
 
       if (error) throw error;
 
@@ -104,7 +103,6 @@ function SettingsPage() {
       setSaving(false);
     }
   };
-
 
   const handlePasswordReset = async () => {
     if (!user?.email) return;

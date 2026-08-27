@@ -1,3 +1,4 @@
+import type { ServerContext } from "@/server/context";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export async function checkFeatureUsage(
@@ -5,7 +6,7 @@ export async function checkFeatureUsage(
   feature: "ai_prompt" | "pentest_scan" | "easm_scan" | "code_scan" | "lab_session",
 ): Promise<void> {
   // 1. Check if user is Pro
-  const { data: sub } = await (supabaseAdmin as any)
+  const { data: sub } = await supabaseAdmin
     .from("subscriptions")
     .select("status, current_period_end")
     .eq("user_id", userId)
@@ -16,7 +17,7 @@ export async function checkFeatureUsage(
   if (isPro) return; // Unlimited for Pro users
 
   // 2. Free Tier Enforcement
-  const { count } = await (supabaseAdmin as any)
+  const { count } = await supabaseAdmin
     .from("usage_logs")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
@@ -50,5 +51,5 @@ export async function logFeatureUsage(
     feature,
     details: { ...details, requestId },
   };
-  await (supabaseAdmin as any).from("usage_logs").insert(payload);
+  await supabaseAdmin.from("usage_logs").insert(payload);
 }

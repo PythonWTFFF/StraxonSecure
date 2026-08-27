@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { createRateLimiter } from "@/server/security/rateLimit";
@@ -23,11 +25,11 @@ import { getCache, setCache } from "@/server/redis";
 // ─── Fetch & Cache CVEs from NVD ─────────────────────────────────────────────
 
 export const fetchThreatIntel = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     return withSpan("fetchThreatIntel", async (span) => {
-      if ((context as any).requestId as string)
-        span.setAttribute("requestId", (context as any).requestId as string);
+      if ((context as ServerContext).requestId as string)
+        span.setAttribute("requestId", (context as ServerContext).requestId as string);
 
       // In-process cache first (60s TTL)
       const memCached = sharedCache.get<any>("threat_intel_cves");
@@ -110,7 +112,7 @@ export const fetchThreatIntel = createServerFn({ method: "GET" })
 // ─── AI Analyze a Specific CVE ────────────────────────────────────────────────
 
 export const analyzeCVE = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(10, 60, "rate_limit:ai_cve")])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth, createRateLimiter(10, 60, "rate_limit:ai_cve")])
   .validator((d) =>
     z
       .object({
@@ -174,7 +176,7 @@ Be concise, technical, and actionable. Max 400 words.`;
 // ─── Search CVEs ──────────────────────────────────────────────────────────────
 
 export const searchCVEs = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) =>
     z
       .object({

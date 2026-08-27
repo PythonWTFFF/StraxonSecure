@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -27,7 +29,7 @@ const SYSTEM_PROMPTS: Record<string, string> = {
 };
 
 export const askAI = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(15, 60, "rate_limit:ask_ai")])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth, createRateLimiter(15, 60, "rate_limit:ask_ai")])
   .validator((input: AskAIInput) => {
     if (!input || !Array.isArray(input.messages)) {
       throw new Error("Invalid input: messages required");
@@ -46,7 +48,7 @@ export const askAI = createServerFn({ method: "POST" })
     const mode = data.mode ?? "chat";
     const systemPrompt = SYSTEM_PROMPTS[mode];
 
-    await checkFeatureUsage((context as any).userId as string, "ai_prompt");
+    await checkFeatureUsage((context as ServerContext).userId as string, "ai_prompt");
 
     try {
       const mlUrl = process.env.VITE_ML_ENGINE_URL || "http://localhost:8082";
@@ -64,17 +66,14 @@ export const askAI = createServerFn({ method: "POST" })
 
       const json = await res.json();
       await logFeatureUsage(
-        (context as any).userId as string,
+        (context as ServerContext).userId as string,
         "ai_prompt",
         { mode },
-        (context as any).requestId as string,
+        (context as ServerContext).requestId as string,
       );
 
       // Phase 5: Immutable Audit Logging
-      await logAudit({
-        requestId: ((context as any).requestId as string) ?? "unknown",
-        actorUserId: (context as any).userId as string,
-        orgId: "00000000-0000-0000-0000-000000000000", // Needs true orgId when multi-tenant is active
+      await logAudit(context as ServerContext, {
         action: "ai.ask",
         serverFn: "askAI",
         metadata: { mode, messageCount: data.messages.length },

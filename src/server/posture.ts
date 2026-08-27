@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -5,12 +7,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 
 export const getPostureEvaluations = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (supabaseAdmin as any)
+    const { data, error } = await supabaseAdmin
       .from("posture_evaluations")
       .select("*")
-      .eq("user_id", (context as any).userId as string)
+      .eq("user_id", (context as ServerContext).userId as string)
       .order("evaluated_at", { ascending: false });
 
     if (error) throw new Error("Failed to load evaluations");
@@ -18,7 +20,7 @@ export const getPostureEvaluations = createServerFn({ method: "GET" })
   });
 
 export const evaluatePosture = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ provider: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     // Simulate Cloud Posture Evaluation
@@ -41,10 +43,10 @@ export const evaluatePosture = createServerFn({ method: "POST" })
         return f;
       });
 
-    const { data: evalData, error } = await (supabaseAdmin as any)
+    const { data: evalData, error } = await supabaseAdmin
       .from("posture_evaluations")
       .insert({
-        user_id: (context as any).userId as string,
+        user_id: (context as ServerContext).userId as string,
         cloud_provider: data.provider,
         score,
         findings,

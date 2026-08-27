@@ -32,20 +32,6 @@ export function useSubscription() {
       return;
     }
 
-    // Check DEV Override first to avoid 404s on missing tables
-    if (localStorage.getItem("dev_pro_override") === "true") {
-      setSub({
-        id: "dev-override",
-        plan: "pro_monthly",
-        status: "active",
-        provider: "none",
-        trial_ends_at: new Date(Date.now() + 86400000 * 30).toISOString(),
-        current_period_end: new Date(Date.now() + 86400000 * 30).toISOString(),
-        cancel_at_period_end: false,
-      });
-      setLoading(false);
-      return;
-    }
     const { data } = await supabase
       .from("subscriptions")
       .select("*")
@@ -68,22 +54,14 @@ export function useSubscription() {
     sub.status === "active" &&
     (!sub.current_period_end || new Date(sub.current_period_end).getTime() > now);
 
-  // Local bypass check
-  const devOverride =
-    typeof window !== "undefined" &&
-    import.meta.env.DEV &&
-    localStorage.getItem("dev_pro_override") === "true";
-
-  const hasAccess = devOverride || trialActive || paidActive;
+  const hasAccess = trialActive || paidActive;
   const trialDaysLeft = sub
     ? Math.max(0, Math.ceil((new Date(sub.trial_ends_at).getTime() - now) / 86400000))
     : 0;
 
   // Determine limits based on plan
   let limits: UsageLimits = { max_edr_hosts: 1, max_lab_sessions: 1 };
-  if (devOverride) {
-    limits = { max_edr_hosts: 999, max_lab_sessions: 999 };
-  } else if (hasAccess) {
+  if (hasAccess) {
     if (sub?.plan === "pro_monthly" || sub?.plan === "pro_yearly") {
       limits = { max_edr_hosts: 5, max_lab_sessions: 10 };
     } else {

@@ -204,6 +204,43 @@ function TrialBanner() {
   return null;
 }
 
+function MobileBottomNav() {
+  const location = useLocation();
+  const tabs = [
+    { to: "/", icon: Shield, label: "Home" },
+    { to: "/dashboard", icon: Activity, label: "SOC" },
+    { to: "/labs", icon: Beaker, label: "Labs" },
+    { to: "/settings", icon: ShieldCheck, label: "Settings" },
+  ];
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#020610]/95 backdrop-blur-xl border-t border-border/50 pb-safe">
+      <div className="flex items-center justify-around h-16 px-2">
+        {tabs.map((tab) => {
+          const active = location.pathname === tab.to || (tab.to !== "/" && location.pathname.startsWith(tab.to));
+          const Icon = tab.icon;
+          return (
+            <Link
+              key={tab.to}
+              to={tab.to}
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors relative min-w-[64px] min-h-[44px]", // Target sizes for touch accessibility
+                active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {active && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-primary rounded-b glow-cyan" />
+              )}
+              <Icon className={cn("w-5 h-5", active && "drop-shadow-[0_0_8px_rgba(0,243,255,0.6)]")} />
+              <span className="text-[10px] font-mono tracking-wider">{tab.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
@@ -291,8 +328,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 relative scanline main-content overflow-y-auto">{children}</main>
+        <main className="flex-1 min-w-0 relative scanline main-content overflow-y-auto">
+          <div className="max-w-[2560px] mx-auto w-full h-full">
+            {children}
+          </div>
+        </main>
       </div>
+      <MobileBottomNav />
       <CommandPalette />
     </div>
   );

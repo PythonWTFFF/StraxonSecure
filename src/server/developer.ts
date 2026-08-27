@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -5,11 +7,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 import { assertSafeScanTarget } from "@/server/security/scanTarget";
 import crypto from "crypto";
+import { encrypt } from "@/server/security/encryption";
 
 // ===== API KEYS =====
 
 export const generateApiKey = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     // Generate a secure random API key
     const rawKey = `strx_live_${crypto.randomBytes(24).toString("hex")}`;
@@ -18,7 +21,7 @@ export const generateApiKey = createServerFn({ method: "POST" })
     const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
 
     const { error } = await supabaseAdmin.from("api_keys").insert({
-      user_id: (context as any).userId as string,
+      user_id: (context as ServerContext).userId as string,
       key_hash: keyHash,
       name: "Default API Key",
     });
@@ -31,12 +34,12 @@ export const generateApiKey = createServerFn({ method: "POST" })
 // ===== WEBHOOKS =====
 
 export const getWebhooks = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await supabaseAdmin
       .from("webhooks")
       .select("*")
-      .eq("user_id", (context as any).userId as string)
+      .eq("user_id", (context as ServerContext).userId as string)
       .order("created_at", { ascending: false });
 
     if (error) throw new Error(error.message);
@@ -44,7 +47,7 @@ export const getWebhooks = createServerFn({ method: "GET" })
   });
 
 export const addWebhook = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ url: z.string().url() }).parse(d))
   .handler(async ({ data, context }) => {
     // SSRF Mitigation
@@ -56,9 +59,9 @@ export const addWebhook = createServerFn({ method: "POST" })
     const { data: webhook, error } = await supabaseAdmin
       .from("webhooks")
       .insert({
-        user_id: (context as any).userId as string,
+        user_id: (context as ServerContext).userId as string,
         url: data.url,
-        secret,
+        secret: encrypt(secret),
       })
       .select()
       .single();
@@ -68,14 +71,14 @@ export const addWebhook = createServerFn({ method: "POST" })
   });
 
 export const deleteWebhook = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await supabaseAdmin
       .from("webhooks")
       .delete()
       .eq("id", data.id)
-      .eq("user_id", (context as any).userId as string);
+      .eq("user_id", (context as ServerContext).userId as string);
 
     if (error) throw new Error("Failed to delete webhook");
     return { success: true };

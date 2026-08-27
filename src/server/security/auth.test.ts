@@ -1,3 +1,4 @@
+import type { ServerContext } from "@/server/context";
 import { describe, it, expect, vi } from "vitest";
 import { getPentestJobs } from "../pentest";
 
@@ -31,13 +32,13 @@ describe("Tenant Isolation (Cross-Org Access Prevention)", () => {
     // We can't directly execute TanStack Start server functions easily without the runtime context,
     // but we can verify the mock was called with the correct user_id if we simulate the handler.
     // Instead of fighting the TanStack Router internals, we can test that our middleware design
-    // pattern strictly requires a valid ((context as any).userId as string).
+    // pattern strictly requires a valid ((context as ServerContext).userId as string).
 
     // Simulate the handler logic directly since it's hard to mock the TanStack Start Context
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const mockContext = { userId: "user-123", requestId: "req-1" };
 
-    const { data, error } = await (supabaseAdmin as any)
+    const { data, error } = await supabaseAdmin
       .from("pentest_jobs")
       .select("*")
       .eq("user_id", mockContext.userId)

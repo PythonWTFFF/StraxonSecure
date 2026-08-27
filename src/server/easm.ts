@@ -1,3 +1,5 @@
+import { traceRequest } from "@/server/telemetry-middleware";
+import type { ServerContext } from "@/server/context";
 import { createServerFn } from "@tanstack/react-start";
 import { requireRequestId } from "@/server/security/requestId";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -10,12 +12,12 @@ import { assertSafeScanTarget } from "@/server/security/scanTarget";
 // ===== DB Helpers =====
 
 export const getTargets = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (supabaseAdmin as any)
+    const { data, error } = await supabaseAdmin
       .from("easm_targets")
       .select("*")
-      .eq("user_id", (context as any).userId as string)
+      .eq("user_id", (context as ServerContext).userId as string)
       .order("created_at", { ascending: false });
 
     if (error) throw new Error(error.message);
@@ -23,20 +25,20 @@ export const getTargets = createServerFn({ method: "GET" })
   });
 
 export const getFindings = createServerFn({ method: "GET" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ targetId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     // Basic auth check ensuring the target belongs to the user
-    const { data: target } = await (supabaseAdmin as any)
+    const { data: target } = await supabaseAdmin
       .from("easm_targets")
       .select("id")
       .eq("id", data.targetId)
-      .eq("user_id", (context as any).userId as string)
+      .eq("user_id", (context as ServerContext).userId as string)
       .single();
 
     if (!target) throw new Error("Unauthorized or not found");
 
-    const { data: findings, error } = await (supabaseAdmin as any)
+    const { data: findings, error } = await supabaseAdmin
       .from("easm_findings")
       .select("*")
       .eq("target_id", data.targetId)
@@ -47,10 +49,10 @@ export const getFindings = createServerFn({ method: "GET" })
   });
 
 export const addTarget = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth])
+  .middleware([traceRequest, requireRequestId, requireSupabaseAuth])
   .validator((d) => z.object({ domain: z.string().min(3) }).parse(d))
   .handler(async ({ data, context }) => {
-    await checkFeatureUsage((context as any).userId as string, "easm_scan");
+    await checkFeatureUsage((context as ServerContext).userId as string, "easm_scan");
 
     // Strip http/https and paths if user entered a URL
     const cleanDomain = data.domain
@@ -62,19 +64,19 @@ export const addTarget = createServerFn({ method: "POST" })
     // SSRF Mitigation (we construct a dummy http url to use our existing validator)
     await assertSafeScanTarget(`http://${cleanDomain}`);
 
-    const { data: target, error } = await (supabaseAdmin as any)
+    const { data: target, error } = await supabaseAdmin
       .from("easm_targets")
-      .insert({ user_id: (context as any).userId as string, domain: cleanDomain })
+      .insert({ user_id: (context as ServerContext).userId as string, domain: cleanDomain })
       .select()
       .single();
 
     if (error) throw new Error("Failed to add target. It might already exist.");
 
     await logFeatureUsage(
-      (context as any).userId as string,
+      (context as ServerContext).userId as string,
       "easm_scan",
       { domain: cleanDomain },
-      (context as any).requestId as string,
+      (context as ServerContext).requestId as string,
     );
 
     // Fire off recon in the background so we don't block the UI
@@ -113,7 +115,7 @@ async function checkPort(host: string, port: number, timeoutMs = 1500): Promise<
 // Background Task
 async function runRecon(targetId: string, domain: string) {
   try {
-    await (supabaseAdmin as any)
+    await supabaseAdmin
       .from("easm_targets")
       .update({ status: "scanning" })
       .eq("id", targetId);
@@ -153,7 +155,7 @@ async function runRecon(targetId: string, domain: string) {
 
     // Upsert to handle duplicates safely
     if (findingRecords.length > 0) {
-      await (supabaseAdmin as any)
+      await supabaseAdmin
         .from("easm_findings")
         .upsert(findingRecords, { onConflict: "target_id, finding_type, value" });
     }
@@ -170,7 +172,7 @@ async function runRecon(targetId: string, domain: string) {
           if (port === 22) severity = "medium";
           if (port === 3389) severity = "high"; // RDP exposed
 
-          await (supabaseAdmin as any).from("easm_findings").upsert(
+          await supabaseAdmin.from("easm_findings").upsert(
             {
               target_id: targetId,
               finding_type: "open_port",
@@ -185,13 +187,13 @@ async function runRecon(targetId: string, domain: string) {
     }
 
     // Done
-    await (supabaseAdmin as any)
+    await supabaseAdmin
       .from("easm_targets")
       .update({ status: "completed" })
       .eq("id", targetId);
   } catch (error) {
     console.error("EASM Recon Failed for", domain, error);
-    await (supabaseAdmin as any)
+    await supabaseAdmin
       .from("easm_targets")
       .update({ status: "failed" })
       .eq("id", targetId);

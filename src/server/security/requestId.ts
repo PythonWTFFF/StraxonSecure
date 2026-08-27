@@ -1,3 +1,4 @@
+import type { ServerContext } from "@/server/context";
 import { createMiddleware } from "@tanstack/react-start";
 
 export const requireRequestId = createMiddleware().server(async ({ next, context }) => {
@@ -7,7 +8,7 @@ export const requireRequestId = createMiddleware().server(async ({ next, context
   // Pass it down the context chain
   return next({
     context: {
-      ...(context as any),
+      ...(context as unknown as ServerContext),
       requestId,
     },
   });
