@@ -270,7 +270,7 @@ const THREAT_INTEL = [
   },
 ];
 
-const DEFAULT_RULES: AlertRule[] = [
+export const DEFAULT_RULES: AlertRule[] = [
   { id: "r1", name: "Critical Severity Auto-Block", enabled: true, severity: "critical", count: 0 },
   { id: "r2", name: "SSH Brute Force (>5 / min)", enabled: true, severity: "high", count: 0 },
   { id: "r3", name: "Data Exfil Detection", enabled: true, severity: "high", count: 0 },

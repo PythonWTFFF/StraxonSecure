@@ -86,7 +86,7 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
-import { GlitchHeadline, Panel, SevBadge, Toggle, SevFilter, EventFeed, DPIPanel, uid, fmtBytes, fmtTime, hexDump } from "@/components/dashboard/DashboardShared";
+import { GlitchHeadline, Panel, SevBadge, Toggle, SevFilter, EventFeed, DPIPanel, uid, fmtBytes, fmtTime, hexDump, DEFAULT_RULES } from "@/components/dashboard/DashboardShared";
 import { DashboardProvider, useDashboardContext } from "@/components/dashboard/DashboardContext";
 function DashboardContent() {
   const { user } = useAuth();
