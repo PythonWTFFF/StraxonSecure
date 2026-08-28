@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/sheet";
 import { useSubscription } from "@/hooks/useSubscription";
 import { CommandPalette } from "./CommandPalette";
+import { StraxonCopilot } from "@/components/cyber/StraxonCopilot";
 
 const NAV_GROUPS = [
   {
@@ -294,6 +295,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 min-w-0 relative scanline">{children}</main>
       </div>
       <CommandPalette />
+      <StraxonCopilot />
     </div>
   );
 }
