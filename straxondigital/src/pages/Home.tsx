@@ -5,18 +5,22 @@ import { ServiceCard } from "@/components/ServiceCard";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { SERVICES } from "@/lib/services";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Sparkles, Zap, Shield, Cpu, LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Home = () => {
+  const { scrollY } = useScroll();
+  const backgroundY = useTransform(scrollY, [0, 1000], ["0%", "50%"]);
+  const globeY = useTransform(scrollY, [0, 1000], ["0%", "20%"]);
+
   return (
     <div className="min-h-screen">
       <Navbar />
 
       {/* Hero */}
       <section className="relative pt-32 pb-24 sm:pt-40 sm:pb-32 overflow-hidden">
-        <div className="absolute inset-0 grid-pattern opacity-30" />
+        <motion.div style={{ y: backgroundY }} className="absolute inset-0 grid-pattern opacity-30" />
         <div className="absolute inset-0 bg-gradient-radial" />
 
         <div className="container relative grid lg:grid-cols-2 gap-12 items-center">
@@ -62,6 +66,7 @@ const Home = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
+            style={{ y: globeY }}
             className="relative h-[420px] sm:h-[520px]"
           >
             <NetworkGlobe />
