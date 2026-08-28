@@ -11,7 +11,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 
 const SCHEMAS: Record<string, { name: string; description: string; parameters: unknown }> = {
   resume: {
@@ -493,14 +493,14 @@ ${JSON.stringify(order.intake_data, null, 2)}${brandBlock}
 
 Produce the deliverable now using the provided tool.`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: system },
           { role: "user", content: userPrompt },
@@ -512,10 +512,10 @@ Produce the deliverable now using the provided tool.`;
 
     if (!aiResp.ok) {
       const text = await aiResp.text();
-      console.error("AI gateway error", aiResp.status, text);
+      console.error("OpenAI error", aiResp.status, text);
       const human =
         aiResp.status === 429 ? "Rate limit hit. Try again shortly."
-        : aiResp.status === 402 ? "AI credits exhausted. Top up the Lovable AI workspace."
+        : aiResp.status === 401 ? "OpenAI API key is missing or invalid."
         : `AI gateway error (${aiResp.status})`;
       await admin.from("orders").update({ status: "pending", error_message: human }).eq("id", order_id);
       return new Response(JSON.stringify({ error: human }), {

@@ -36,6 +36,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
@@ -54,6 +55,12 @@ const Auth = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Honeypot check - if filled out by bot, pretend it succeeded
+    if (honeypot) {
+      toast.success(mode === "signup" ? "Account created successfully. Please check your email to confirm." : "Authentication successful. Welcome back.");
+      return;
+    }
+
     // Validate input
     const parse = schema.safeParse({ email, password, fullName });
     if (!parse.success) {
@@ -161,6 +168,9 @@ const Auth = () => {
                   onSubmit={onSubmit}
                   className="space-y-5"
                 >
+                  <div className="hidden" aria-hidden="true">
+                    <input type="text" name="hp_field" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" />
+                  </div>
                   {mode === "signup" && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
@@ -202,7 +212,7 @@ const Auth = () => {
                         Password
                       </Label>
                       {mode === "signin" && (
-                        <Link to="#" className="text-xs text-primary hover:underline font-medium">
+                        <Link to="/reset-password" className="text-xs text-primary hover:underline font-medium">
                           Forgot password?
                         </Link>
                       )}

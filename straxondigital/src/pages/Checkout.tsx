@@ -12,6 +12,7 @@ import { findService, formatPrice } from "@/lib/services";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { createCheckoutSession } from "@/lib/stripe";
 import { Check, ChevronLeft, ChevronRight, Lock, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -75,8 +76,19 @@ const Checkout = () => {
         progress: 0,
       }).select().single();
       if (error) throw error;
-      toast.success("Order placed. Tracking it now.");
-      navigate(`/dashboard?order=${order.id}`);
+      
+      const { url } = await createCheckoutSession({
+        service,
+        orderId: order.id,
+        email: user.email || "",
+      });
+
+      if (url) {
+        window.location.href = url;
+      } else {
+        toast.success("Order placed. Tracking it now.");
+        navigate(`/dashboard?order=${order.id}`);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not place order");
     } finally {

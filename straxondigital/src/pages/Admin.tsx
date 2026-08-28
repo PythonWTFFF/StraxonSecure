@@ -91,6 +91,14 @@ const Admin = () => {
     return Array.from(map.entries()).map(([day, revenue]) => ({ day, revenue }));
   })();
 
+  const revByService = (() => {
+    const map = new Map<string, number>();
+    orders.filter((o) => o.status === "completed").forEach((o) => {
+      map.set(o.service_name, (map.get(o.service_name) || 0) + o.price_cents / 100);
+    });
+    return Array.from(map.entries()).map(([name, revenue]) => ({ name, revenue }));
+  })();
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -185,7 +193,7 @@ const Admin = () => {
               ))}
           </TabsContent>
 
-          <TabsContent value="analytics" className="mt-6">
+          <TabsContent value="analytics" className="mt-6 space-y-6">
             <Card className="glass p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="h-4 w-4 text-primary" />
@@ -202,6 +210,26 @@ const Admin = () => {
                       <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
                       <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))" }} />
                     </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </Card>
+            <Card className="glass p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Package className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold">Revenue by service</h3>
+              </div>
+              {revByService.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No completed orders yet.</p>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={revByService}>
+                      <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
+                      <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}

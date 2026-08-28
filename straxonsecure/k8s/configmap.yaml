@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: straxon-config
-data:
-  REDIS_URL: "redis://straxon-redis-service:6379"
-  # Add other non-sensitive configurations here

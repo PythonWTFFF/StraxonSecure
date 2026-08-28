@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline · Straxon Digital</title>
+  <meta name="theme-color" content="#09090b" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+    p { color: #a1a1aa; max-w: 400px; margin: 0 auto 2rem; line-height: 1.5; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #09090b;
+      background-color: #fafafa;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .icon { margin-bottom: 2rem; opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <div class="icon">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 9.86a10.94 10.94 0 00-3.41 2.69M14.28 16.32A5 5 0 0112 17a5 5 0 01-3.54-1.46M12 20h.01M8.53 16.11a6 6 0 011.66-1.5M10.91 13.06A6 6 0 0112 13a6 6 0 013.53 1.15M8.5 5.53A10.94 10.94 0 0112 4a11 11 0 017 2.53"/>
+    </svg>
+  </div>
+  <h1>You're Offline</h1>
+  <p>Straxon Digital requires an internet connection to sync your workspace and deliverables. Please check your network connection and try again.</p>
+  <button class="btn" onclick="window.location.reload()">Retry Connection</button>
+</body>
+</html>
