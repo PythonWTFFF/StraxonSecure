@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Sparkles, Webhook, Plus, Trash2, ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AIChat } from "./AIChat";
 
 interface Workspace { id: string; name: string; owner_id: string; }
 interface BrandBrain {
@@ -59,9 +60,11 @@ export const WorkspacePanel = ({ userId }: { userId: string }) => {
       <Tabs defaultValue="brand" className="w-full">
         <TabsList className="glass">
           <TabsTrigger value="brand"><Brain className="h-3.5 w-3.5 mr-1.5" /> Brand Brain</TabsTrigger>
+          <TabsTrigger value="knowledge"><Brain className="h-3.5 w-3.5 mr-1.5" /> Knowledge Base</TabsTrigger>
           <TabsTrigger value="integrations"><Webhook className="h-3.5 w-3.5 mr-1.5" /> Integrations</TabsTrigger>
         </TabsList>
         <TabsContent value="brand" className="mt-6"><BrandBrainWizard workspaceId={ws.id} /></TabsContent>
+        <TabsContent value="knowledge" className="mt-6"><KnowledgeBaseTab workspaceId={ws.id} /></TabsContent>
         <TabsContent value="integrations" className="mt-6"><IntegrationsTab workspaceId={ws.id} /></TabsContent>
       </Tabs>
     </div>
@@ -294,5 +297,87 @@ const IntegrationsTab = ({ workspaceId }: { workspaceId: string }) => {
           ))}
       </div>
     </Card>
+  );
+};
+
+// ---------------- KNOWLEDGE BASE TAB ----------------
+const KnowledgeBaseTab = ({ workspaceId }: { workspaceId: string }) => {
+  const [content, setContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [docs, setDocs] = useState<any[]>([]);
+
+  const loadDocs = async () => {
+    const { data } = await supabase.from("documents").select("id, metadata, created_at").eq("workspace_id", workspaceId).order("created_at", { ascending: false });
+    setDocs(data || []);
+  };
+
+  useEffect(() => {
+    loadDocs();
+  }, [workspaceId]);
+
+  const upload = async () => {
+    if (!content.trim()) return;
+    setSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          workspaceId,
+          content,
+          metadata: { source: "manual_upload", title: content.substring(0, 30) + "..." }
+        })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast.success("Document added to Knowledge Base");
+      setContent("");
+      loadDocs();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to process document");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card className="glass-strong p-8">
+        <h3 className="text-xl font-semibold mb-2">Knowledge Base (RAG)</h3>
+        <p className="text-sm text-muted-foreground mb-6">Upload raw text or paste brand guidelines here to feed into the AI's semantic memory.</p>
+
+        <Textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Paste document text here..."
+          className="min-h-[150px] mb-4"
+        />
+        
+        <Button onClick={upload} disabled={saving || !content.trim()} className="bg-gradient-primary text-primary-foreground border-0 shadow-glow mb-8">
+          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />} Add to Knowledge Base
+        </Button>
+
+        <div className="space-y-3 mt-4 pt-4 border-t border-border/40">
+          <h4 className="font-semibold text-sm">Indexed Documents ({docs.length})</h4>
+          {docs.length === 0 && <p className="text-sm text-muted-foreground">No documents uploaded.</p>}
+          {docs.map(d => (
+            <div key={d.id} className="flex justify-between items-center p-3 rounded bg-muted/20 border border-border/30">
+              <div>
+                <p className="text-sm font-medium">{d.metadata?.title || "Document"}</p>
+                <p className="text-xs text-muted-foreground font-mono">{new Date(d.created_at).toLocaleString()}</p>
+              </div>
+              <Badge variant="outline" className="text-[10px]">Vectorized</Badge>
+            </div>
+          ))}
+        </div>
+      </Card>
+      
+      <div className="h-full">
+        <AIChat workspaceId={workspaceId} />
+      </div>
+    </div>
   );
 };

@@ -472,6 +472,37 @@ Deno.serve(async (req) => {
     const system = SYSTEM_PROMPTS[kind] || "You are a senior consultant.";
     if (!schema) throw new Error(`No generator for service_type=${kind}`);
 
+    // --- SaaS Logic: Check limits ---
+    if (order.workspace_id) {
+      const { data: ws, error: wsErr } = await admin
+        .from("workspaces")
+        .select("credits")
+        .eq("id", order.workspace_id)
+        .single();
+      
+      if (wsErr || !ws) throw new Error("Could not verify workspace credits");
+      
+      // Check for active subscription
+      const { data: subs } = await admin
+        .from("subscriptions")
+        .select("status")
+        .eq("user_id", order.user_id)
+        .in("status", ["active", "trialing"]);
+        
+      const hasActiveSub = subs && subs.length > 0;
+      
+      if (!hasActiveSub) {
+        if (ws.credits <= 0) {
+          const msg = "Out of credits. Please upgrade to a Pro subscription to continue generating deliverables.";
+          await admin.from("orders").update({ status: "cancelled", error_message: msg }).eq("id", order_id);
+          throw new Error(msg);
+        }
+        // Deduct 1 credit
+        await admin.from("workspaces").update({ credits: ws.credits - 1 }).eq("id", order.workspace_id);
+      }
+    }
+    // --------------------------------
+
     // Brand Brain injection (server-side, secure). Falls back gracefully if not configured.
     let brandBlock = "";
     if (order.workspace_id) {
