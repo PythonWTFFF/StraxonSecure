@@ -9,3 +9,5 @@ bypass_token.py
 terraform/tfplan
 *.tfstate
 *.tfstate.*
+.terraform/
+.terraform.lock.hcl
