@@ -7,7 +7,7 @@ export const Footer = () => {
     <footer className="border-t border-border/40 mt-12">
       <div className="container py-12 grid gap-10 md:grid-cols-4">
         <div className="md:col-span-2">
-          <BrandMark withWordmark wordmark="STRAXON LABS" />
+          <BrandMark withWordmark wordmark="StraxonLabs" />
           <p className="mt-4 text-sm text-muted-foreground max-w-md">
             Straxon Labs — automated digital deliverables, engineered with surgical precision.
             If anything ever falls short, our team is one click away.

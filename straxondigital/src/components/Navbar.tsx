@@ -27,7 +27,7 @@ export const Navbar = () => {
     >
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <BrandMark withWordmark wordmark="STRAXON LABS" />
+          <BrandMark withWordmark wordmark="StraxonLabs" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm">

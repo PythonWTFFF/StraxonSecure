@@ -22,8 +22,8 @@ export default defineConfig(({ mode }) => ({
         config: true,
       },
       manifest: {
-        name: 'Straxon Digital',
-        short_name: 'Straxon',
+        name: 'StraxonLabs Digital',
+        short_name: 'StraxonLabs',
         description: 'Automated Digital Agency',
         theme_color: '#09090b',
         background_color: '#09090b',

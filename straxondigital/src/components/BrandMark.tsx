@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export const BrandMark = ({
   size = 32,
   withWordmark = false,
-  wordmark = "STRAXON",
+  wordmark = "StraxonLabs",
   className,
 }: {
   size?: number;
