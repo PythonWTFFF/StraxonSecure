@@ -2,10 +2,13 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, LogOut, Shield, Menu, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Shield, Menu, X, Sparkles } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { NotificationBell } from "@/components/NotificationBell";
+import { CreditBalanceBadge } from "@/components/CreditBalanceBadge";
 import { motion, AnimatePresence } from "framer-motion";
+
+import { toast } from "sonner";
 
 export const Navbar = () => {
   const { user, role, signOut } = useAuth();
@@ -33,14 +36,35 @@ export const Navbar = () => {
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/services", label: "Services" },
-    { to: "/contact", label: "Contact" },
+    { to: "/pricing", label: "Pricing" },
+    { to: "/automations", label: "Automations" },
+    { to: "/reseller", label: "Agency Reseller" },
+    { to: "/affiliates", label: "Partners" },
   ];
 
   return (
     <>
+      {/* Top Promotional Announcement Bar */}
+      <div className="fixed top-0 inset-x-0 z-50 bg-gradient-to-r from-primary/30 via-primary/10 to-primary/30 backdrop-blur-md border-b border-primary/20 py-1.5 px-4 text-center text-xs font-mono text-foreground flex items-center justify-center gap-2">
+        <span className="flex items-center gap-1.5 text-primary font-semibold">
+          <Sparkles className="h-3 w-3 fill-primary" /> LAUNCH SPECIAL:
+        </span>
+        <span className="hidden sm:inline">Use code <strong className="text-primary font-bold">LAUNCH25</strong> for 25% off all services & turnkey suites.</span>
+        <span className="sm:hidden">Code <strong className="text-primary font-bold">LAUNCH25</strong> for 25% off.</span>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText("LAUNCH25");
+            toast.success("Coupon code LAUNCH25 copied to clipboard!");
+          }}
+          className="underline hover:text-primary transition-colors cursor-pointer ml-1 text-[11px] text-muted-foreground hover:text-foreground"
+        >
+          [Copy]
+        </button>
+      </div>
+
       <header 
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-          scrolled ? "glass border-b border-border/40 py-0" : "bg-transparent border-transparent py-2"
+        className={`fixed top-7 inset-x-0 z-50 transition-all duration-300 ${
+          scrolled ? "glass border-b border-border/40 py-0" : "bg-transparent border-transparent py-1"
         }`}
       >
         <div className="container px-4 sm:px-6 flex h-16 items-center justify-between">
@@ -57,7 +81,7 @@ export const Navbar = () => {
                 end={l.to === "/"}
                 className={({ isActive }) =>
                   `relative transition-all duration-300 hover:text-primary ${
-                    isActive ? "text-primary" : "text-muted-foreground"
+                    isActive ? "text-primary font-medium" : "text-muted-foreground"
                   }`
                 }
               >
@@ -67,9 +91,10 @@ export const Navbar = () => {
           </nav>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2.5">
             {user ? (
               <>
+                <CreditBalanceBadge />
                 <NotificationBell />
                 {role === "admin" && (
                   <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} className="hover:scale-105 active:scale-95 transition-transform">
@@ -156,6 +181,9 @@ export const Navbar = () => {
               <div className="mt-auto flex flex-col gap-4 border-t border-border/40 pt-6">
                 {user ? (
                   <>
+                    <div className="py-1">
+                      <CreditBalanceBadge />
+                    </div>
                     {role === "admin" && (
                       <Button variant="outline" className="w-full justify-start" onClick={() => { navigate("/admin"); setMobileMenuOpen(false); }}>
                         <Shield className="h-4 w-4 mr-2" />Admin Panel

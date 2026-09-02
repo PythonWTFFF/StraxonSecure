@@ -12,7 +12,7 @@ import { GenerationTerminal } from "@/components/GenerationTerminal";
 import { InvoiceDocument, InvoiceLike } from "@/components/InvoiceDocument";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Download, FileText, LifeBuoy, Loader2, Package, Receipt, Search, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Download, DollarSign, FileText, LifeBuoy, Loader2, Package, Receipt, Search, CheckCircle2, Clock, AlertCircle, Users } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/lib/services";
@@ -24,8 +24,15 @@ import { Footer } from "@/components/Footer";
 import { BillingTab } from "@/components/BillingTab";
 import { WorkspacePanel } from "@/components/WorkspacePanel";
 import { OrderActions } from "@/components/OrderActions";
-
-
+import { AutomationsHub } from "@/components/AutomationsHub";
+import { AffiliateHub } from "@/components/AffiliateHub";
+import { ClientProfitCenter } from "@/components/ClientProfitCenter";
+import { AgencyLeadMagnet } from "@/components/AgencyLeadMagnet";
+import { RevenueAnalyticsBrain } from "@/components/RevenueAnalyticsBrain";
+import { EmailDigestEngine } from "@/components/EmailDigestEngine";
+import { ClientReportGenerator } from "@/components/ClientReportGenerator";
+import { OnboardingConcierge } from "@/components/OnboardingConcierge";
+import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -44,6 +51,8 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchParams] = useSearchParams();
   const focusOrderId = searchParams.get("order");
+
+  const [showConcierge, setShowConcierge] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -129,10 +138,28 @@ const Dashboard = () => {
             <p className="text-xs font-mono uppercase tracking-[0.3em] text-primary mb-2">/ Client Dashboard</p>
             <h1 className="text-3xl sm:text-4xl font-bold">Your command center</h1>
           </div>
-          <Button asChild className="bg-gradient-primary text-primary-foreground border-0">
-            <a href="/services">+ New order</a>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConcierge(!showConcierge)}
+              className="glass text-xs h-9"
+            >
+              <CompassIcon className="h-3.5 w-3.5 mr-1.5 text-primary" />
+              {showConcierge ? "Close Concierge" : "AI Onboarding Concierge"}
+            </Button>
+            <Button asChild className="bg-gradient-primary text-primary-foreground border-0 h-9 text-xs">
+              <a href="/services">+ New order</a>
+            </Button>
+          </div>
         </div>
+
+        {/* AI Onboarding Concierge */}
+        {(showConcierge || (orders !== null && orders.length === 0)) && (
+          <div className="mb-8">
+            <OnboardingConcierge onComplete={() => setShowConcierge(false)} />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Stat icon={Package} label="Orders" value={String(stats.total)} />
@@ -142,13 +169,30 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="glass">
+          <TabsList className="glass flex-wrap">
             <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="automations">Automations</TabsTrigger>
+            <TabsTrigger value="analytics">
+              <TrendingUpIcon className="h-3.5 w-3.5 mr-1 text-primary" />Analytics Brain
+            </TabsTrigger>
+            <TabsTrigger value="reports">
+              <FileText className="h-3.5 w-3.5 mr-1" />Client Reports
+            </TabsTrigger>
+            <TabsTrigger value="digests">
+              <MailIcon className="h-3.5 w-3.5 mr-1" />Email Digest
+            </TabsTrigger>
             <TabsTrigger value="invoices">
               Invoices {invoices.length > 0 && <span className="ml-1.5 text-xs text-primary">({invoices.length})</span>}
             </TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="workspace">Workspace</TabsTrigger>
+            <TabsTrigger value="reseller">
+              <DollarSign className="h-3.5 w-3.5 mr-1" />Client Profit
+            </TabsTrigger>
+            <TabsTrigger value="leads">
+              <Users className="h-3.5 w-3.5 mr-1" />Agency Leads
+            </TabsTrigger>
+            <TabsTrigger value="affiliates">Partners (30%)</TabsTrigger>
             <TabsTrigger value="support">
               Support {tickets.length > 0 && <span className="ml-1.5 text-xs text-primary">({tickets.length})</span>}
             </TabsTrigger>
@@ -211,6 +255,22 @@ const Dashboard = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="automations" className="mt-6">
+            <AutomationsHub />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-6">
+            <RevenueAnalyticsBrain />
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <ClientReportGenerator />
+          </TabsContent>
+
+          <TabsContent value="digests" className="mt-6">
+            <EmailDigestEngine />
+          </TabsContent>
+
           <TabsContent value="invoices" className="mt-6">
             <InvoicesTab invoices={invoices} orders={orders ?? []} profile={profile} />
           </TabsContent>
@@ -221,6 +281,18 @@ const Dashboard = () => {
 
           <TabsContent value="workspace" className="mt-6">
             <WorkspacePanel userId={user.id} />
+          </TabsContent>
+
+          <TabsContent value="reseller" className="mt-6">
+            <ClientProfitCenter />
+          </TabsContent>
+
+          <TabsContent value="leads" className="mt-6">
+            <AgencyLeadMagnet />
+          </TabsContent>
+
+          <TabsContent value="affiliates" className="mt-6">
+            <AffiliateHub />
           </TabsContent>
 
           <TabsContent value="support" className="mt-6">

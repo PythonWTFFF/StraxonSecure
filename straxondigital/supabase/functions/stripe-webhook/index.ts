@@ -41,6 +41,16 @@ Deno.serve(async (req) => {
             .update({ status: "processing", progress: 10 })
             .eq("id", orderId);
           if (error) throw error;
+
+          // Asynchronously trigger automated AI deliverable generation
+          fetch(`${SUPABASE_URL}/functions/v1/generate-deliverable`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${SERVICE_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ order_id: orderId }),
+          }).catch(e => console.warn("[stripe-webhook] invoke generate-deliverable error:", e));
         }
         break;
       }

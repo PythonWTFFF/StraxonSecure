@@ -8,9 +8,10 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Sparkles, Webhook, Plus, Trash2, ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react";
+import { Brain, Sparkles, Webhook, Plus, Trash2, ChevronRight, ChevronLeft, Check, Loader2, Search, Microscope, Radar } from "lucide-react";
 import { toast } from "sonner";
-import { AIChat } from "./AIChat";
+import { AIChat, KnowledgeBaseUpload, VectorPlayground } from "./AIChat";
+import { CompetitiveRadar } from "./CompetitiveRadar";
 
 interface Workspace { id: string; name: string; owner_id: string; }
 interface BrandBrain {
@@ -58,13 +59,31 @@ export const WorkspacePanel = ({ userId }: { userId: string }) => {
         <h2 className="text-2xl font-bold text-gradient">{ws.name}</h2>
       </div>
       <Tabs defaultValue="brand" className="w-full">
-        <TabsList className="glass">
+        <TabsList className="glass flex-wrap">
           <TabsTrigger value="brand"><Brain className="h-3.5 w-3.5 mr-1.5" /> Brand Brain</TabsTrigger>
-          <TabsTrigger value="knowledge"><Brain className="h-3.5 w-3.5 mr-1.5" /> Knowledge Base</TabsTrigger>
+          <TabsTrigger value="knowledge"><Sparkles className="h-3.5 w-3.5 mr-1.5" /> Knowledge Base</TabsTrigger>
+          <TabsTrigger value="rag-chat"><Search className="h-3.5 w-3.5 mr-1.5" /> RAG Assistant</TabsTrigger>
+          <TabsTrigger value="rag-playground"><Microscope className="h-3.5 w-3.5 mr-1.5" /> Vector Playground</TabsTrigger>
+          <TabsTrigger value="radar"><Radar className="h-3.5 w-3.5 mr-1.5 text-primary" /> Competitor Radar</TabsTrigger>
           <TabsTrigger value="integrations"><Webhook className="h-3.5 w-3.5 mr-1.5" /> Integrations</TabsTrigger>
         </TabsList>
         <TabsContent value="brand" className="mt-6"><BrandBrainWizard workspaceId={ws.id} /></TabsContent>
         <TabsContent value="knowledge" className="mt-6"><KnowledgeBaseTab workspaceId={ws.id} /></TabsContent>
+        <TabsContent value="rag-chat" className="mt-6"><AIChat workspaceId={ws.id} /></TabsContent>
+        <TabsContent value="rag-playground" className="mt-6">
+          <Card className="glass-strong p-6 border-primary/20">
+            <div className="flex items-center gap-2 mb-4">
+              <Microscope className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold">Vector Semantic Search Playground</h3>
+              <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20 font-mono">pgvector HNSW</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mb-5">Test queries against your indexed Knowledge Base and inspect cosine similarity scores for each matched chunk.</p>
+            <VectorPlayground workspaceId={ws.id} />
+          </Card>
+        </TabsContent>
+        <TabsContent value="radar" className="mt-6">
+          <CompetitiveRadar workspaceId={ws.id} />
+        </TabsContent>
         <TabsContent value="integrations" className="mt-6"><IntegrationsTab workspaceId={ws.id} /></TabsContent>
       </Tabs>
     </div>
@@ -296,18 +315,53 @@ const IntegrationsTab = ({ workspaceId }: { workspaceId: string }) => {
             </div>
           ))}
       </div>
+
+      {/* Embeddable RAG Chat Widget Snippet */}
+      <div className="mt-8 pt-6 border-t border-border/30 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h4 className="font-semibold text-sm text-foreground">Embeddable RAG AI Chat Widget</h4>
+          </div>
+          <Badge variant="outline" className="text-[10px] font-mono bg-primary/10 text-primary border-primary/20">
+            White-Label Client Embed
+          </Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Deploy your autonomous RAG assistant and lead-capture agent on any client website or Webflow/WordPress landing page.
+        </p>
+
+        <div className="p-3 rounded-xl bg-black/40 border border-border/40 font-mono text-[11px] text-muted-foreground flex items-center justify-between gap-3 overflow-x-auto">
+          <code>
+            {`<script src="${window.location.origin}/chat-widget.js" data-workspace="${workspaceId}" data-brand="AI Assistant"></script>`}
+          </code>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="shrink-0 h-7 text-xs text-primary hover:text-primary-foreground"
+            onClick={() => {
+              navigator.clipboard.writeText(`<script src="${window.location.origin}/chat-widget.js" data-workspace="${workspaceId}" data-brand="AI Assistant"></script>`);
+              toast.success("Chat widget snippet copied to clipboard!");
+            }}
+          >
+            Copy Script
+          </Button>
+        </div>
+      </div>
     </Card>
   );
 };
 
 // ---------------- KNOWLEDGE BASE TAB ----------------
 const KnowledgeBaseTab = ({ workspaceId }: { workspaceId: string }) => {
-  const [content, setContent] = useState("");
-  const [saving, setSaving] = useState(false);
   const [docs, setDocs] = useState<any[]>([]);
 
   const loadDocs = async () => {
-    const { data } = await supabase.from("documents").select("id, metadata, created_at").eq("workspace_id", workspaceId).order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("documents")
+      .select("id, metadata, created_at, title, source_type")
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: false });
     setDocs(data || []);
   };
 
@@ -315,69 +369,74 @@ const KnowledgeBaseTab = ({ workspaceId }: { workspaceId: string }) => {
     loadDocs();
   }, [workspaceId]);
 
-  const upload = async () => {
-    if (!content.trim()) return;
-    setSaving(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-document`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
-          workspaceId,
-          content,
-          metadata: { source: "manual_upload", title: content.substring(0, 30) + "..." }
-        })
-      });
-      if (!res.ok) throw new Error(await res.text());
-      toast.success("Document added to Knowledge Base");
-      setContent("");
+  const deleteDoc = async (id: string) => {
+    const { error } = await supabase.from("documents").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Document removed from Knowledge Base");
       loadDocs();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to process document");
-    } finally {
-      setSaving(false);
     }
+  };
+
+  const sourceTypeLabel: Record<string, string> = {
+    manual: "Manual",
+    file_upload: "File",
+    url_scrape: "URL",
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="glass-strong p-8">
-        <h3 className="text-xl font-semibold mb-2">Knowledge Base (RAG)</h3>
-        <p className="text-sm text-muted-foreground mb-6">Upload raw text or paste brand guidelines here to feed into the AI's semantic memory.</p>
-
-        <Textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Paste document text here..."
-          className="min-h-[150px] mb-4"
-        />
-        
-        <Button onClick={upload} disabled={saving || !content.trim()} className="bg-gradient-primary text-primary-foreground border-0 shadow-glow mb-8">
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />} Add to Knowledge Base
-        </Button>
-
-        <div className="space-y-3 mt-4 pt-4 border-t border-border/40">
-          <h4 className="font-semibold text-sm">Indexed Documents ({docs.length})</h4>
-          {docs.length === 0 && <p className="text-sm text-muted-foreground">No documents uploaded.</p>}
-          {docs.map(d => (
-            <div key={d.id} className="flex justify-between items-center p-3 rounded bg-muted/20 border border-border/30">
-              <div>
-                <p className="text-sm font-medium">{d.metadata?.title || "Document"}</p>
-                <p className="text-xs text-muted-foreground font-mono">{new Date(d.created_at).toLocaleString()}</p>
-              </div>
-              <Badge variant="outline" className="text-[10px]">Vectorized</Badge>
-            </div>
-          ))}
+      <Card className="glass-strong p-6 border-primary/20">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xl font-semibold">Knowledge Base (RAG)</h3>
+          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20 font-mono">
+            pgvector HNSW
+          </Badge>
         </div>
+        <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
+          Ingest brand guidelines, product specs, URLs, or any document. The AI vectorizes with 1536-dimension embeddings for semantic retrieval across all automations and the RAG assistant.
+        </p>
+        <KnowledgeBaseUpload workspaceId={workspaceId} onSuccess={loadDocs} />
       </Card>
-      
-      <div className="h-full">
-        <AIChat workspaceId={workspaceId} />
-      </div>
+
+      <Card className="glass-strong p-6 border-primary/20">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="font-semibold text-sm font-mono uppercase tracking-wider text-muted-foreground">
+            Indexed Chunks ({docs.length})
+          </h4>
+          <Button variant="ghost" size="sm" onClick={loadDocs} className="h-7 text-xs">
+            Refresh
+          </Button>
+        </div>
+
+        {docs.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-8 text-center">
+            No documents indexed yet. Use the upload panel to ingest your first document.
+          </p>
+        ) : (
+          <div className="space-y-2 max-h-[420px] overflow-y-auto">
+            {docs.map(d => (
+              <div key={d.id} className="flex justify-between items-center p-3 rounded-lg bg-muted/20 border border-border/30 text-xs">
+                <div className="min-w-0 flex-1 pr-3">
+                  <p className="font-medium truncate">{d.title || d.metadata?.title || "Document Chunk"}</p>
+                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                    {new Date(d.created_at).toLocaleDateString()} · {sourceTypeLabel[d.source_type || "manual"] || d.source_type}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">
+                    Vectorized
+                  </Badge>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteDoc(d.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 };

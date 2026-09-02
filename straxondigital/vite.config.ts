@@ -18,8 +18,7 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       pwaAssets: {
-        disabled: false,
-        config: true,
+        disabled: true,
       },
       manifest: {
         name: 'StraxonLabs Digital',
