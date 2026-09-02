@@ -32,7 +32,10 @@ import { RevenueAnalyticsBrain } from "@/components/RevenueAnalyticsBrain";
 import { EmailDigestEngine } from "@/components/EmailDigestEngine";
 import { ClientReportGenerator } from "@/components/ClientReportGenerator";
 import { OnboardingConcierge } from "@/components/OnboardingConcierge";
-import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon } from "lucide-react";
+import { ContentEngine } from "@/components/ContentEngine";
+import { DripCampaignGenerator } from "@/components/DripCampaignGenerator";
+import { CompetitorTracker } from "@/components/CompetitorTracker";
+import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon, PenTool, Send as SendIcon, Crosshair } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -189,6 +192,15 @@ const Dashboard = () => {
             <TabsTrigger value="reseller">
               <DollarSign className="h-3.5 w-3.5 mr-1" />Client Profit
             </TabsTrigger>
+            <TabsTrigger value="content">
+              <PenTool className="h-3.5 w-3.5 mr-1" />Auto-Blogger
+            </TabsTrigger>
+            <TabsTrigger value="drip">
+              <SendIcon className="h-3.5 w-3.5 mr-1" />Drip Campaigns
+            </TabsTrigger>
+            <TabsTrigger value="intel">
+              <Crosshair className="h-3.5 w-3.5 mr-1" />Competitor Intel
+            </TabsTrigger>
             <TabsTrigger value="leads">
               <Users className="h-3.5 w-3.5 mr-1" />Agency Leads
             </TabsTrigger>
@@ -285,6 +297,18 @@ const Dashboard = () => {
 
           <TabsContent value="reseller" className="mt-6">
             <ClientProfitCenter />
+          </TabsContent>
+          
+          <TabsContent value="content" className="mt-6">
+            <ContentEngine />
+          </TabsContent>
+
+          <TabsContent value="drip" className="mt-6">
+            <DripCampaignGenerator />
+          </TabsContent>
+
+          <TabsContent value="intel" className="mt-6">
+            <CompetitorTracker />
           </TabsContent>
 
           <TabsContent value="leads" className="mt-6">
