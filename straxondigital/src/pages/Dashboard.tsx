@@ -35,7 +35,10 @@ import { OnboardingConcierge } from "@/components/OnboardingConcierge";
 import { ContentEngine } from "@/components/ContentEngine";
 import { DripCampaignGenerator } from "@/components/DripCampaignGenerator";
 import { CompetitorTracker } from "@/components/CompetitorTracker";
-import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon, PenTool, Send as SendIcon, Crosshair } from "lucide-react";
+import { SocialMediaEngine } from "@/components/SocialMediaEngine";
+import { PricingOptimizer } from "@/components/PricingOptimizer";
+import { ReviewEngine } from "@/components/ReviewEngine";
+import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon, PenTool, Send as SendIcon, Crosshair, Smartphone, LineChart, Star } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -201,6 +204,15 @@ const Dashboard = () => {
             <TabsTrigger value="intel">
               <Crosshair className="h-3.5 w-3.5 mr-1" />Competitor Intel
             </TabsTrigger>
+            <TabsTrigger value="social">
+              <Smartphone className="h-3.5 w-3.5 mr-1" />Social Growth
+            </TabsTrigger>
+            <TabsTrigger value="pricing">
+              <LineChart className="h-3.5 w-3.5 mr-1" />Price AI
+            </TabsTrigger>
+            <TabsTrigger value="reviews">
+              <Star className="h-3.5 w-3.5 mr-1" />Review Harvest
+            </TabsTrigger>
             <TabsTrigger value="leads">
               <Users className="h-3.5 w-3.5 mr-1" />Agency Leads
             </TabsTrigger>
@@ -309,6 +321,18 @@ const Dashboard = () => {
 
           <TabsContent value="intel" className="mt-6">
             <CompetitorTracker />
+          </TabsContent>
+
+          <TabsContent value="social" className="mt-6">
+            <SocialMediaEngine />
+          </TabsContent>
+
+          <TabsContent value="pricing" className="mt-6">
+            <PricingOptimizer />
+          </TabsContent>
+
+          <TabsContent value="reviews" className="mt-6">
+            <ReviewEngine />
           </TabsContent>
 
           <TabsContent value="leads" className="mt-6">
