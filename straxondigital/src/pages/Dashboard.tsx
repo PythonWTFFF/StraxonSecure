@@ -39,7 +39,9 @@ import { SocialMediaEngine } from "@/components/SocialMediaEngine";
 import { PricingOptimizer } from "@/components/PricingOptimizer";
 import { ReviewEngine } from "@/components/ReviewEngine";
 import { SecurityCenter } from "@/components/SecurityCenter";
-import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon, PenTool, Send as SendIcon, Crosshair, Smartphone, LineChart, Star, ShieldCheck } from "lucide-react";
+import { RagVectorStudio } from "@/components/RagVectorStudio";
+import { GstInvoiceGenerator } from "@/components/GstInvoiceGenerator";
+import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon, PenTool, Send as SendIcon, Crosshair, Smartphone, LineChart, Star, ShieldCheck, Database, Building2 } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -60,6 +62,7 @@ const Dashboard = () => {
   const focusOrderId = searchParams.get("order");
 
   const [showConcierge, setShowConcierge] = useState(false);
+  const [selectedGstInvoice, setSelectedGstInvoice] = useState<any>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -179,6 +182,9 @@ const Dashboard = () => {
           <div className="overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
             <TabsList className="glass inline-flex w-max min-w-full sm:min-w-0 p-1.5 gap-1 rounded-2xl border border-primary/20 backdrop-blur-xl">
               <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="rag-studio">
+                <Database className="h-3.5 w-3.5 mr-1 text-primary" />RAG Studio
+              </TabsTrigger>
               <TabsTrigger value="automations">Automations</TabsTrigger>
               <TabsTrigger value="analytics">
                 <TrendingUpIcon className="h-3.5 w-3.5 mr-1 text-primary" />Analytics Brain
@@ -230,6 +236,10 @@ const Dashboard = () => {
 
           <TabsContent value="security" className="mt-6">
             <SecurityCenter />
+          </TabsContent>
+
+          <TabsContent value="rag-studio" className="mt-6">
+            <RagVectorStudio />
           </TabsContent>
 
           <TabsContent value="orders" className="mt-6">
@@ -359,6 +369,13 @@ const Dashboard = () => {
         </Tabs>
       </div>
       <Footer />
+      {selectedGstInvoice && (
+        <GstInvoiceGenerator
+          isOpen={Boolean(selectedGstInvoice)}
+          onClose={() => setSelectedGstInvoice(null)}
+          orderData={selectedGstInvoice}
+        />
+      )}
     </div>
   );
 };
@@ -471,6 +488,21 @@ const InvoicesTab = ({
             </div>
             <div className="flex items-center gap-3">
               <span className="text-lg font-bold text-gradient">{formatPrice(inv.total_cents)}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedGstInvoice({
+                  id: inv.invoice_number || inv.id,
+                  serviceName: order?.service_name ?? "Autonomous RAG Service Suite",
+                  amountCents: inv.total_cents,
+                  clientName: profile?.full_name,
+                  clientEmail: profile?.email,
+                  date: new Date(inv.issued_at).toLocaleDateString(),
+                })}
+                className="border-primary/30 text-primary hover:bg-primary/10 text-xs h-9"
+              >
+                <Building2 className="h-3.5 w-3.5 mr-1" /> GST / B2B Tax
+              </Button>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
