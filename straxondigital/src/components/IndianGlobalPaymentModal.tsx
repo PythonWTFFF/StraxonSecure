@@ -129,6 +129,8 @@ export const IndianGlobalPaymentModal: React.FC<PaymentModalProps> = ({
                 <Label className="text-xs">Or Enter Your UPI ID</Label>
                 <div className="flex gap-2 mt-1">
                   <Input
+                    id="upiId"
+                    name="upiId"
                     placeholder="name@okaxis or name@ybl"
                     value={upiId}
                     onChange={(e) => setUpiId(e.target.value)}
@@ -169,6 +171,8 @@ export const IndianGlobalPaymentModal: React.FC<PaymentModalProps> = ({
                 <Building2 className="w-3.5 h-3.5 text-emerald-400" /> B2B GSTIN (Optional for 18% Input Credit)
               </Label>
               <Input
+                id="gstNumber"
+                name="gstNumber"
                 placeholder="27AAECS9841K1Z5"
                 value={gstNumber}
                 onChange={(e) => setGstNumber(e.target.value.toUpperCase())}

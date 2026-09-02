@@ -495,6 +495,7 @@ const Auth = () => {
                   </Label>
                   <Input
                     id="magic-email"
+                    name="magic-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -539,6 +540,7 @@ const Auth = () => {
                         </Label>
                         <Input
                           id="fullName"
+                          name="fullName"
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
                           placeholder="Aditya Sharma or David Vance"
@@ -573,6 +575,8 @@ const Auth = () => {
                             className="space-y-2 pt-1 border-t border-white/5"
                           >
                             <Input
+                              id="gstin"
+                              name="gstin"
                               value={gstin}
                               onChange={(e) => setGstin(e.target.value.toUpperCase())}
                               placeholder="GSTIN (e.g. 27AAECS9841K1Z5)"
@@ -594,6 +598,7 @@ const Auth = () => {
                     </Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -618,6 +623,7 @@ const Auth = () => {
                     <div className="relative group">
                       <Input
                         id="password"
+                        name="password"
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

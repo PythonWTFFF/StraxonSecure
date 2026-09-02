@@ -177,6 +177,8 @@ export const OnboardingConcierge = ({
                 Your Brand or Agency Name
               </label>
               <Input
+                id="brandName"
+                name="brandName"
                 placeholder="e.g. Apex Digital Capital"
                 value={brandName}
                 onChange={(e) => setBrandName(e.target.value)}
@@ -190,6 +192,8 @@ export const OnboardingConcierge = ({
                 Primary Website / Portfolio URL (Optional)
               </label>
               <Input
+                id="websiteUrl"
+                name="websiteUrl"
                 placeholder="https://yourbrand.com"
                 value={websiteUrl}
                 onChange={(e) => setWebsiteUrl(e.target.value)}

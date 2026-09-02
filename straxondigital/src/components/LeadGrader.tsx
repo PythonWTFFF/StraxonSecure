@@ -218,6 +218,8 @@ export const LeadGrader = () => {
           <form onSubmit={handleAudit} className="max-w-xl mx-auto mb-8">
             <div className="flex gap-2 flex-col sm:flex-row">
               <Input
+                id="urlOrPitch"
+                name="urlOrPitch"
                 value={urlOrPitch}
                 onChange={(e) => setUrlOrPitch(e.target.value)}
                 placeholder="https://yourstartup.com or describe your business in 1-2 sentences..."
@@ -305,6 +307,8 @@ export const LeadGrader = () => {
                     </p>
                     <form onSubmit={handleUnlock} className="flex gap-2 max-w-sm mx-auto">
                       <Input
+                        id="unlockEmail"
+                        name="unlockEmail"
                         type="email"
                         placeholder="founder@startup.com"
                         value={email}

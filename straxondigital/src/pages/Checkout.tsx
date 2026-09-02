@@ -350,6 +350,7 @@ const Checkout = () => {
                       ) : (
                         <Input
                           id={f.name}
+                          name={f.name}
                           type={f.kind === "email" ? "email" : f.kind === "url" ? "url" : "text"}
                           value={data[f.name] || ""}
                           onChange={(e) => setData({ ...data, [f.name]: e.target.value })}
@@ -428,6 +429,8 @@ const Checkout = () => {
                     <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                       <Tag className="h-4 w-4 text-primary shrink-0" />
                       <Input
+                        id="promoCode"
+                        name="promoCode"
                         value={promoInput}
                         onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
                         placeholder="Discount Code (e.g. LAUNCH25)"
