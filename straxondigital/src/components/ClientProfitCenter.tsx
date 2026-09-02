@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useAuth } from "@/hooks/useAuth";
 
 const DELIVERABLE_SERVICES = [
   { name: "High-Conversion Website Blueprint", wholesale: 89, retail: 997 },
