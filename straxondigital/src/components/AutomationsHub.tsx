@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Sparkles, Zap, Play, CheckCircle2, Clock, Terminal, Webhook, Download, Copy, Search,
   ShieldCheck, Cpu, Layers, Loader2, History, Calendar, Globe, RefreshCw, Trash2, AlertCircle,
-  ChevronRight, Brain, TrendingUp, Mail, Eye, Database, Wifi, WifiOff,
+  ChevronRight, Brain, TrendingUp, Mail, Eye, Database, Wifi, WifiOff, FileText, Building2
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,6 +68,16 @@ const AUTOMATIONS_CATALOG: AutomationJobDef[] = [
     description: "Generates a full production-ready SaaS architecture spec: tech stack, database schema, API matrix, security model, and scaling plan.",
     turnaround: "~25s", creditsCost: 1, icon: Database,
     sampleInput: "Build a SaaS platform for freelance designers to manage clients, proposals, and deliverables with Stripe billing and Supabase backend.",
+  },
+  {
+    id: "b2b-contract-sow",
+    name: "Enterprise B2B SOW & Indian/Global Service Contract",
+    category: "strategy",
+    description: "Draws from your Brand Brain context to draft an enforceable B2B Service Contract with milestones, scope, 18% GST / USD payment terms, and SAC 998314 compliance.",
+    turnaround: "~15s",
+    creditsCost: 1,
+    icon: FileText,
+    sampleInput: "Client: Apex Digital Global. Deliverables: Full Landing Page Redesign + 5-Sequence Automated Email Drip + pgvector RAG Assistant. Value: $12,500 / ₹10,40,000 across 3 milestone tranches.",
   },
 ];
 

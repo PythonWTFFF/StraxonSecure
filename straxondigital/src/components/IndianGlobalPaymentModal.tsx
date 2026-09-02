@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCurrency } from "@/context/CurrencyContext";
-import { Loader2, QrCode, CreditCard, Building2, CheckCircle2 } from "lucide-react";
+import { Loader2, QrCode, CreditCard, Building2, CheckCircle2, Shield, Smartphone, ArrowRight, Zap, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface PaymentModalProps {
@@ -112,35 +112,68 @@ export const IndianGlobalPaymentModal: React.FC<PaymentModalProps> = ({
           {/* Method Specific Fields */}
           {paymentMethod === "upi" && currency === "INR" ? (
             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
-              <Label>UPI ID</Label>
-              <Input
-                placeholder="example@okaxis"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                className="bg-black/30 border-white/10"
-              />
+              <div className="p-3 bg-black/40 border border-white/10 rounded-xl flex items-center gap-3">
+                <div className="bg-white p-2 rounded-lg shrink-0">
+                  <QrCode className="w-16 h-16 text-black" />
+                </div>
+                <div className="text-xs space-y-1">
+                  <p className="font-semibold text-white">Scan & Pay via any UPI App</p>
+                  <p className="text-muted-foreground font-mono text-[11px]">VPA: straxonlabs@icici</p>
+                  <div className="flex gap-1 pt-1 text-[10px] font-mono text-emerald-400">
+                    <span>GPay</span> · <span>PhonePe</span> · <span>Paytm</span> · <span>BHIM</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs">Or Enter Your UPI ID</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    placeholder="name@okaxis or name@ybl"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    className="bg-black/30 border-white/10 text-xs font-mono"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setUpiId("operator@okaxis")} 
+                    className="text-xs shrink-0 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                  >
+                    Demo UPI
+                  </Button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
-              <Label>Card Details (Stripe Secured)</Label>
-              <div className="p-3 bg-black/30 border border-white/10 rounded-md text-sm text-gray-400 flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                Stripe Elements will render here
+              <Label className="text-xs">Card Payment (Stripe / 256-Bit SSL)</Label>
+              <div className="p-3.5 bg-black/30 border border-white/10 rounded-xl space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="font-mono">Accepted:</span>
+                  <span className="font-mono text-white text-[11px]">Visa · Mastercard · RuPay · Amex</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-emerald-400 font-mono">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>256-Bit End-to-End Encrypted Gateway</span>
+                </div>
               </div>
             </div>
           )}
 
           {/* B2B GST (India Only) */}
           {currency === "INR" && (
-            <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
-              <Label className="flex items-center gap-2">
-                <Building2 className="w-4 h-4" /> B2B GST Details (Optional)
+            <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 pt-2 border-t border-white/5">
+              <Label className="flex items-center gap-2 text-xs">
+                <Building2 className="w-3.5 h-3.5 text-emerald-400" /> B2B GSTIN (Optional for 18% Input Credit)
               </Label>
               <Input
-                placeholder="22AAAAA0000A1Z5"
+                placeholder="27AAECS9841K1Z5"
                 value={gstNumber}
-                onChange={(e) => setGstNumber(e.target.value)}
-                className="bg-black/30 border-white/10"
+                onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
+                className="bg-black/30 border-white/10 font-mono text-xs uppercase"
+                maxLength={15}
               />
             </div>
           )}
