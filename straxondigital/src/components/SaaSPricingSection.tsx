@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Sparkles, Zap, Shield, ArrowRight, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface PlanDef {
   id: string;
@@ -99,6 +100,7 @@ export const SaaSPricingSection = () => {
   const [annual, setAnnual] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { formatPrice, currency } = useCurrency();
 
   const handleSelectPlan = (plan: PlanDef) => {
     if (!user) {
@@ -183,12 +185,12 @@ export const SaaSPricingSection = () => {
 
                 <div className="mb-6 pt-3 border-t border-border/40">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold text-gradient">${price}</span>
+                    <span className="text-3xl sm:text-4xl font-extrabold text-gradient">{formatPrice(price * 100)}</span>
                     <span className="text-xs text-muted-foreground font-mono">/ month</span>
                   </div>
                   {annual && plan.monthlyPrice > 0 && (
                     <span className="text-[11px] text-muted-foreground block font-mono mt-0.5">
-                      Billed annually (${price * 12}/yr)
+                      Billed annually ({formatPrice(price * 12 * 100)}/yr)
                     </span>
                   )}
                   <div className="mt-2 inline-flex items-center gap-1 text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">

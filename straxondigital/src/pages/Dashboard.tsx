@@ -41,6 +41,7 @@ import { ReviewEngine } from "@/components/ReviewEngine";
 import { SecurityCenter } from "@/components/SecurityCenter";
 import { RagVectorStudio } from "@/components/RagVectorStudio";
 import { GstInvoiceGenerator } from "@/components/GstInvoiceGenerator";
+import { DashboardUpsell } from "@/components/DashboardUpsell";
 import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon, PenTool, Send as SendIcon, Crosshair, Smartphone, LineChart, Star, ShieldCheck, Database, Building2 } from "lucide-react";
 
 const statusColors: Record<string, string> = {
@@ -243,6 +244,7 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="orders" className="mt-6">
+            <DashboardUpsell orders={filteredOrders} />
             <div className="flex items-center gap-3 mb-4 flex-wrap">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

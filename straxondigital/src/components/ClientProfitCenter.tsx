@@ -11,9 +11,9 @@ import {
   ExternalLink, Trash2, RefreshCw, Eye, MessageSquare, Check, Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { useCurrency } from "@/context/CurrencyContext";
 
 const DELIVERABLE_SERVICES = [
   { name: "High-Conversion Website Blueprint", wholesale: 89, retail: 997 },
@@ -28,6 +28,7 @@ const DELIVERABLE_SERVICES = [
 
 export const ClientProfitCenter = () => {
   const { user } = useAuth();
+  const { formatPrice, currency } = useCurrency();
   const [clientCount, setClientCount] = useState(5);
   const [avgRetainer, setAvgRetainer] = useState(2500);
   const [agencyName, setAgencyName] = useState("");
@@ -237,20 +238,20 @@ Questions? Reply to this proposal or contact ${agencyName || "our team"} directl
             <div className="space-y-3">
               <div className="flex justify-between text-sm font-semibold">
                 <span>Avg. Monthly Retainer Billed to Client</span>
-                <span className="font-mono text-primary">${avgRetainer.toLocaleString()}/mo</span>
+                <span className="font-mono text-primary">{formatPrice(avgRetainer * 100)}/mo</span>
               </div>
               <Slider value={[avgRetainer]} min={500} max={10000} step={250} onValueChange={v => setAvgRetainer(v[0])} />
               <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
-                <span>$500/mo</span><span>$5,000/mo</span><span>$10,000/mo</span>
+                <span>{formatPrice(500 * 100)}/mo</span><span>{formatPrice(5000 * 100)}/mo</span><span>{formatPrice(10000 * 100)}/mo</span>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             {[
-              { label: "Gross Client Revenue", value: `$${grossRevenue.toLocaleString()}/mo`, highlight: false, icon: DollarSign },
-              { label: "Straxon Fulfillment Cost", value: `$${straxonCost.toLocaleString()}/mo`, highlight: false, icon: Zap },
-              { label: "Net Agency Profit", value: `$${netProfit.toLocaleString()}/mo`, highlight: true, icon: TrendingUp },
+              { label: "Gross Client Revenue", value: `${formatPrice(grossRevenue * 100)}/mo`, highlight: false, icon: DollarSign },
+              { label: "Straxon Fulfillment Cost", value: `${formatPrice(straxonCost * 100)}/mo`, highlight: false, icon: Zap },
+              { label: "Net Agency Profit", value: `${formatPrice(netProfit * 100)}/mo`, highlight: true, icon: TrendingUp },
               { label: "Gross Margin", value: `${margin}%`, highlight: margin > 70, icon: ShieldCheck },
             ].map(stat => {
               const Icon = stat.icon;
@@ -268,7 +269,7 @@ Questions? Reply to this proposal or contact ${agencyName || "our team"} directl
         <div className="mt-6 pt-6 border-t border-border/40 flex gap-3 flex-wrap">
           <Button asChild className="bg-gradient-primary text-primary-foreground border-0 shadow-glow font-semibold">
             <Link to="/checkout/conversion-website?tier=enterprise">
-              Activate Agency License ($149/mo) <ArrowRight className="h-4 w-4 ml-1.5" />
+              Activate Agency License ({formatPrice(149 * 100)}/mo) <ArrowRight className="h-4 w-4 ml-1.5" />
             </Link>
           </Button>
           <Button asChild variant="outline" className="border-primary/30">
@@ -298,7 +299,7 @@ Questions? Reply to this proposal or contact ${agencyName || "our team"} directl
                     }`}
                   >
                     <span>{svc.name}</span>
-                    <span className="font-mono text-muted-foreground">${svc.wholesale} → ${Math.round(svc.wholesale * (1 + markup / 100))}</span>
+                    <span className="font-mono text-muted-foreground">{formatPrice(svc.wholesale * 100)} → {formatPrice(Math.round(svc.wholesale * (1 + markup / 100)) * 100)}</span>
                   </button>
                 ))}
               </div>
@@ -315,15 +316,15 @@ Questions? Reply to this proposal or contact ${agencyName || "our team"} directl
             <div className="grid grid-cols-3 gap-3 pt-2 text-center">
               <div className="p-3 rounded-xl bg-muted/20 border border-border/40">
                 <p className="text-[10px] text-muted-foreground font-mono">Wholesale</p>
-                <p className="text-lg font-bold">${selectedService.wholesale}</p>
+                <p className="text-base sm:text-lg font-bold">{formatPrice(selectedService.wholesale * 100)}</p>
               </div>
               <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
                 <p className="text-[10px] text-muted-foreground font-mono">Your Price</p>
-                <p className="text-lg font-bold text-gradient">${retailPrice}</p>
+                <p className="text-base sm:text-lg font-bold text-gradient">{formatPrice(retailPrice * 100)}</p>
               </div>
               <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20">
                 <p className="text-[10px] text-muted-foreground font-mono">Net Profit</p>
-                <p className="text-lg font-bold text-green-400">{profitMarginPct}%</p>
+                <p className="text-base sm:text-lg font-bold text-green-400">{profitMarginPct}%</p>
               </div>
             </div>
           </div>

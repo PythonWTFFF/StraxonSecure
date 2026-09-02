@@ -8,6 +8,11 @@ import { SaaSPricingSection } from "@/components/SaaSPricingSection";
 import { BundlesSection } from "@/components/BundlesSection";
 import { LeadGrader } from "@/components/LeadGrader";
 import { Footer } from "@/components/Footer";
+import { HeroStats } from "@/components/HeroStats";
+import { FeatureGrid } from "@/components/FeatureGrid";
+import { TestimonialsSection } from "@/components/TestimonialsSection";
+import { DemoWidget } from "@/components/DemoWidget";
+import { MagneticButton } from "@/components/MagneticButton";
 import { Button } from "@/components/ui/button";
 import { SERVICES, ServiceDef } from "@/lib/services";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -46,25 +51,17 @@ const Home = () => {
               Resumes, websites, branding, SEO, SaaS architecture, and autonomous AI voice agents — engineered, customized, and delivered with surgical precision. Order at midnight, receive at dawn.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="bg-gradient-primary text-primary-foreground border-0 shadow-glow hover:opacity-90">
-                <Link to="/services">Explore 16+ Services <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
+              <MagneticButton>
+                <Button asChild size="lg" className="bg-gradient-primary text-primary-foreground border-0 shadow-glow hover:opacity-90">
+                  <Link to="/services">Explore 16+ Services <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+              </MagneticButton>
               <Button asChild size="lg" variant="outline" className="border-primary/30">
                 <Link to="/automations"><Cpu className="mr-2 h-4 w-4 text-primary" /> Automations Hub</Link>
               </Button>
             </div>
 
-            <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground flex-wrap">
-              {[
-                { i: Zap, t: "12-24h delivery SLA" },
-                { i: Shield, t: "100% money-back guarantee" },
-                { i: Cpu, t: "pgvector RAG + human refined" },
-              ].map(({ i: Icon, t }) => (
-                <div key={t} className="flex items-center gap-2 font-mono text-xs">
-                  <Icon className="h-4 w-4 text-primary" /> {t}
-                </div>
-              ))}
-            </div>
+            <HeroStats />
           </motion.div>
 
           <motion.div
@@ -79,6 +76,8 @@ const Home = () => {
           </motion.div>
         </div>
       </section>
+
+      <FeatureGrid />
 
       {/* Services preview */}
       <section className="container py-20">
@@ -191,6 +190,10 @@ const Home = () => {
           if (!open) setCustomizingService(null);
         }}
       />
+
+      <TestimonialsSection />
+      
+      <DemoWidget />
 
       <Footer />
     </div>

@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 export const OnboardingConcierge = ({
   workspaceId,
@@ -119,30 +120,53 @@ export const OnboardingConcierge = ({
         <X className="h-4 w-4" />
       </button>
 
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <span className="text-xs font-mono uppercase tracking-wider text-primary font-semibold">
-          AI Onboarding Concierge
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between gap-4 flex-wrap mb-6">
-        <div>
-          <h3 className="text-xl sm:text-2xl font-black text-foreground">
-            Activate Your Autonomous Agency & RAG Engine
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            4 rapid steps to calibrate your Brand Brain, embed your Knowledge Base, and launch automated services.
-          </p>
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Floating AI Orb */}
+        <div className="hidden md:flex flex-col items-center justify-center shrink-0 w-48 border-r border-border/40 pr-8">
+          <motion.div 
+            animate={{ 
+              y: [0, -10, 0],
+              scale: [1, 1.05, 1],
+              boxShadow: ["0 0 20px 0px rgba(var(--primary), 0.3)", "0 0 40px 10px rgba(var(--primary), 0.5)", "0 0 20px 0px rgba(var(--primary), 0.3)"]
+            }}
+            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+            className="w-24 h-24 rounded-full bg-gradient-to-br from-primary via-purple-500 to-blue-500 flex items-center justify-center mb-6"
+          >
+            <div className="w-20 h-20 rounded-full bg-background/90 flex items-center justify-center backdrop-blur-md">
+              <Brain className="h-10 w-10 text-primary" />
+            </div>
+          </motion.div>
+          <div className="text-center">
+            <h4 className="font-bold text-sm">Nexus AI</h4>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Chief of Staff</p>
+          </div>
         </div>
 
-        {/* Step Counter */}
-        <div className="flex items-center gap-1.5 font-mono text-xs text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-          <span>Step {step} of 4</span>
-        </div>
-      </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-xs font-mono uppercase tracking-wider text-primary font-semibold">
+              AI Onboarding Concierge
+            </span>
+          </div>
 
-      <Progress value={(step / 4) * 100} className="h-1.5 mb-6" />
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-6">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-black text-foreground">
+                Activate Your Autonomous Agency & RAG Engine
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                4 rapid steps to calibrate your Brand Brain, embed your Knowledge Base, and launch automated services.
+              </p>
+            </div>
+
+            {/* Step Counter */}
+            <div className="flex items-center gap-1.5 font-mono text-xs text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+              <span>Step {step} of 4</span>
+            </div>
+          </div>
+
+          <Progress value={(step / 4) * 100} className="h-1.5 mb-6" />
 
       {/* Step 1: Brand & Domain */}
       {step === 1 && (
@@ -313,6 +337,8 @@ export const OnboardingConcierge = ({
           </div>
         </div>
       )}
+        </div>
+      </div>
     </Card>
   );
 };

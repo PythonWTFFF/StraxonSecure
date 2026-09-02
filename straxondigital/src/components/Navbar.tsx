@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { LayoutDashboard, LogOut, Shield, Menu, X, Sparkles } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
-import { NotificationBell } from "@/components/NotificationBell";
+import { NotificationsEngine } from "@/components/NotificationsEngine";
 import { CreditBalanceBadge } from "@/components/CreditBalanceBadge";
 import { CurrencyToggle } from "@/components/CurrencyToggle";
+import { MagneticButton } from "@/components/MagneticButton";
 import { motion, AnimatePresence } from "framer-motion";
+import { ServicesMegaMenu } from "./ServicesMegaMenu";
+import { AnimatedCounter } from "./AnimatedCounter";
 
 import { toast } from "sonner";
 
@@ -16,6 +19,7 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -76,18 +80,35 @@ export const Navbar = () => {
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8 text-sm">
             {navLinks.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                end={l.to === "/"}
-                className={({ isActive }) =>
-                  `relative transition-all duration-300 hover:text-primary ${
-                    isActive ? "text-primary font-medium" : "text-muted-foreground"
-                  }`
-                }
+              <div 
+                key={l.to} 
+                className="relative flex items-center h-full py-4"
+                onMouseEnter={() => l.label === "Services" && setServicesOpen(true)}
+                onMouseLeave={() => l.label === "Services" && setServicesOpen(false)}
               >
-                {l.label}
-              </NavLink>
+                <NavLink
+                  to={l.to}
+                  end={l.to === "/"}
+                  className={({ isActive }) =>
+                    `relative transition-all duration-300 hover:text-primary ${
+                      isActive ? "text-primary font-medium" : "text-muted-foreground"
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {l.label}
+                      {isActive && (
+                        <motion.div
+                          layoutId="navDot"
+                          className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-primary shadow-[0_0_8px_rgb(var(--primary))] animate-pulse"
+                        />
+                      )}
+                    </>
+                  )}
+                </NavLink>
+                {l.label === "Services" && <ServicesMegaMenu isOpen={servicesOpen} />}
+              </div>
             ))}
           </nav>
 
@@ -97,7 +118,7 @@ export const Navbar = () => {
             {user ? (
               <>
                 <CreditBalanceBadge />
-                <NotificationBell />
+                <NotificationsEngine />
                 {role === "admin" && (
                   <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} className="hover:scale-105 active:scale-95 transition-transform">
                     <Shield className="h-4 w-4 mr-2" />Admin
@@ -116,20 +137,24 @@ export const Navbar = () => {
                 <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="hover:scale-105 active:scale-95 transition-transform">
                   Sign in
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => navigate("/services")}
-                  className="bg-gradient-primary hover:opacity-90 text-primary-foreground border-0 shadow-glow hover:scale-105 active:scale-95 transition-transform"
-                >
-                  Get started
-                </Button>
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary/50 rounded-lg blur opacity-50 group-hover:opacity-100 transition duration-500"></div>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate("/auth")}
+                    className="relative bg-background hover:bg-background text-primary border border-primary/50 hover:border-primary shadow-xl hover:scale-105 active:scale-95 transition-all"
+                  >
+                    Start Free <Sparkles className="ml-1.5 h-3 w-3" />
+                  </Button>
+                </div>
               </>
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <div className="flex md:hidden items-center gap-2">
-            {user && <NotificationBell />}
+          {/* Mobile Header Actions */}
+          <div className="flex md:hidden items-center gap-1.5 sm:gap-2">
+            <CurrencyToggle />
+            {user && <NotificationsEngine />}
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)}>
               <Menu className="h-6 w-6" />
             </Button>
@@ -137,32 +162,37 @@ export const Navbar = () => {
         </div>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer (Full Screen Overlay) */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm md:hidden"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-xs glass-strong border-l border-border/50 p-6 md:hidden flex flex-col"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <BrandMark size={24} />
-                <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
-                  <X className="h-6 w-6" />
-                </Button>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col md:hidden overflow-y-auto"
+          >
+            <div className="container px-4 py-6 flex items-center justify-between border-b border-border/40">
+              <BrandMark size={24} />
+              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
+                <X className="h-6 w-6" />
+              </Button>
+            </div>
+
+            <div className="container px-4 py-8 flex-1 flex flex-col">
+              <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 mb-8 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-mono">Total Platform Revenue</p>
+                  <p className="text-lg font-bold font-mono text-primary flex items-center mt-1">
+                    <AnimatedCounter value={1.2} prefix="₹" suffix="Cr+" decimals={1} duration={1} />
+                  </p>
+                </div>
+                <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center animate-pulse">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
               </div>
 
-              <nav className="flex flex-col gap-6 text-lg">
+              <nav className="flex flex-col gap-6 text-2xl font-semibold mb-12">
                 {navLinks.map((l) => (
                   <NavLink
                     key={l.to}
@@ -170,19 +200,24 @@ export const Navbar = () => {
                     end={l.to === "/"}
                     onClick={() => setMobileMenuOpen(false)}
                     className={({ isActive }) =>
-                      `transition-colors hover:text-primary ${
-                        isActive ? "text-primary font-semibold" : "text-muted-foreground"
+                      `transition-colors flex items-center ${
+                        isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                       }`
                     }
                   >
-                    {l.label}
+                    {({ isActive }) => (
+                      <>
+                        {l.label}
+                        {isActive && <div className="ml-3 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgb(var(--primary))]" />}
+                      </>
+                    )}
                   </NavLink>
                 ))}
               </nav>
 
               <div className="mt-auto flex flex-col gap-4 border-t border-border/40 pt-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground font-medium">Currency</span>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm text-muted-foreground font-medium">Currency Preference</span>
                   <CurrencyToggle />
                 </div>
                 {user ? (
@@ -191,33 +226,36 @@ export const Navbar = () => {
                       <CreditBalanceBadge />
                     </div>
                     {role === "admin" && (
-                      <Button variant="outline" className="w-full justify-start" onClick={() => { navigate("/admin"); setMobileMenuOpen(false); }}>
-                        <Shield className="h-4 w-4 mr-2" />Admin Panel
+                      <Button variant="outline" className="w-full justify-start h-12 text-base" onClick={() => { navigate("/admin"); setMobileMenuOpen(false); }}>
+                        <Shield className="h-5 w-5 mr-2" />Admin Panel
                       </Button>
                     )}
-                    <Button variant="secondary" className="w-full justify-start" onClick={() => { navigate("/dashboard"); setMobileMenuOpen(false); }}>
-                      <LayoutDashboard className="h-4 w-4 mr-2" />Dashboard
+                    <Button variant="secondary" className="w-full justify-start h-12 text-base" onClick={() => { navigate("/dashboard"); setMobileMenuOpen(false); }}>
+                      <LayoutDashboard className="h-5 w-5 mr-2" />Dashboard
                     </Button>
-                    <Button variant="destructive" className="w-full justify-start" onClick={() => { signOut(); setMobileMenuOpen(false); }}>
-                      <LogOut className="h-4 w-4 mr-2" />Sign out
+                    <Button variant="destructive" className="w-full justify-start h-12 text-base" onClick={() => { signOut(); setMobileMenuOpen(false); }}>
+                      <LogOut className="h-5 w-5 mr-2" />Sign out
                     </Button>
                   </>
                 ) : (
-                  <>
-                    <Button variant="outline" className="w-full" onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }}>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <Button variant="outline" className="h-14 text-base" onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }}>
                       Sign in
                     </Button>
-                    <Button
-                      className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground border-0 shadow-glow"
-                      onClick={() => { navigate("/services"); setMobileMenuOpen(false); }}
-                    >
-                      Get started
-                    </Button>
-                  </>
+                    <div className="relative group w-full">
+                      <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary/50 rounded-lg blur opacity-75 animate-pulse"></div>
+                      <Button
+                        className="relative w-full h-14 text-base bg-background text-primary border border-primary/50"
+                        onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }}
+                      >
+                        Start Free
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
-            </motion.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

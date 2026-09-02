@@ -25,9 +25,14 @@ import {
   Fingerprint,
   Smartphone,
   KeyRound,
-  Globe2
+  Globe2,
+  Building,
+  Check,
+  IndianRupee,
+  DollarSign
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/context/CurrencyContext";
 
 const schema = z.object({
   email: z.string().trim().email("Please enter a valid email address").max(255),
@@ -103,9 +108,19 @@ const Auth = () => {
   const [biometricLoading, setBiometricLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [tickerIndex, setTickerIndex] = useState(0);
+  const [isIndianBusiness, setIsIndianBusiness] = useState(false);
+  const [gstin, setGstin] = useState("");
+  const [companyName, setCompanyName] = useState("");
   
   const { session } = useAuth();
+  const { currency, setCurrency, formatPrice } = useCurrency();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currency === "INR") {
+      setIsIndianBusiness(true);
+    }
+  }, [currency]);
 
   useEffect(() => {
     if (session) {
@@ -131,10 +146,20 @@ const Auth = () => {
 
   const strength = calculateStrength(password);
   
-  const handleLoadDemo = () => {
-    setEmail("founder@straxonlabs.com");
-    setPassword("OperatorSecure2026!");
-    toast.success("Loaded instant Demo Agency credentials! Click Sign In to launch.");
+  const handleLoadDemo = (type: "global" | "india" = "global") => {
+    if (type === "india") {
+      setCurrency("INR");
+      setEmail("agency.mumbai@straxonlabs.com");
+      setPassword("OperatorSecure2026!");
+      setIsIndianBusiness(true);
+      setGstin("27AAECS9841K1Z5");
+      toast.success("Loaded Indian B2B Agency Demo (INR + GST Enabled)! Click Sign In.");
+    } else {
+      setCurrency("USD");
+      setEmail("founder@straxonlabs.com");
+      setPassword("OperatorSecure2026!");
+      toast.success("Loaded Global Agency Founder Demo (USD + Stripe)! Click Sign In.");
+    }
   };
 
   const handlePasskeySignIn = async () => {
@@ -256,27 +281,56 @@ const Auth = () => {
           </AnimatePresence>
         </div>
 
-        {/* Header / Logo */}
-        <div className="px-6 py-4 sm:px-10 sm:py-5 flex items-center justify-between border-b border-border/20">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="bg-primary/10 p-2 rounded-xl ring-1 ring-primary/30 group-hover:ring-primary/60 transition-all shadow-glow">
-              <BrandMark size={22} />
+        {/* Header / Logo + Region Switcher */}
+        <div className="px-4 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between border-b border-border/20 gap-2">
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="bg-primary/10 p-1.5 sm:p-2 rounded-xl ring-1 ring-primary/30 group-hover:ring-primary/60 transition-all shadow-glow">
+              <BrandMark size={20} />
             </div>
             <div>
-              <span className="font-bold text-lg tracking-tight block leading-none">
+              <span className="font-bold text-base sm:text-lg tracking-tight block leading-none">
                 Straxon<span className="text-primary">Secure</span>
               </span>
-              <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+              <span className="text-[9px] sm:text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
                 Autonomous SaaS RAG
               </span>
             </div>
           </Link>
-          <Link 
-            to="/" 
-            className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 glass px-3 py-1.5 rounded-full"
-          >
-            ← Home
-          </Link>
+          
+          <div className="flex items-center gap-2">
+            {/* Indian vs Global Currency / Region Switcher */}
+            <div className="flex items-center bg-muted/40 p-0.5 rounded-full border border-border/60">
+              <button
+                type="button"
+                onClick={() => setCurrency("USD")}
+                className={`px-2 py-1 rounded-full text-[11px] font-mono font-medium flex items-center gap-1 transition-all ${
+                  currency === "USD" ? "bg-primary text-primary-foreground shadow-glow" : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Global USD Mode"
+              >
+                <DollarSign className="w-3 h-3" />
+                <span className="hidden sm:inline">USD</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrency("INR")}
+                className={`px-2 py-1 rounded-full text-[11px] font-mono font-medium flex items-center gap-1 transition-all ${
+                  currency === "INR" ? "bg-primary text-primary-foreground shadow-glow" : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="India INR Mode (UPI & GST)"
+              >
+                <IndianRupee className="w-3 h-3" />
+                <span className="hidden sm:inline">INR</span>
+              </button>
+            </div>
+
+            <Link 
+              to="/" 
+              className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 glass px-2.5 sm:px-3 py-1.5 rounded-full"
+            >
+              ← Home
+            </Link>
+          </div>
         </div>
 
         {/* Main Auth Form Container */}
@@ -287,7 +341,7 @@ const Auth = () => {
             transition={{ duration: 0.4 }}
           >
             {/* Mode Switcher Segmented Pill */}
-            <div className="grid grid-cols-2 p-1 bg-muted/40 border border-border/50 rounded-2xl mb-5 backdrop-blur-md relative">
+            <div className="grid grid-cols-2 p-1 bg-muted/40 border border-border/50 rounded-2xl mb-4 backdrop-blur-md relative">
               <button
                 type="button"
                 onClick={() => setMode("signin")}
@@ -322,8 +376,21 @@ const Auth = () => {
               </button>
             </div>
 
-            <div className="mb-5">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-1.5 flex items-center gap-2">
+            {/* Live Profitability & Regional Assurance Banner */}
+            <div className="mb-4 p-2.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-primary/10 to-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-2 text-[11px]">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-emerald-300 font-semibold font-mono">
+                  {currency === "INR" ? "Avg. Indian Agency Net Profit:" : "Avg. Global Agency Net Profit:"}
+                </span>
+              </div>
+              <span className="font-mono font-bold text-white bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+                {currency === "INR" ? "₹1,48,500/mo" : "$1,850/mo"}
+              </span>
+            </div>
+
+            <div className="mb-4">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-1 flex items-center gap-2">
                 {mode === "signin" ? "Welcome Back, Operator" : "Build Your AI SaaS Empire"}
                 <Sparkles className="h-5 w-5 text-primary" />
               </h1>
@@ -334,27 +401,36 @@ const Auth = () => {
               </p>
             </div>
 
-            {/* Fast-Lane Passkey & Instant Demo Dual Actions */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-5">
+            {/* Fast-Lane Demo Multi-Select */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handlePasskeySignIn}
                 disabled={biometricLoading}
-                className="h-10 border-primary/30 hover:border-primary/60 bg-white/5 hover:bg-primary/10 text-xs font-semibold text-white flex items-center justify-center gap-2 rounded-xl transition-all"
+                className="h-9 sm:h-10 border-primary/30 hover:border-primary/60 bg-white/5 hover:bg-primary/10 text-[11px] font-semibold text-white flex items-center justify-center gap-1.5 rounded-xl transition-all"
               >
-                {biometricLoading ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Fingerprint className="h-4 w-4 text-primary" />}
+                {biometricLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Fingerprint className="h-3.5 w-3.5 text-primary" />}
                 <span>FaceID / Passkey</span>
               </Button>
 
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleLoadDemo}
-                className="h-10 border-white/10 hover:border-primary/40 bg-white/5 hover:bg-white/10 text-xs font-mono text-primary flex items-center justify-center gap-1.5 rounded-xl transition-all"
+                onClick={() => handleLoadDemo("global")}
+                className="h-9 sm:h-10 border-white/10 hover:border-primary/40 bg-white/5 hover:bg-white/10 text-[11px] font-mono text-primary flex items-center justify-center gap-1 rounded-xl transition-all"
               >
-                <Zap className="h-3.5 w-3.5 fill-primary text-primary" />
-                <span>Instant Demo</span>
+                <Zap className="h-3 w-3 fill-primary text-primary" />
+                <span>Global Demo ($)</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleLoadDemo("india")}
+                className="h-9 sm:h-10 border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/5 hover:bg-emerald-500/10 text-[11px] font-mono text-emerald-400 flex items-center justify-center gap-1 rounded-xl transition-all"
+              >
+                <span>🇮🇳 India Demo (₹)</span>
               </Button>
             </div>
 
@@ -455,18 +531,60 @@ const Auth = () => {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
+                      className="overflow-hidden space-y-3"
                     >
-                      <Label htmlFor="fullName" className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 mb-1">
-                        <User className="h-3 w-3 text-primary" /> Full Name / Agency Brand
-                      </Label>
-                      <Input
-                        id="fullName"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="John Doe (Apex Media)"
-                        className="bg-background border-border/50 focus:border-primary/60 transition-colors h-11 text-sm rounded-xl"
-                      />
+                      <div>
+                        <Label htmlFor="fullName" className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 mb-1">
+                          <User className="h-3 w-3 text-primary" /> Full Name / Operator Name
+                        </Label>
+                        <Input
+                          id="fullName"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="Aditya Sharma or David Vance"
+                          className="bg-background border-border/50 focus:border-primary/60 transition-colors h-10 sm:h-11 text-sm rounded-xl"
+                        />
+                      </div>
+
+                      {/* Indian Business / GSTIN Option */}
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                            <Building className="h-3.5 w-3.5 text-emerald-400" />
+                            Indian Business / GSTIN Registration
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setIsIndianBusiness(!isIndianBusiness)}
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition-colors ${
+                              isIndianBusiness 
+                                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" 
+                                : "bg-muted/30 text-muted-foreground border-border/40"
+                            }`}
+                          >
+                            {isIndianBusiness ? "Active (18% ITC)" : "Optional"}
+                          </button>
+                        </div>
+
+                        {isIndianBusiness && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-2 pt-1 border-t border-white/5"
+                          >
+                            <Input
+                              value={gstin}
+                              onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                              placeholder="GSTIN (e.g. 27AAECS9841K1Z5)"
+                              maxLength={15}
+                              className="bg-black/30 border-emerald-500/30 font-mono text-xs h-9 uppercase"
+                            />
+                            <div className="text-[10px] text-emerald-400/90 font-mono flex items-center gap-1">
+                              <Check className="h-3 w-3" /> Auto-calculate 18% GST Input Tax Credit (ITC) on all orders
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
                     </motion.div>
                   )}
                   
@@ -564,7 +682,7 @@ const Auth = () => {
             )}
 
             {/* Bank-Grade Security & Indian/Global Compliance Seals */}
-            <div className="mt-6 pt-5 border-t border-border/30 grid grid-cols-3 gap-2 text-[10px] font-mono text-muted-foreground text-center">
+            <div className="mt-5 pt-4 border-t border-border/30 grid grid-cols-3 gap-2 text-[10px] font-mono text-muted-foreground text-center">
               <div className="flex items-center justify-center gap-1">
                 <Shield className="h-3 w-3 text-primary" /> 256-Bit AES
               </div>
@@ -572,8 +690,12 @@ const Auth = () => {
                 <CheckCircle2 className="h-3 w-3 text-green-400" /> SOC-2 / ISO
               </div>
               <div className="flex items-center justify-center gap-1">
-                <Zap className="h-3 w-3 text-primary" /> UPI & GST Ready
+                <Zap className="h-3 w-3 text-emerald-400" /> UPI & GST Ready
               </div>
+            </div>
+
+            <div className="mt-3 text-center text-[10px] font-mono text-muted-foreground/80">
+              ⚡ Supported: UPI · RuPay · NetBanking · Visa · MC · Amex · Stripe Global
             </div>
           </motion.div>
         </div>

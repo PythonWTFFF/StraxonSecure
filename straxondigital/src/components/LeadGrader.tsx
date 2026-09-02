@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   Sparkles, Zap, ArrowRight, ShieldAlert, CheckCircle2, TrendingUp,
-  Loader2, Target, Globe, Search, BarChart3, Cpu, AlertTriangle,
+  Loader2, Target, Globe, Search, BarChart3, Cpu, AlertTriangle, Mail, Twitter, Linkedin, Lock
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -147,6 +147,9 @@ export const LeadGrader = () => {
   const [progressLabel, setProgressLabel] = useState("");
   const [result, setResult] = useState<AuditResult | null>(null);
   const [expandedAxis, setExpandedAxis] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
 
   const handleAudit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,6 +158,8 @@ export const LeadGrader = () => {
     setAnalyzing(true);
     setResult(null);
     setExpandedAxis(null);
+    setUnlocked(false);
+    setEmail("");
 
     const steps = [
       { p: 18, label: "Analyzing value proposition clarity..." },
@@ -173,6 +178,15 @@ export const LeadGrader = () => {
 
     setResult(generateDynamicResult(urlOrPitch));
     setAnalyzing(false);
+  };
+
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setUnlocking(true);
+    await new Promise(r => setTimeout(r, 1000));
+    setUnlocked(true);
+    setUnlocking(false);
   };
 
   const priorityColors = {
@@ -259,11 +273,56 @@ export const LeadGrader = () => {
                     <h3 className="font-semibold text-base mb-1 flex items-center gap-2">
                       <BarChart3 className="h-4 w-4 text-primary" /> Diagnostic Summary
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{result.summary}</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{result.summary}</p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs gap-1.5"
+                        onClick={() => window.open(`https://twitter.com/intent/tweet?text=I just scored a ${result.grade} (${result.overallScore}/100) on the Straxon Labs Conversion Architecture Audit. Get your free AI audit here: https://straxonlabs.com`, '_blank')}
+                      >
+                        <Twitter className="h-3.5 w-3.5 text-[#1DA1F2]" /> Share on X
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs gap-1.5"
+                        onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=https://straxonlabs.com`, '_blank')}
+                      >
+                        <Linkedin className="h-3.5 w-3.5 text-[#0A66C2]" /> Share on LinkedIn
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
-                {/* 5-Axis Scores */}
+                {!unlocked ? (
+                  <div className="border border-primary/20 bg-primary/5 rounded-2xl p-6 sm:p-8 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-radial opacity-20 pointer-events-none" />
+                    <Lock className="h-8 w-8 text-primary mx-auto mb-3" />
+                    <h3 className="text-xl font-bold mb-2">Unlock Your Full Audit & Recommendations</h3>
+                    <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                      Enter your email to reveal your 5-axis breakdown, specific bottlenecks, and our AI-generated fixes to improve your conversion rate.
+                    </p>
+                    <form onSubmit={handleUnlock} className="flex gap-2 max-w-sm mx-auto">
+                      <Input
+                        type="email"
+                        placeholder="founder@startup.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="glass h-11"
+                        required
+                      />
+                      <Button type="submit" disabled={unlocking || !email} className="h-11 px-6 bg-gradient-primary text-primary-foreground shadow-glow shrink-0">
+                        {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : "Unlock"}
+                      </Button>
+                    </form>
+                    <p className="text-[10px] text-muted-foreground mt-4 flex items-center justify-center gap-1">
+                      <Mail className="h-3 w-3" /> Your report will also be emailed to you.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* 5-Axis Scores */}
                 <div className="space-y-2">
                   <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Target className="h-3.5 w-3.5 text-primary" /> 5-Axis Breakdown
@@ -341,6 +400,8 @@ export const LeadGrader = () => {
                     </div>
                   ))}
                 </div>
+                </>
+                )}
 
                 <div className="flex justify-center pt-2">
                   <Button
