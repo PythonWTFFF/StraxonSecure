@@ -175,52 +175,54 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="glass flex-wrap">
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="automations">Automations</TabsTrigger>
-            <TabsTrigger value="analytics">
-              <TrendingUpIcon className="h-3.5 w-3.5 mr-1 text-primary" />Analytics Brain
-            </TabsTrigger>
-            <TabsTrigger value="reports">
-              <FileText className="h-3.5 w-3.5 mr-1" />Client Reports
-            </TabsTrigger>
-            <TabsTrigger value="digests">
-              <MailIcon className="h-3.5 w-3.5 mr-1" />Email Digest
-            </TabsTrigger>
-            <TabsTrigger value="invoices">
-              Invoices {invoices.length > 0 && <span className="ml-1.5 text-xs text-primary">({invoices.length})</span>}
-            </TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
-            <TabsTrigger value="workspace">Workspace</TabsTrigger>
-            <TabsTrigger value="reseller">
-              <DollarSign className="h-3.5 w-3.5 mr-1" />Client Profit
-            </TabsTrigger>
-            <TabsTrigger value="content">
-              <PenTool className="h-3.5 w-3.5 mr-1" />Auto-Blogger
-            </TabsTrigger>
-            <TabsTrigger value="drip">
-              <SendIcon className="h-3.5 w-3.5 mr-1" />Drip Campaigns
-            </TabsTrigger>
-            <TabsTrigger value="intel">
-              <Crosshair className="h-3.5 w-3.5 mr-1" />Competitor Intel
-            </TabsTrigger>
-            <TabsTrigger value="social">
-              <Smartphone className="h-3.5 w-3.5 mr-1" />Social Growth
-            </TabsTrigger>
-            <TabsTrigger value="pricing">
-              <LineChart className="h-3.5 w-3.5 mr-1" />Price AI
-            </TabsTrigger>
-            <TabsTrigger value="reviews">
-              <Star className="h-3.5 w-3.5 mr-1" />Review Harvest
-            </TabsTrigger>
-            <TabsTrigger value="leads">
-              <Users className="h-3.5 w-3.5 mr-1" />Agency Leads
-            </TabsTrigger>
-            <TabsTrigger value="affiliates">Partners (30%)</TabsTrigger>
-            <TabsTrigger value="support">
-              Support {tickets.length > 0 && <span className="ml-1.5 text-xs text-primary">({tickets.length})</span>}
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="glass inline-flex w-max min-w-full sm:min-w-0 p-1.5 gap-1 rounded-2xl border border-primary/20 backdrop-blur-xl">
+              <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="automations">Automations</TabsTrigger>
+              <TabsTrigger value="analytics">
+                <TrendingUpIcon className="h-3.5 w-3.5 mr-1 text-primary" />Analytics Brain
+              </TabsTrigger>
+              <TabsTrigger value="reports">
+                <FileText className="h-3.5 w-3.5 mr-1" />Client Reports
+              </TabsTrigger>
+              <TabsTrigger value="digests">
+                <MailIcon className="h-3.5 w-3.5 mr-1" />Email Digest
+              </TabsTrigger>
+              <TabsTrigger value="invoices">
+                Invoices {invoices.length > 0 && <span className="ml-1.5 text-xs text-primary">({invoices.length})</span>}
+              </TabsTrigger>
+              <TabsTrigger value="billing">Billing</TabsTrigger>
+              <TabsTrigger value="workspace">Workspace</TabsTrigger>
+              <TabsTrigger value="reseller">
+                <DollarSign className="h-3.5 w-3.5 mr-1" />Client Profit
+              </TabsTrigger>
+              <TabsTrigger value="content">
+                <PenTool className="h-3.5 w-3.5 mr-1" />Auto-Blogger
+              </TabsTrigger>
+              <TabsTrigger value="drip">
+                <SendIcon className="h-3.5 w-3.5 mr-1" />Drip Campaigns
+              </TabsTrigger>
+              <TabsTrigger value="intel">
+                <Crosshair className="h-3.5 w-3.5 mr-1" />Competitor Intel
+              </TabsTrigger>
+              <TabsTrigger value="social">
+                <Smartphone className="h-3.5 w-3.5 mr-1" />Social Growth
+              </TabsTrigger>
+              <TabsTrigger value="pricing">
+                <LineChart className="h-3.5 w-3.5 mr-1" />Price AI
+              </TabsTrigger>
+              <TabsTrigger value="reviews">
+                <Star className="h-3.5 w-3.5 mr-1" />Review Harvest
+              </TabsTrigger>
+              <TabsTrigger value="leads">
+                <Users className="h-3.5 w-3.5 mr-1" />Agency Leads
+              </TabsTrigger>
+              <TabsTrigger value="affiliates">Partners (30%)</TabsTrigger>
+              <TabsTrigger value="support">
+                Support {tickets.length > 0 && <span className="ml-1.5 text-xs text-primary">({tickets.length})</span>}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="orders" className="mt-6">
             <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -608,11 +610,11 @@ const OrderCard = ({ order, index, autoOpen }: { order: Order; index: number; au
 };
 
 const Stat = ({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) => (
-  <Card className="glass p-5">
-    <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-wider font-mono mb-2">
-      <Icon className="h-3.5 w-3.5" /> {label}
+  <Card className="glass p-4 sm:p-5 border border-primary/20 hover:border-primary/40 transition-all shadow-sm">
+    <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] sm:text-xs uppercase tracking-wider font-mono mb-1.5">
+      <Icon className="h-3.5 w-3.5 text-primary shrink-0" /> <span className="truncate">{label}</span>
     </div>
-    <p className="text-2xl font-bold text-gradient">{value}</p>
+    <p className="text-xl sm:text-2xl font-bold text-gradient truncate">{value}</p>
   </Card>
 );
 
