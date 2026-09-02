@@ -27,6 +27,7 @@ const Affiliates = lazy(() => import("./pages/Affiliates"));
 const Reseller = lazy(() => import("./pages/Reseller"));
 const ReportView = lazy(() => import("./pages/ReportView"));
 import { LiveSocialProof } from "@/components/LiveSocialProof";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 
 const queryClient = new QueryClient();
 
@@ -75,28 +76,30 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner theme="dark" />
-        {!splashDone && <SplashScreen onComplete={() => setSplashDone(true)} />}
-        <ParticleField density={1200} />
-        <CursorGlow />
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          }>
-            <AnimatedRoutes />
-          </Suspense>
-          <LiveSocialProof />
-        </BrowserRouter>
-      </TooltipProvider>
+      <CurrencyProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner theme="dark" />
+          {!splashDone && <SplashScreen onComplete={() => setSplashDone(true)} />}
+          <ParticleField density={1200} />
+          <CursorGlow />
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            }>
+              <AnimatedRoutes />
+            </Suspense>
+            <LiveSocialProof />
+          </BrowserRouter>
+        </TooltipProvider>
+      </CurrencyProvider>
     </QueryClientProvider>
   );
 };

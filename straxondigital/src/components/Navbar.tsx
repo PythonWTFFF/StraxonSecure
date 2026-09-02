@@ -6,6 +6,7 @@ import { LayoutDashboard, LogOut, Shield, Menu, X, Sparkles } from "lucide-react
 import { BrandMark } from "@/components/BrandMark";
 import { NotificationBell } from "@/components/NotificationBell";
 import { CreditBalanceBadge } from "@/components/CreditBalanceBadge";
+import { CurrencyToggle } from "@/components/CurrencyToggle";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { toast } from "sonner";
@@ -92,6 +93,7 @@ export const Navbar = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-2.5">
+            <CurrencyToggle />
             {user ? (
               <>
                 <CreditBalanceBadge />
@@ -179,6 +181,10 @@ export const Navbar = () => {
               </nav>
 
               <div className="mt-auto flex flex-col gap-4 border-t border-border/40 pt-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground font-medium">Currency</span>
+                  <CurrencyToggle />
+                </div>
                 {user ? (
                   <>
                     <div className="py-1">

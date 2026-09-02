@@ -40,6 +40,7 @@ import {
   Package,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { IndianGlobalPaymentModal } from "@/components/IndianGlobalPaymentModal";
 
 const DEFAULT_BUNDLE_INTAKE: IntakeField[] = [
   { name: "company_name", label: "Company or Brand Name", kind: "text", required: true, placeholder: "Acme Technologies" },
@@ -73,6 +74,8 @@ const Checkout = () => {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate(`/auth?redirect=/checkout/${slug}`);
@@ -214,45 +217,27 @@ const Checkout = () => {
       }).select().single();
 
       if (error) throw error;
-
-      // Attempt Stripe session
-      const { url } = await createCheckoutSession({
-        service: {
-          ...(service || {
-            slug: bundle!.slug,
-            type: "website",
-            category: "engineering",
-            tier: "one-time",
-            turnaround: bundle!.turnaround,
-            tagline: bundle!.tagline,
-            description: bundle!.description,
-            features: bundle!.highlights,
-            deliverables: bundle!.highlights,
-            intake: DEFAULT_BUNDLE_INTAKE,
-          }),
-          priceCents: discountResult.finalCents,
-          name: displayName,
-        },
-        orderId: order.id,
-        email: user.email || "",
-      });
-
-      if (url) {
-        window.location.href = url;
-      } else {
-        // Immediate simulated order execution
-        await supabase
-          .from("orders")
-          .update({ status: "processing", progress: 15 })
-          .eq("id", order.id);
-
-        toast.success("Order placed successfully! Redirecting to tracking center.");
-        navigate(`/dashboard?order=${order.id}`);
-      }
+      setCreatedOrderId(order.id);
+      setShowPaymentModal(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not place order");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    if (!createdOrderId) return;
+    try {
+      await supabase
+        .from("orders")
+        .update({ status: "processing", progress: 15 })
+        .eq("id", createdOrderId);
+
+      toast.success("Order placed successfully! Redirecting to tracking center.");
+      navigate(`/dashboard?order=${createdOrderId}`);
+    } catch (err) {
+      toast.error("Failed to update order status.");
     }
   };
 
@@ -544,6 +529,13 @@ const Checkout = () => {
           </div>
         </Card>
       </div>
+      <IndianGlobalPaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        amountCents={discountResult.finalCents}
+        serviceName={currentTitle}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 };

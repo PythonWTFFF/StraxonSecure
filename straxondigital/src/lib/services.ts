@@ -607,8 +607,13 @@ export const ORDER_BUMPS: OrderBump[] = [
   },
 ];
 
-export const formatPrice = (cents: number) =>
-  `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
+// NOTE: For React components, prefer using useCurrency() from CurrencyContext for dynamic INR/USD formatting.
+export const formatPrice = (cents: number, forceCurrency?: "USD" | "INR") => {
+  if (forceCurrency === "INR") {
+    return `₹${Math.round((cents / 100) * 83.5).toLocaleString("en-IN")}`;
+  }
+  return `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
+};
 
 export function applyDiscount(
   totalCents: number,

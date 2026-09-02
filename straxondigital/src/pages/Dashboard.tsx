@@ -38,7 +38,8 @@ import { CompetitorTracker } from "@/components/CompetitorTracker";
 import { SocialMediaEngine } from "@/components/SocialMediaEngine";
 import { PricingOptimizer } from "@/components/PricingOptimizer";
 import { ReviewEngine } from "@/components/ReviewEngine";
-import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon, PenTool, Send as SendIcon, Crosshair, Smartphone, LineChart, Star } from "lucide-react";
+import { SecurityCenter } from "@/components/SecurityCenter";
+import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon, PenTool, Send as SendIcon, Crosshair, Smartphone, LineChart, Star, ShieldCheck } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -221,8 +222,15 @@ const Dashboard = () => {
               <TabsTrigger value="support">
                 Support {tickets.length > 0 && <span className="ml-1.5 text-xs text-primary">({tickets.length})</span>}
               </TabsTrigger>
+              <TabsTrigger value="security">
+                <ShieldCheck className="h-3.5 w-3.5 mr-1" />Security Center
+              </TabsTrigger>
             </TabsList>
           </div>
+
+          <TabsContent value="security" className="mt-6">
+            <SecurityCenter />
+          </TabsContent>
 
           <TabsContent value="orders" className="mt-6">
             <div className="flex items-center gap-3 mb-4 flex-wrap">
