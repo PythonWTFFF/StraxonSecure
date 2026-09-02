@@ -28,6 +28,7 @@ const Reseller = lazy(() => import("./pages/Reseller"));
 const ReportView = lazy(() => import("./pages/ReportView"));
 import { LiveSocialProof } from "@/components/LiveSocialProof";
 import { CurrencyProvider } from "@/context/CurrencyContext";
+import { AiRagAssistant } from "@/components/AiRagAssistant";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +98,7 @@ const App = () => {
               <AnimatedRoutes />
             </Suspense>
             <LiveSocialProof />
+            <AiRagAssistant />
           </BrowserRouter>
         </TooltipProvider>
       </CurrencyProvider>
