@@ -48,41 +48,86 @@ export const askAI = createServerFn({ method: "POST" })
 
     await checkFeatureUsage((context as any).userId as string, "ai_prompt");
 
+    let replyText = "";
     try {
       const mlUrl = process.env.VITE_ML_ENGINE_URL || "http://localhost:8082";
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
       const res = await fetch(`${mlUrl}/api/ml/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [{ role: "system", content: systemPrompt }, ...data.messages],
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
-      if (!res.ok) {
-        throw new Error(`AI Engine failed: ${await res.text()}`);
+      if (res.ok) {
+        const json = await res.json();
+        replyText = json.reply || "";
+      } else {
+        throw new Error(`ML Engine error: ${res.statusText}`);
       }
-
-      const json = await res.json();
-      await logFeatureUsage(
-        (context as any).userId as string,
-        "ai_prompt",
-        { mode },
-        (context as any).requestId as string,
-      );
-
-      // Phase 5: Immutable Audit Logging
-      await logAudit({
-        requestId: ((context as any).requestId as string) ?? "unknown",
-        actorUserId: (context as any).userId as string,
-        orgId: "00000000-0000-0000-0000-000000000000", // Needs true orgId when multi-tenant is active
-        action: "ai.ask",
-        serverFn: "askAI",
-        metadata: { mode, messageCount: data.messages.length },
-      });
-
-      return { reply: json.reply || "No response generated." };
     } catch (e: any) {
-      console.error("AI Request Failed", e);
-      throw new Error(e.message || "AI request failed");
+      console.warn("ML Engine unreachable, attempting Gemini API fallback:", e.message);
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (geminiApiKey) {
+        try {
+          const contents = data.messages.map((m) => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }],
+          }));
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                contents,
+              }),
+            },
+          );
+
+          if (geminiRes.ok) {
+            const gData = await geminiRes.json();
+            replyText =
+              gData.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+          } else {
+            console.error("Gemini API error:", await geminiRes.text());
+            replyText = "AI defense engine is currently re-calibrating. Please retry in a moment.";
+          }
+        } catch (geminiErr: any) {
+          console.error("Gemini direct fallback error:", geminiErr);
+          replyText = "AI defense engine is currently re-calibrating. Please retry in a moment.";
+        }
+      } else {
+        replyText = "AI defense engine is currently unavailable. Please verify API configurations.";
+      }
     }
+
+    if (!replyText) {
+      replyText = "No response generated.";
+    }
+
+    await logFeatureUsage(
+      (context as any).userId as string,
+      "ai_prompt",
+      { mode },
+      (context as any).requestId as string,
+    );
+
+    // Phase 5: Immutable Audit Logging
+    await logAudit({
+      requestId: ((context as any).requestId as string) ?? "unknown",
+      actorUserId: (context as any).userId as string,
+      orgId: "00000000-0000-0000-0000-000000000000",
+      action: "ai.ask",
+      serverFn: "askAI",
+      metadata: { mode, messageCount: data.messages.length },
+    });
+
+    return { reply: replyText };
   });

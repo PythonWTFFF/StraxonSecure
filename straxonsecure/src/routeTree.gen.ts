@@ -39,6 +39,7 @@ import { Route as SupplyChainRouteImport } from './routes/supply-chain'
 import { Route as TeamsRouteImport } from './routes/teams'
 import { Route as ThreatIntelRouteImport } from './routes/threat-Intel'
 import { Route as WarroomRouteImport } from './routes/warroom'
+import { Route as ApiHealthzRouteImport } from './routes/api/healthz'
 import { Route as LabsIndexRouteImport } from './routes/labs.index'
 import { Route as LabsAdNetworkRouteImport } from './routes/labs.ad-network'
 import { Route as LabsBruteRouteImport } from './routes/labs.brute'
@@ -212,6 +213,11 @@ const WarroomRoute = WarroomRouteImport.update({
   path: '/warroom',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthzRoute = ApiHealthzRouteImport.update({
+  id: '/api/healthz',
+  path: '/api/healthz',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LabsIndexRoute = LabsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -355,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/teams': typeof TeamsRoute
   '/threat-Intel': typeof ThreatIntelRoute
   '/warroom': typeof WarroomRoute
+  '/api/healthz': typeof ApiHealthzRoute
   '/labs/ad-network': typeof LabsAdNetworkRoute
   '/labs/brute': typeof LabsBruteRoute
   '/labs/csrf': typeof LabsCsrfRoute
@@ -408,6 +415,7 @@ export interface FileRoutesByTo {
   '/teams': typeof TeamsRoute
   '/threat-Intel': typeof ThreatIntelRoute
   '/warroom': typeof WarroomRoute
+  '/api/healthz': typeof ApiHealthzRoute
   '/labs/ad-network': typeof LabsAdNetworkRoute
   '/labs/brute': typeof LabsBruteRoute
   '/labs/csrf': typeof LabsCsrfRoute
@@ -463,6 +471,7 @@ export interface FileRoutesById {
   '/teams': typeof TeamsRoute
   '/threat-Intel': typeof ThreatIntelRoute
   '/warroom': typeof WarroomRoute
+  '/api/healthz': typeof ApiHealthzRoute
   '/labs/ad-network': typeof LabsAdNetworkRoute
   '/labs/brute': typeof LabsBruteRoute
   '/labs/csrf': typeof LabsCsrfRoute
@@ -519,6 +528,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/threat-Intel'
     | '/warroom'
+    | '/api/healthz'
     | '/labs/ad-network'
     | '/labs/brute'
     | '/labs/csrf'
@@ -572,6 +582,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/threat-Intel'
     | '/warroom'
+    | '/api/healthz'
     | '/labs/ad-network'
     | '/labs/brute'
     | '/labs/csrf'
@@ -626,6 +637,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/threat-Intel'
     | '/warroom'
+    | '/api/healthz'
     | '/labs/ad-network'
     | '/labs/brute'
     | '/labs/csrf'
@@ -681,6 +693,7 @@ export interface RootRouteChildren {
   TeamsRoute: typeof TeamsRoute
   ThreatIntelRoute: typeof ThreatIntelRoute
   WarroomRoute: typeof WarroomRoute
+  ApiHealthzRoute: typeof ApiHealthzRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicEdrIngestRoute: typeof ApiPublicEdrIngestRoute
@@ -896,6 +909,13 @@ declare module '@tanstack/react-router' {
       path: '/warroom'
       fullPath: '/warroom'
       preLoaderRoute: typeof WarroomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/healthz': {
+      id: '/api/healthz'
+      path: '/api/healthz'
+      fullPath: '/api/healthz'
+      preLoaderRoute: typeof ApiHealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/labs/': {
@@ -1132,6 +1152,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeamsRoute: TeamsRoute,
   ThreatIntelRoute: ThreatIntelRoute,
   WarroomRoute: WarroomRoute,
+  ApiHealthzRoute: ApiHealthzRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicEdrIngestRoute: ApiPublicEdrIngestRoute,

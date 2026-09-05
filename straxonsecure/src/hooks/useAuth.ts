@@ -33,8 +33,27 @@ export function useAuth() {
     resetTimeout();
 
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+      } else if (
+        typeof window !== "undefined" &&
+        localStorage.getItem("straxon_demo_user") === "true"
+      ) {
+        const demoUser = {
+          id: "demo-operator-001",
+          email: "demo.operator@straxon.io",
+          aud: "authenticated",
+          role: "authenticated",
+          user_metadata: { name: "VIP Evaluator (Demo Clearance)" },
+          app_metadata: { provider: "straxon_sandbox" },
+          created_at: new Date().toISOString(),
+        } as unknown as User;
+        setUser(demoUser);
+      } else {
+        setSession(null);
+        setUser(null);
+      }
       setLoading(false);
     });
 

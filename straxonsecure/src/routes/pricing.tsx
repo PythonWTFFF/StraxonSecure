@@ -1,6 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Check, Sparkles, CreditCard, IndianRupee, Lock } from "lucide-react";
+import {
+  Check,
+  Sparkles,
+  CreditCard,
+  IndianRupee,
+  Lock,
+  Calculator,
+  TrendingUp,
+  ShieldCheck,
+  Server,
+  Eye,
+  HelpCircle,
+  ChevronDown,
+  Plus,
+} from "lucide-react";
 import { CyberCard } from "@/components/cyber/CyberCard";
 import { CyberButton } from "@/components/cyber/CyberButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,11 +32,11 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — Straxon Secure Pro" },
+      { title: "Pricing & Enterprise Add-ons — Straxon Secure Pro" },
       {
         name: "description",
         content:
-          "7-day free trial. Hobby, Pro, and Enterprise tiers for advanced labs, replay theatre, and SOC features.",
+          "7-day free trial. Hobby, Pro, and Enterprise tiers with autonomous PTaaS, dedicated SOC tenants, and threat intelligence.",
       },
     ],
   }),
@@ -63,6 +77,55 @@ const FEATURES_ENTERPRISE = [
   "White-labeled PDF reports",
 ];
 
+const ENTERPRISE_ADDONS = [
+  {
+    id: "ptaas",
+    name: "Autonomous PTaaS Red-Team Agent",
+    badge: "AI RED-TEAM",
+    icon: ShieldCheck,
+    price: 299,
+    description: "24/7 continuous autonomous penetration testing bot with automated MITRE ATT&CK exploit path generation and safe validation.",
+    benefits: ["Zero-day vulnerability validation", "Automated GitHub remediation PRs", "Blast-radius simulation graphs"],
+  },
+  {
+    id: "soc_tenant",
+    name: "Dedicated Enterprise SOC Tenant",
+    badge: "ISOLATED SIEM",
+    icon: Server,
+    price: 499,
+    description: "High-throughput sovereign SIEM cluster with 1-year immutable hot telemetry retention and custom sigma rule ingestion.",
+    benefits: ["Sub-second federated threat hunting", "Full multi-tenant RBAC & audit logs", "Dedicated NVMe ingestion pipeline"],
+  },
+  {
+    id: "darkweb_vip",
+    name: "Executive Dark Web Radar & CISO Shield",
+    badge: "VIP INTEL",
+    icon: Eye,
+    price: 199,
+    description: "Real-time deep web surveillance scraping Tor hidden services, private Telegram broker channels, and infostealer dumps.",
+    benefits: ["C-Suite credential leak alerts", "VIP domain typosquatting detection", "Rapid takedown legal coordinator"],
+  },
+];
+
+const CISO_FAQS = [
+  {
+    q: "How does Straxon guarantee Zero-Trust data privacy & residency?",
+    a: "Straxon is SOC 2 Type II certified and ISO 27001 aligned. All telemetry in transit is protected with TLS 1.3, and data at rest is encrypted using customer-managed AWS KMS keys (AES-256-GCM). We offer sovereign VPC deployments in US, EU (Frankfurt), and APAC (Mumbai/Singapore) regions to satisfy GDPR, HIPAA, and DPDP compliances.",
+  },
+  {
+    q: "Can Autonomous PTaaS be safely run against production workloads?",
+    a: "Yes. Our PTaaS engine features real-time defensive rate limiting, safe payload nonces, and an emergency instantaneous abort killswitch. Non-destructive vulnerability profiling is separated from active exploitation, which requires strict CISO policy sign-off.",
+  },
+  {
+    q: "What SLAs are provided for Enterprise SOC customers?",
+    a: "Enterprise subscribers receive a contractually guaranteed 99.99% uptime SLA, sub-second telemetry ingestion latency, and 15-minute response times from Straxon Tier 3 Incident Commanders during active P1 incidents.",
+  },
+  {
+    q: "Does Straxon integrate into our current SIEM / SOAR tech stack?",
+    a: "Yes. Straxon provides bi-directional webhooks and pre-built native connectors for Splunk Enterprise, Datadog, Microsoft Sentinel, Elastic SIEM, CrowdStrike Falcon, and Jira Service Management.",
+  },
+];
+
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     if (typeof window === "undefined") return resolve(false);
@@ -80,6 +143,29 @@ function PricingPage() {
   const { sub, hasAccess, trialActive, paidActive, trialDaysLeft, refresh } = useSubscription();
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [busy, setBusy] = useState<string | null>(null);
+  const [roiEndpoints, setRoiEndpoints] = useState(50);
+  const [roiPentests, setRoiPentests] = useState(2);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>(["ptaas"]);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+
+  const toggleAddon = (id: string) => {
+    setSelectedAddons((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const addonTotalMonthly = selectedAddons.reduce((sum, id) => {
+    const item = ENTERPRISE_ADDONS.find((a) => a.id === id);
+    return sum + (item ? item.price : 0);
+  }, 0);
+
+  const basePricePerMonth = billing === "monthly" ? 19 : Math.round(190 / 12);
+  const totalStackPerMonth = basePricePerMonth + addonTotalMonthly;
+
+  const traditionalCost = roiEndpoints * 120 + roiPentests * 12000;
+  const straxonCost = billing === "monthly" ? 19 * 12 : 190;
+  const annualSavings = Math.max(0, traditionalCost - straxonCost);
+  const roiPercentage = Math.round((annualSavings / straxonCost) * 100);
 
   const plan = billing === "monthly" ? "pro_monthly" : "pro_yearly";
   const priceUsd = billing === "monthly" ? 19 : 190;
@@ -406,6 +492,263 @@ function PricingPage() {
               </CyberButton>
             </div>
           </CyberCard>
+        </div>
+
+        {/* ENTERPRISE HIGH-TICKET ADD-ONS SELECTION */}
+        <div className="mt-16 max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="text-xs font-mono tracking-[0.25em] text-[#ff003c] uppercase mb-2 flex items-center justify-center gap-1.5">
+              <ShieldCheck className="h-4 w-4" /> ADVANCED CAPABILITIES
+            </div>
+            <h2 className="font-display text-2xl md:text-3xl font-bold text-white">
+              Enterprise Defense Add-Ons
+            </h2>
+            <p className="text-xs md:text-sm text-slate-400 max-w-xl mx-auto mt-2">
+              Extend your Straxon Pro instance with mission-critical autonomous agents, dedicated sovereign SOC infrastructure, and VIP intelligence feeds.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {ENTERPRISE_ADDONS.map((addon) => {
+              const isSelected = selectedAddons.includes(addon.id);
+              const Icon = addon.icon;
+              return (
+                <div
+                  key={addon.id}
+                  onClick={() => toggleAddon(addon.id)}
+                  className={`cursor-pointer rounded-2xl p-6 border transition-all duration-300 relative flex flex-col justify-between ${
+                    isSelected
+                      ? "bg-[#00f3ff]/5 border-[#00f3ff] shadow-[0_0_25px_rgba(0,243,255,0.2)]"
+                      : "bg-[#020610]/80 border-white/10 hover:border-white/25"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[10px] font-mono tracking-widest px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[#00f3ff]">
+                        {addon.badge}
+                      </span>
+                      <div
+                        className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? "bg-[#00f3ff] border-[#00f3ff] text-black"
+                            : "border-white/20 bg-black/40"
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 mb-2">
+                      <div className="p-2 rounded-lg bg-white/5 text-[#00f3ff]">
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-display font-bold text-sm text-white leading-snug">
+                        {addon.name}
+                      </h3>
+                    </div>
+
+                    <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                      {addon.description}
+                    </p>
+
+                    <div className="space-y-2 mb-6">
+                      {addon.benefits.map((b, i) => (
+                        <div key={i} className="flex items-center gap-2 text-[11px] text-slate-300">
+                          <Check className="w-3 h-3 text-[#00f3ff] shrink-0" />
+                          <span>{b}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/10 flex items-baseline justify-between">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">ADD-ON PRICE</span>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-white">${addon.price}</span>
+                      <span className="text-xs text-slate-500 font-mono"> / mo</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* DYNAMIC BUNDLE CHECKOUT BAR */}
+          <div className="mt-6 p-4 md:p-6 rounded-2xl bg-gradient-to-r from-[#00f3ff]/10 via-[#020610] to-[#ff003c]/10 border border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <div className="text-xs font-mono text-slate-300">
+                Custom Enterprise Configuration:{" "}
+                <span className="text-[#00f3ff] font-bold">
+                  Pro Tier + {selectedAddons.length} Add-on{selectedAddons.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="text-xs text-slate-400 mt-0.5">
+                Billed {billing === "monthly" ? "monthly" : "annually"} • Instant zero-trust cloud provisioning
+              </div>
+            </div>
+            <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="text-right">
+                <span className="text-xs text-slate-400 font-mono block">Estimated Total:</span>
+                <span className="text-2xl font-black text-white">${totalStackPerMonth}</span>
+                <span className="text-xs text-slate-500 font-mono"> / mo</span>
+              </div>
+              <CyberButton
+                variant="cyan"
+                size="md"
+                onClick={startStripe}
+                disabled={busy !== null}
+                className="shadow-[0_0_20px_rgba(0,243,255,0.4)] whitespace-nowrap"
+              >
+                <Sparkles className="h-4 w-4 mr-1.5" />
+                Deploy Enterprise Stack
+              </CyberButton>
+            </div>
+          </div>
+        </div>
+
+        {/* INTERACTIVE ENTERPRISE ROI & BREAKEVEN CALCULATOR */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <CyberCard variant="cyan" glow className="p-6 md:p-10 border-[#00f3ff]/30 bg-[#020610]/90 relative overflow-hidden">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 rounded-lg bg-[#00f3ff]/10 border border-[#00f3ff]/30 text-[#00f3ff]">
+                <Calculator className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-display text-xl md:text-2xl font-bold text-white tracking-wide">
+                  SaaS ROI & Breakeven Calculator
+                </h3>
+                <p className="text-xs font-mono text-slate-400 mt-0.5">
+                  Quantify your cost reduction vs legacy external pentest vendors & manual EDR tools
+                </p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between text-xs font-mono mb-2">
+                    <span className="text-slate-300">Protected Endpoints:</span>
+                    <span className="text-[#00f3ff] font-bold">{roiEndpoints} Nodes</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="10"
+                    max="500"
+                    step="10"
+                    value={roiEndpoints}
+                    onChange={(e) => setRoiEndpoints(Number(e.target.value))}
+                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#00f3ff]"
+                  />
+                  <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
+                    <span>10 Nodes</span>
+                    <span>500 Nodes</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs font-mono mb-2">
+                    <span className="text-slate-300">Annual Manual Audits / Pentests:</span>
+                    <span className="text-[#ff003c] font-bold">{roiPentests} / year</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={roiPentests}
+                    onChange={(e) => setRoiPentests(Number(e.target.value))}
+                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#ff003c]"
+                  />
+                  <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
+                    <span>1 Audit</span>
+                    <span>10 Audits</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2 text-xs font-mono">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Traditional Vendor Spend:</span>
+                    <span className="text-slate-200">${traditionalCost.toLocaleString()}/yr</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Straxon Pro Investment:</span>
+                    <span className="text-[#00f3ff]">${straxonCost.toLocaleString()}/yr</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-gradient-to-b from-[#00f3ff]/10 via-transparent to-[#ff003c]/10 border border-white/10 flex flex-col justify-center text-center space-y-4">
+                <div className="text-[10px] font-mono text-[#00f3ff] uppercase tracking-widest">
+                  PROJECTED ANNUAL SAVINGS
+                </div>
+                <div className="font-display text-4xl md:text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(0,243,255,0.4)]">
+                  ${annualSavings.toLocaleString()}
+                </div>
+                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono mx-auto">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  <span>+{roiPercentage.toLocaleString()}% Est. ROI</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed max-w-xs mx-auto">
+                  Plus mitigation against the average $4.45M cost of an uncontained enterprise data breach.
+                </p>
+                <CyberButton
+                  variant="magenta"
+                  size="sm"
+                  className="mt-2 w-full text-xs shadow-[0_0_20px_rgba(255,0,60,0.3)]"
+                  onClick={startStripe}
+                  disabled={busy !== null}
+                >
+                  <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Claim Your Pro Savings
+                </CyberButton>
+              </div>
+            </div>
+          </CyberCard>
+        </div>
+
+        {/* CISO & EXECUTIVE ENTERPRISE FAQ */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="text-xs font-mono tracking-[0.25em] text-[#00f3ff] uppercase mb-2 flex items-center justify-center gap-1.5">
+              <HelpCircle className="h-4 w-4" /> DUE DILIGENCE & COMPLIANCE
+            </div>
+            <h2 className="font-display text-2xl md:text-3xl font-bold text-white">
+              CISO & Enterprise FAQ
+            </h2>
+            <p className="text-xs md:text-sm text-slate-400 max-w-lg mx-auto mt-2">
+              Everything your security, legal, and procurement teams need to clear Straxon for enterprise deployment.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {CISO_FAQS.map((faq, idx) => {
+              const isOpen = expandedFaq === idx;
+              return (
+                <div
+                  key={idx}
+                  className="rounded-xl border border-white/10 bg-[#020610]/80 overflow-hidden transition-all duration-200"
+                >
+                  <button
+                    onClick={() => setExpandedFaq(isOpen ? null : idx)}
+                    className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 hover:bg-white/5 transition-colors"
+                  >
+                    <span className="font-mono text-xs md:text-sm font-semibold text-slate-200">
+                      {faq.q}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-[#00f3ff] shrink-0 transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-4 pt-1 text-xs font-mono text-slate-400 leading-relaxed border-t border-white/5 bg-black/20">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <p className="text-center text-[10px] font-mono tracking-widest uppercase text-slate-500 mt-12">

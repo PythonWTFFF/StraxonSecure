@@ -11,3 +11,7 @@ terraform/tfplan
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+dist/
+.tanstack/
+.wrangler/
+supabase/

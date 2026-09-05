@@ -69,15 +69,48 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
     }
 
     try {
+      let lineItem: Stripe.Checkout.SessionCreateParams.LineItem;
+      if (priceId.startsWith("price_")) {
+        lineItem = { price: priceId, quantity: 1 };
+      } else {
+        // Resolve or create recurring price for prod_ Product ID
+        try {
+          const prices = await stripe.prices.list({
+            product: priceId,
+            active: true,
+            type: "recurring",
+            limit: 1,
+          });
+          if (prices.data.length > 0) {
+            lineItem = { price: prices.data[0].id, quantity: 1 };
+          } else {
+            const interval = data.plan === "pro_monthly" ? "month" : "year";
+            const unitAmount = data.plan === "pro_monthly" ? 1900 : 19000;
+            const newPrice = await stripe.prices.create({
+              product: priceId,
+              unit_amount: unitAmount,
+              currency: "usd",
+              recurring: { interval },
+            });
+            lineItem = { price: newPrice.id, quantity: 1 };
+          }
+        } catch {
+          lineItem = {
+            price_data: {
+              currency: "usd",
+              product: priceId,
+              recurring: { interval: data.plan === "pro_monthly" ? "month" : "year" },
+              unit_amount: data.plan === "pro_monthly" ? 1900 : 19000,
+            },
+            quantity: 1,
+          };
+        }
+      }
+
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         payment_method_types: ["card"],
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
+        line_items: [lineItem],
         success_url: `${origin}/billing?success=1`,
         cancel_url: `${origin}/pricing?canceled=1`,
         client_reference_id: userId,

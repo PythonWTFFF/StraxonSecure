@@ -27,6 +27,7 @@ import {
   FileText,
   Mail,
   Package,
+  Ghost,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -56,6 +57,7 @@ const NAV_GROUPS = [
       { to: "/labs", label: "Attack Labs", icon: Beaker },
       { to: "/ctf", label: "CTF Challenges", icon: Flag },
       { to: "/pentest", label: "PTaaS", icon: Crosshair },
+      { to: "/darkweb", label: "Dark Web Monitor", icon: Ghost, isNew: true },
       { to: "/easm", label: "EASM / Recon", icon: Globe },
       { to: "/phishing", label: "Phishing Sim", icon: Mail, isNew: true },
     ],
@@ -230,16 +232,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </SheetTrigger>
               <SheetContent
                 side="left"
-                className="bg-card/95 backdrop-blur-xl border-border w-64 p-4"
+                className="bg-card/95 backdrop-blur-xl border-border w-72 max-w-[85vw] p-0 flex flex-col h-[100dvh]"
               >
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <SheetDescription className="sr-only">
                   Use this menu to navigate through the application.
                 </SheetDescription>
-                <div className="mb-6">
+                <div className="p-4 border-b border-border/40 shrink-0">
                   <Brand />
                 </div>
-                <NavLinks onNavigate={() => setOpen(false)} />
+                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 p-4 pb-20">
+                  <NavLinks onNavigate={() => setOpen(false)} />
+                </div>
               </SheetContent>
             </Sheet>
             <Brand />
@@ -292,7 +296,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 relative scanline">{children}</main>
+        <main className="flex-1 min-w-0 relative scanline overflow-y-auto min-h-[calc(100dvh-3.5rem)] pb-24 md:pb-6">{children}</main>
       </div>
       <CommandPalette />
       <StraxonCopilot />

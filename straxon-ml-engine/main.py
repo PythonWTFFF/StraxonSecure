@@ -28,7 +28,7 @@ app.add_middleware(
 
 try:
     import docker
-    docker_client = docker.from_env()
+    docker_client = docker.from_env(timeout=2)
     DOCKER_AVAILABLE = True
     print("[StraxonEngine] Docker connected ✓")
 except Exception as e:
