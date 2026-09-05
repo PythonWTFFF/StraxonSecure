@@ -14,11 +14,17 @@ export const NetworkGlobe = () => {
     const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
     camera.position.z = 4.2;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(w, h);
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h);
+      renderer.setClearColor(0x000000, 0);
+      container.appendChild(renderer.domElement);
+    } catch (e) {
+      console.warn("WebGL not supported or context unavailable, falling back to CSS background effect:", e);
+      return;
+    }
 
     // Wireframe globe
     const sphere = new THREE.Mesh(

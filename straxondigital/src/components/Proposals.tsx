@@ -19,6 +19,8 @@ import {
   INamingData,
   ILinkedInData,
   IPressReleaseData,
+  ISaasArchitectureData,
+  IAiVoiceAutomationsData,
   parseDeliverable,
 } from "@/types/deliverables";
 
@@ -87,6 +89,10 @@ export const ProposalPreview = ({ order }: { order: OrderLike }) => {
           <LinkedInLayout data={content} />
         ) : content.kind === "pressrelease" ? (
           <PressReleaseLayout data={content} />
+        ) : content.kind === "saas-architecture" ? (
+          <SaasArchitectureLayout data={content} />
+        ) : content.kind === "ai-voice-automations" ? (
+          <AiVoiceAutomationsLayout data={content} />
         ) : (
           <PlaceholderLayout order={order} />
         )}
@@ -601,6 +607,116 @@ const PressReleaseLayout = ({ data }: { data: IPressReleaseData }) => (
       <ul style={{ margin: "0 0 0 5mm", padding: 0 }}>
         {data.suggested_outlets.map((o, i) => <li key={i}>{o}</li>)}
       </ul>
+    </section>
+  </div>
+);
+
+const SaasArchitectureLayout = ({ data }: { data: ISaasArchitectureData }) => (
+  <div>
+    <header style={{ borderBottom: "2px solid #0a0a0a", paddingBottom: "4mm", marginBottom: "5mm" }}>
+      <p style={{ fontSize: "9pt", color: "#666", margin: 0, textTransform: "uppercase", letterSpacing: "0.2em" }}>SaaS System Architecture & Engineering Spec</p>
+      <h1 style={{ fontSize: "22pt", fontWeight: 700, margin: "2mm 0" }}>{data.product_name}</h1>
+      <p style={{ fontSize: "10pt", color: "#444", margin: 0, lineHeight: 1.4 }}>{data.architecture_overview}</p>
+    </header>
+
+    <section style={{ marginBottom: "5mm" }}>
+      <SectionHeading>Core Tech Stack</SectionHeading>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3mm" }}>
+        {data.tech_stack.map((t, idx) => (
+          <div key={idx} style={{ padding: "2.5mm", background: "#f7f7f7", borderRadius: "1.5mm", fontSize: "9pt" }}>
+            <strong style={{ display: "block", color: "#0066cc" }}>{t.layer}: {t.tool}</strong>
+            <span style={{ color: "#555" }}>{t.rationale}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section style={{ marginBottom: "5mm" }}>
+      <SectionHeading>Database Schema Design</SectionHeading>
+      <div style={{ display: "flex", flexDirection: "column", gap: "2.5mm" }}>
+        {data.database_tables.map((tbl, idx) => (
+          <div key={idx} style={{ padding: "2.5mm", border: "1px solid #e0e0e0", borderRadius: "1.5mm", fontSize: "8.5pt" }}>
+            <strong>Table: {tbl.table}</strong> — <span style={{ color: "#666" }}>{tbl.description}</span>
+            <div style={{ marginTop: "1mm", color: "#333", fontFamily: "monospace" }}>
+              Columns: {tbl.columns.join(", ")}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section style={{ marginBottom: "5mm" }}>
+      <SectionHeading>Key API Endpoints</SectionHeading>
+      <div style={{ display: "flex", flexDirection: "column", gap: "2mm", fontSize: "8.5pt" }}>
+        {data.api_endpoints.map((api, idx) => (
+          <div key={idx} style={{ display: "flex", alignItems: "center", gap: "3mm", padding: "1.5mm 2.5mm", background: "#f7f7f7", borderRadius: "1mm" }}>
+            <span style={{ fontWeight: 700, padding: "1mm 2mm", background: "#0a0a0a", color: "#fff", borderRadius: "1mm", fontSize: "7.5pt" }}>{api.method}</span>
+            <code style={{ fontWeight: 600 }}>{api.endpoint}</code>
+            <span style={{ color: "#666", marginLeft: "auto" }}>{api.purpose}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section>
+      <SectionHeading>Security & Multi-Tenant Isolation</SectionHeading>
+      <ul style={{ margin: "0 0 0 5mm", padding: 0, fontSize: "9pt" }}>
+        {data.security_and_auth.map((sec, idx) => <li key={idx}>{sec}</li>)}
+      </ul>
+    </section>
+  </div>
+);
+
+const AiVoiceAutomationsLayout = ({ data }: { data: IAiVoiceAutomationsData }) => (
+  <div>
+    <header style={{ borderBottom: "2px solid #0a0a0a", paddingBottom: "4mm", marginBottom: "5mm" }}>
+      <p style={{ fontSize: "9pt", color: "#666", margin: 0, textTransform: "uppercase", letterSpacing: "0.2em" }}>Autonomous Voice Agent & Webhook Blueprint</p>
+      <h1 style={{ fontSize: "22pt", fontWeight: 700, margin: "2mm 0" }}>{data.agent_name}</h1>
+      <p style={{ fontSize: "10pt", color: "#444", margin: 0 }}><strong>Objective:</strong> {data.objective}</p>
+    </header>
+
+    <section style={{ marginBottom: "5mm" }}>
+      <SectionHeading>Conversational Flow & Dialogue Script</SectionHeading>
+      <div style={{ padding: "3mm", background: "#f7f7f7", borderRadius: "2mm", marginBottom: "3mm" }}>
+        <p style={{ margin: 0, fontSize: "9pt" }}><strong>Greeting Hook:</strong> "{data.conversational_script.greeting}"</p>
+      </div>
+
+      <div style={{ marginBottom: "3mm" }}>
+        <strong style={{ fontSize: "9pt", display: "block", marginBottom: "1.5mm" }}>Qualification Inquiries:</strong>
+        <ul style={{ margin: "0 0 0 5mm", padding: 0, fontSize: "9pt" }}>
+          {data.conversational_script.qualification_questions.map((q, idx) => (
+            <li key={idx} style={{ marginBottom: "1mm" }}>{q}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <strong style={{ fontSize: "9pt", display: "block", marginBottom: "1.5mm" }}>Objection Handling Matrix:</strong>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2mm" }}>
+          {data.conversational_script.objection_handlers.map((obj, idx) => (
+            <div key={idx} style={{ padding: "2.5mm", borderLeft: "3px solid #0066cc", background: "#fafafa", fontSize: "8.5pt" }}>
+              <div style={{ fontWeight: 600, color: "#0066cc" }}>When Customer Says: "{obj.objection}"</div>
+              <div style={{ color: "#333", marginTop: "1mm" }}>Agent Response: "{obj.response}"</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section style={{ marginBottom: "5mm" }}>
+      <SectionHeading>Automation Pipeline Sequence</SectionHeading>
+      <ol style={{ margin: "0 0 0 5mm", padding: 0, fontSize: "9pt" }}>
+        {data.automation_steps.map((step, idx) => (
+          <li key={idx} style={{ marginBottom: "1mm" }}>{step}</li>
+        ))}
+      </ol>
+    </section>
+
+    <section>
+      <SectionHeading>Outbound Webhook Payload Schema</SectionHeading>
+      <pre style={{ margin: 0, padding: "3mm", background: "#0a0a0a", color: "#00ffcc", borderRadius: "2mm", fontSize: "8pt", overflow: "hidden", whiteSpace: "pre-wrap" }}>
+        {JSON.stringify(data.webhook_payload_example, null, 2)}
+      </pre>
     </section>
   </div>
 );

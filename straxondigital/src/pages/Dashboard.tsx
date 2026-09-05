@@ -12,7 +12,7 @@ import { GenerationTerminal } from "@/components/GenerationTerminal";
 import { InvoiceDocument, InvoiceLike } from "@/components/InvoiceDocument";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Download, FileText, LifeBuoy, Loader2, Package, Receipt, Search, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Download, DollarSign, FileText, LifeBuoy, Loader2, Package, Receipt, Search, CheckCircle2, Clock, AlertCircle, Users } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/lib/services";
@@ -24,8 +24,25 @@ import { Footer } from "@/components/Footer";
 import { BillingTab } from "@/components/BillingTab";
 import { WorkspacePanel } from "@/components/WorkspacePanel";
 import { OrderActions } from "@/components/OrderActions";
-
-
+import { AutomationsHub } from "@/components/AutomationsHub";
+import { AffiliateHub } from "@/components/AffiliateHub";
+import { ClientProfitCenter } from "@/components/ClientProfitCenter";
+import { AgencyLeadMagnet } from "@/components/AgencyLeadMagnet";
+import { RevenueAnalyticsBrain } from "@/components/RevenueAnalyticsBrain";
+import { EmailDigestEngine } from "@/components/EmailDigestEngine";
+import { ClientReportGenerator } from "@/components/ClientReportGenerator";
+import { OnboardingConcierge } from "@/components/OnboardingConcierge";
+import { ContentEngine } from "@/components/ContentEngine";
+import { DripCampaignGenerator } from "@/components/DripCampaignGenerator";
+import { CompetitorTracker } from "@/components/CompetitorTracker";
+import { SocialMediaEngine } from "@/components/SocialMediaEngine";
+import { PricingOptimizer } from "@/components/PricingOptimizer";
+import { ReviewEngine } from "@/components/ReviewEngine";
+import { SecurityCenter } from "@/components/SecurityCenter";
+import { RagVectorStudio } from "@/components/RagVectorStudio";
+import { GstInvoiceGenerator } from "@/components/GstInvoiceGenerator";
+import { DashboardUpsell } from "@/components/DashboardUpsell";
+import { TrendingUp as TrendingUpIcon, Mail as MailIcon, Compass as CompassIcon, PenTool, Send as SendIcon, Crosshair, Smartphone, LineChart, Star, ShieldCheck, Database, Building2 } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -44,6 +61,9 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchParams] = useSearchParams();
   const focusOrderId = searchParams.get("order");
+
+  const [showConcierge, setShowConcierge] = useState(false);
+  const [selectedGstInvoice, setSelectedGstInvoice] = useState<any>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -129,10 +149,28 @@ const Dashboard = () => {
             <p className="text-xs font-mono uppercase tracking-[0.3em] text-primary mb-2">/ Client Dashboard</p>
             <h1 className="text-3xl sm:text-4xl font-bold">Your command center</h1>
           </div>
-          <Button asChild className="bg-gradient-primary text-primary-foreground border-0">
-            <a href="/services">+ New order</a>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConcierge(!showConcierge)}
+              className="glass text-xs h-9"
+            >
+              <CompassIcon className="h-3.5 w-3.5 mr-1.5 text-primary" />
+              {showConcierge ? "Close Concierge" : "AI Onboarding Concierge"}
+            </Button>
+            <Button asChild className="bg-gradient-primary text-primary-foreground border-0 h-9 text-xs">
+              <a href="/services">+ New order</a>
+            </Button>
+          </div>
         </div>
+
+        {/* AI Onboarding Concierge */}
+        {(showConcierge || (orders !== null && orders.length === 0)) && (
+          <div className="mb-8">
+            <OnboardingConcierge onComplete={() => setShowConcierge(false)} />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Stat icon={Package} label="Orders" value={String(stats.total)} />
@@ -142,23 +180,77 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="glass">
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="invoices">
-              Invoices {invoices.length > 0 && <span className="ml-1.5 text-xs text-primary">({invoices.length})</span>}
-            </TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
-            <TabsTrigger value="workspace">Workspace</TabsTrigger>
-            <TabsTrigger value="support">
-              Support {tickets.length > 0 && <span className="ml-1.5 text-xs text-primary">({tickets.length})</span>}
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="glass inline-flex w-max min-w-full sm:min-w-0 p-1.5 gap-1 rounded-2xl border border-primary/20 backdrop-blur-xl">
+              <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="rag-studio">
+                <Database className="h-3.5 w-3.5 mr-1 text-primary" />RAG Studio
+              </TabsTrigger>
+              <TabsTrigger value="automations">Automations</TabsTrigger>
+              <TabsTrigger value="analytics">
+                <TrendingUpIcon className="h-3.5 w-3.5 mr-1 text-primary" />Analytics Brain
+              </TabsTrigger>
+              <TabsTrigger value="reports">
+                <FileText className="h-3.5 w-3.5 mr-1" />Client Reports
+              </TabsTrigger>
+              <TabsTrigger value="digests">
+                <MailIcon className="h-3.5 w-3.5 mr-1" />Email Digest
+              </TabsTrigger>
+              <TabsTrigger value="invoices">
+                Invoices {invoices.length > 0 && <span className="ml-1.5 text-xs text-primary">({invoices.length})</span>}
+              </TabsTrigger>
+              <TabsTrigger value="billing">Billing</TabsTrigger>
+              <TabsTrigger value="workspace">Workspace</TabsTrigger>
+              <TabsTrigger value="reseller">
+                <DollarSign className="h-3.5 w-3.5 mr-1" />Client Profit
+              </TabsTrigger>
+              <TabsTrigger value="content">
+                <PenTool className="h-3.5 w-3.5 mr-1" />Auto-Blogger
+              </TabsTrigger>
+              <TabsTrigger value="drip">
+                <SendIcon className="h-3.5 w-3.5 mr-1" />Drip Campaigns
+              </TabsTrigger>
+              <TabsTrigger value="intel">
+                <Crosshair className="h-3.5 w-3.5 mr-1" />Competitor Intel
+              </TabsTrigger>
+              <TabsTrigger value="social">
+                <Smartphone className="h-3.5 w-3.5 mr-1" />Social Growth
+              </TabsTrigger>
+              <TabsTrigger value="pricing">
+                <LineChart className="h-3.5 w-3.5 mr-1" />Price AI
+              </TabsTrigger>
+              <TabsTrigger value="reviews">
+                <Star className="h-3.5 w-3.5 mr-1" />Review Harvest
+              </TabsTrigger>
+              <TabsTrigger value="leads">
+                <Users className="h-3.5 w-3.5 mr-1" />Agency Leads
+              </TabsTrigger>
+              <TabsTrigger value="affiliates">Partners (30%)</TabsTrigger>
+              <TabsTrigger value="support">
+                Support {tickets.length > 0 && <span className="ml-1.5 text-xs text-primary">({tickets.length})</span>}
+              </TabsTrigger>
+              <TabsTrigger value="security">
+                <ShieldCheck className="h-3.5 w-3.5 mr-1" />Security Center
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="security" className="mt-6">
+            <SecurityCenter />
+          </TabsContent>
+
+          <TabsContent value="rag-studio" className="mt-6">
+            <RagVectorStudio />
+          </TabsContent>
 
           <TabsContent value="orders" className="mt-6">
+            <DashboardUpsell orders={filteredOrders} />
             <div className="flex items-center gap-3 mb-4 flex-wrap">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
+                  id="dashboard-order-search"
+                  name="dashboard-order-search"
                   placeholder="Search by service or order ID…"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -211,6 +303,22 @@ const Dashboard = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="automations" className="mt-6">
+            <AutomationsHub />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-6">
+            <RevenueAnalyticsBrain />
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <ClientReportGenerator />
+          </TabsContent>
+
+          <TabsContent value="digests" className="mt-6">
+            <EmailDigestEngine />
+          </TabsContent>
+
           <TabsContent value="invoices" className="mt-6">
             <InvoicesTab invoices={invoices} orders={orders ?? []} profile={profile} />
           </TabsContent>
@@ -223,12 +331,55 @@ const Dashboard = () => {
             <WorkspacePanel userId={user.id} />
           </TabsContent>
 
+          <TabsContent value="reseller" className="mt-6">
+            <ClientProfitCenter />
+          </TabsContent>
+          
+          <TabsContent value="content" className="mt-6">
+            <ContentEngine />
+          </TabsContent>
+
+          <TabsContent value="drip" className="mt-6">
+            <DripCampaignGenerator />
+          </TabsContent>
+
+          <TabsContent value="intel" className="mt-6">
+            <CompetitorTracker />
+          </TabsContent>
+
+          <TabsContent value="social" className="mt-6">
+            <SocialMediaEngine />
+          </TabsContent>
+
+          <TabsContent value="pricing" className="mt-6">
+            <PricingOptimizer />
+          </TabsContent>
+
+          <TabsContent value="reviews" className="mt-6">
+            <ReviewEngine />
+          </TabsContent>
+
+          <TabsContent value="leads" className="mt-6">
+            <AgencyLeadMagnet />
+          </TabsContent>
+
+          <TabsContent value="affiliates" className="mt-6">
+            <AffiliateHub />
+          </TabsContent>
+
           <TabsContent value="support" className="mt-6">
             <SupportTab tickets={tickets} />
           </TabsContent>
         </Tabs>
       </div>
       <Footer />
+      {selectedGstInvoice && (
+        <GstInvoiceGenerator
+          isOpen={Boolean(selectedGstInvoice)}
+          onClose={() => setSelectedGstInvoice(null)}
+          orderData={selectedGstInvoice}
+        />
+      )}
     </div>
   );
 };
@@ -341,6 +492,21 @@ const InvoicesTab = ({
             </div>
             <div className="flex items-center gap-3">
               <span className="text-lg font-bold text-gradient">{formatPrice(inv.total_cents)}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedGstInvoice({
+                  id: inv.invoice_number || inv.id,
+                  serviceName: order?.service_name ?? "Autonomous RAG Service Suite",
+                  amountCents: inv.total_cents,
+                  clientName: profile?.full_name,
+                  clientEmail: profile?.email,
+                  date: new Date(inv.issued_at).toLocaleDateString(),
+                })}
+                className="border-primary/30 text-primary hover:bg-primary/10 text-xs h-9"
+              >
+                <Building2 className="h-3.5 w-3.5 mr-1" /> GST / B2B Tax
+              </Button>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -488,11 +654,11 @@ const OrderCard = ({ order, index, autoOpen }: { order: Order; index: number; au
 };
 
 const Stat = ({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) => (
-  <Card className="glass p-5">
-    <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-wider font-mono mb-2">
-      <Icon className="h-3.5 w-3.5" /> {label}
+  <Card className="glass p-4 sm:p-5 border border-primary/20 hover:border-primary/40 transition-all shadow-sm">
+    <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] sm:text-xs uppercase tracking-wider font-mono mb-1.5">
+      <Icon className="h-3.5 w-3.5 text-primary shrink-0" /> <span className="truncate">{label}</span>
     </div>
-    <p className="text-2xl font-bold text-gradient">{value}</p>
+    <p className="text-xl sm:text-2xl font-bold text-gradient truncate">{value}</p>
   </Card>
 );
 

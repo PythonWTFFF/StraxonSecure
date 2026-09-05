@@ -25,6 +25,7 @@ const createSupabaseClient = () => createClient<Database>(
 );
 
 if (import.meta.hot) {
+  import.meta.hot.data = import.meta.hot.data || {};
   if (!import.meta.hot.data.supabase) {
     import.meta.hot.data.supabase = createSupabaseClient();
   }

@@ -18,7 +18,9 @@ export type DeliverableKind =
   | "bizplan"
   | "naming"
   | "linkedin"
-  | "pressrelease";
+  | "pressrelease"
+  | "saas-architecture"
+  | "ai-voice-automations";
 
 // ---------- Zod schemas ----------
 
@@ -246,6 +248,38 @@ export const PressReleaseSchema = z.object({
   suggested_outlets: z.array(z.string()).min(1),
 });
 
+export const SaasArchitectureSchema = z.object({
+  kind: z.literal("saas-architecture"),
+  product_name: z.string(),
+  architecture_overview: z.string(),
+  tech_stack: z.array(
+    z.object({ layer: z.string(), tool: z.string(), rationale: z.string() })
+  ).min(2),
+  database_tables: z.array(
+    z.object({ table: z.string(), columns: z.array(z.string()), description: z.string() })
+  ).min(2),
+  api_endpoints: z.array(
+    z.object({ endpoint: z.string(), method: z.string(), purpose: z.string() })
+  ).min(2),
+  security_and_auth: z.array(z.string()).min(2),
+});
+
+export const AiVoiceAutomationsSchema = z.object({
+  kind: z.literal("ai-voice-automations"),
+  agent_name: z.string(),
+  objective: z.string(),
+  conversational_script: z.object({
+    greeting: z.string(),
+    qualification_questions: z.array(z.string()).min(2),
+    objection_handlers: z.array(
+      z.object({ objection: z.string(), response: z.string() })
+    ).min(1),
+    closing_cta: z.string(),
+  }),
+  webhook_payload_example: z.record(z.unknown()),
+  automation_steps: z.array(z.string()).min(2),
+});
+
 export const DeliverableSchema = z.discriminatedUnion("kind", [
   ResumeSchema,
   BrandKitSchema,
@@ -261,6 +295,8 @@ export const DeliverableSchema = z.discriminatedUnion("kind", [
   NamingSchema,
   LinkedInSchema,
   PressReleaseSchema,
+  SaasArchitectureSchema,
+  AiVoiceAutomationsSchema,
 ]);
 
 // ---------- TypeScript types (inferred) ----------
@@ -279,6 +315,8 @@ export type IBizPlanData = z.infer<typeof BizPlanSchema>;
 export type INamingData = z.infer<typeof NamingSchema>;
 export type ILinkedInData = z.infer<typeof LinkedInSchema>;
 export type IPressReleaseData = z.infer<typeof PressReleaseSchema>;
+export type ISaasArchitectureData = z.infer<typeof SaasArchitectureSchema>;
+export type IAiVoiceAutomationsData = z.infer<typeof AiVoiceAutomationsSchema>;
 export type DeliverableContent = z.infer<typeof DeliverableSchema>;
 
 /** Safe-parse arbitrary input into a typed deliverable, returning null on failure. */

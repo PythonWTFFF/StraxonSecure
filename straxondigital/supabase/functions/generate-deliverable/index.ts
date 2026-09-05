@@ -11,7 +11,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 
 const SCHEMAS: Record<string, { name: string; description: string; parameters: unknown }> = {
   resume: {
@@ -419,6 +419,76 @@ const SCHEMAS: Record<string, { name: string; description: string; parameters: u
       required: ["kind", "company_name", "release", "media_pitch", "suggested_outlets"],
     },
   },
+  "saas-architecture": {
+    name: "build_saas_architecture",
+    description: "Generate a production-ready SaaS system design and engineering spec.",
+    parameters: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: ["saas-architecture"] },
+        product_name: { type: "string" },
+        architecture_overview: { type: "string" },
+        tech_stack: {
+          type: "array", minItems: 3, maxItems: 6,
+          items: {
+            type: "object",
+            properties: { layer: { type: "string" }, tool: { type: "string" }, rationale: { type: "string" } },
+            required: ["layer", "tool", "rationale"],
+          },
+        },
+        database_tables: {
+          type: "array", minItems: 3, maxItems: 8,
+          items: {
+            type: "object",
+            properties: { table: { type: "string" }, columns: { type: "array", items: { type: "string" } }, description: { type: "string" } },
+            required: ["table", "columns", "description"],
+          },
+        },
+        api_endpoints: {
+          type: "array", minItems: 4, maxItems: 10,
+          items: {
+            type: "object",
+            properties: { endpoint: { type: "string" }, method: { type: "string" }, purpose: { type: "string" } },
+            required: ["endpoint", "method", "purpose"],
+          },
+        },
+        security_and_auth: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 6 },
+      },
+      required: ["kind", "product_name", "architecture_overview", "tech_stack", "database_tables", "api_endpoints", "security_and_auth"],
+    },
+  },
+  "ai-voice-automations": {
+    name: "build_voice_automation",
+    description: "Generate an autonomous voice agent script and webhook automation pipeline.",
+    parameters: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: ["ai-voice-automations"] },
+        agent_name: { type: "string" },
+        objective: { type: "string" },
+        conversational_script: {
+          type: "object",
+          properties: {
+            greeting: { type: "string" },
+            qualification_questions: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 5 },
+            objection_handlers: {
+              type: "array", minItems: 2, maxItems: 5,
+              items: {
+                type: "object",
+                properties: { objection: { type: "string" }, response: { type: "string" } },
+                required: ["objection", "response"],
+              },
+            },
+            closing_cta: { type: "string" },
+          },
+          required: ["greeting", "qualification_questions", "objection_handlers", "closing_cta"],
+        },
+        webhook_payload_example: { type: "object" },
+        automation_steps: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 6 },
+      },
+      required: ["kind", "agent_name", "objective", "conversational_script", "webhook_payload_example", "automation_steps"],
+    },
+  },
 };
 
 const SYSTEM_PROMPTS: Record<string, string> = {
@@ -449,6 +519,10 @@ const SYSTEM_PROMPTS: Record<string, string> = {
     "You are an executive personal branding strategist. Produce a recruiter-magnet LinkedIn rewrite with quantified bullets and a hooky About section.",
   pressrelease:
     "You are a senior PR strategist writing AP-style press releases. Lead with the news, write a strong dateline and quote, end with boilerplate, then craft a tight media pitch email.",
+  "saas-architecture":
+    "You are a principal cloud and SaaS software architect. Produce a rigorous, highly-scalable software architecture specification, database schema, and API matrix.",
+  "ai-voice-automations":
+    "You are a conversational AI and automation engineer. Produce a natural, high-converting voice agent script and event-driven automation payload spec.",
 };
 
 Deno.serve(async (req) => {
@@ -472,6 +546,37 @@ Deno.serve(async (req) => {
     const system = SYSTEM_PROMPTS[kind] || "You are a senior consultant.";
     if (!schema) throw new Error(`No generator for service_type=${kind}`);
 
+    // --- SaaS Logic: Check limits ---
+    if (order.workspace_id) {
+      const { data: ws, error: wsErr } = await admin
+        .from("workspaces")
+        .select("credits")
+        .eq("id", order.workspace_id)
+        .single();
+      
+      if (wsErr || !ws) throw new Error("Could not verify workspace credits");
+      
+      // Check for active subscription
+      const { data: subs } = await admin
+        .from("subscriptions")
+        .select("status")
+        .eq("user_id", order.user_id)
+        .in("status", ["active", "trialing"]);
+        
+      const hasActiveSub = subs && subs.length > 0;
+      
+      if (!hasActiveSub) {
+        if (ws.credits <= 0) {
+          const msg = "Out of credits. Please upgrade to a Pro subscription to continue generating deliverables.";
+          await admin.from("orders").update({ status: "cancelled", error_message: msg }).eq("id", order_id);
+          throw new Error(msg);
+        }
+        // Deduct 1 credit
+        await admin.from("workspaces").update({ credits: ws.credits - 1 }).eq("id", order.workspace_id);
+      }
+    }
+    // --------------------------------
+
     // Brand Brain injection (server-side, secure). Falls back gracefully if not configured.
     let brandBlock = "";
     if (order.workspace_id) {
@@ -482,25 +587,60 @@ Deno.serve(async (req) => {
           tone: { professional: bb.tone_professional, playful: bb.tone_playful, bold: bb.tone_bold, warm: bb.tone_warm },
           palette: bb.palette, dos: bb.dos, donts: bb.donts,
         }, null, 2)}`;
-      } else {
-        brandBlock = `\n\n(No Brand Brain configured for this workspace — use sensible defaults but do not fabricate brand specifics.)`;
+    // RAG Semantic Document Retrieval (Semantic Memory)
+    let ragBlock = "";
+    if (order.workspace_id && OPENAI_API_KEY) {
+      try {
+        const queryText = `${order.service_name} ${JSON.stringify(order.intake_data || {})}`;
+        const embedResp = await fetch("https://api.openai.com/v1/embeddings", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            input: queryText.slice(0, 1500),
+            model: "text-embedding-3-small",
+          }),
+        });
+
+        if (embedResp.ok) {
+          const embedData = await embedResp.json();
+          const queryEmbedding = embedData.data[0]?.embedding;
+          if (queryEmbedding) {
+            const { data: matchedDocs } = await admin.rpc("match_documents", {
+              query_embedding: queryEmbedding,
+              match_threshold: 0.3,
+              match_count: 3,
+              p_workspace_id: order.workspace_id,
+            });
+
+            if (matchedDocs && matchedDocs.length > 0) {
+              ragBlock = `\n\nRELEVANT KNOWLEDGE BASE CONTEXT (incorporate details accurately):\n${matchedDocs
+                .map((d: any, idx: number) => `[Doc ${idx + 1}]:\n${d.content}`)
+                .join("\n\n---\n\n")}`;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("RAG retrieval failed, proceeding with generation:", err);
       }
     }
 
     const userPrompt = `Service: ${order.service_name}
 Order intake JSON:
-${JSON.stringify(order.intake_data, null, 2)}${brandBlock}
+${JSON.stringify(order.intake_data, null, 2)}${brandBlock}${ragBlock}
 
 Produce the deliverable now using the provided tool.`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: system },
           { role: "user", content: userPrompt },
@@ -512,10 +652,10 @@ Produce the deliverable now using the provided tool.`;
 
     if (!aiResp.ok) {
       const text = await aiResp.text();
-      console.error("AI gateway error", aiResp.status, text);
+      console.error("OpenAI error", aiResp.status, text);
       const human =
         aiResp.status === 429 ? "Rate limit hit. Try again shortly."
-        : aiResp.status === 402 ? "AI credits exhausted. Top up the Lovable AI workspace."
+        : aiResp.status === 401 ? "OpenAI API key is missing or invalid."
         : `AI gateway error (${aiResp.status})`;
       await admin.from("orders").update({ status: "pending", error_message: human }).eq("id", order_id);
       return new Response(JSON.stringify({ error: human }), {

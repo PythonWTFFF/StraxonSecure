@@ -3,13 +3,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CreditCard, ExternalLink, Sparkles, Zap } from "lucide-react";
+import { CreditCard, ExternalLink, Sparkles, Zap, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createPortalSession } from "@/lib/stripe";
 
 interface Subscription {
   id: string;
   stripe_sub_id: string | null;
+  stripe_customer_id: string | null;
   plan_name: string;
   status: string;
   current_period_end: string | null;
@@ -26,6 +28,7 @@ const statusStyles: Record<string, string> = {
 
 export const BillingTab = ({ userId }: { userId: string }) => {
   const [subs, setSubs] = useState<Subscription[] | null>(null);
+  const [loadingPortal, setLoadingPortal] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -47,10 +50,24 @@ export const BillingTab = ({ userId }: { userId: string }) => {
     return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
-  const openPortal = () => {
-    toast.info("Stripe Customer Portal", {
-      description: "Connect your Stripe account in admin settings to enable self-serve billing.",
-    });
+  const openPortal = async (customerId?: string | null) => {
+    if (!customerId) {
+      toast.error("No billing profile found. Please purchase a subscription first.");
+      return;
+    }
+    setLoadingPortal(true);
+    try {
+      const { url } = await createPortalSession(customerId);
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error("Failed to create portal session");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to open billing portal");
+    } finally {
+      setLoadingPortal(false);
+    }
   };
 
   if (subs === null) {
@@ -67,8 +84,8 @@ export const BillingTab = ({ userId }: { userId: string }) => {
         <p className="text-sm text-muted-foreground">
           Manage recurring plans, payment methods, and invoice history.
         </p>
-        <Button onClick={openPortal} className="bg-gradient-primary text-primary-foreground border-0 shadow-glow">
-          <CreditCard className="h-4 w-4 mr-2" /> Manage billing
+        <Button onClick={() => openPortal(subs[0]?.stripe_customer_id)} disabled={loadingPortal} className="bg-gradient-primary text-primary-foreground border-0 shadow-glow">
+          {loadingPortal ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />} Manage billing
           <ExternalLink className="h-3 w-3 ml-2 opacity-60" />
         </Button>
       </div>
@@ -111,8 +128,8 @@ export const BillingTab = ({ userId }: { userId: string }) => {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={openPortal}>
-                Manage <ExternalLink className="h-3 w-3 ml-2" />
+              <Button variant="outline" size="sm" onClick={() => openPortal(s.stripe_customer_id)} disabled={loadingPortal}>
+                {loadingPortal ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : "Manage"} <ExternalLink className="h-3 w-3 ml-2" />
               </Button>
             </Card>
           ))}

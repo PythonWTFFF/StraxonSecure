@@ -1,22 +1,37 @@
+import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { NetworkGlobe } from "@/components/NetworkGlobe";
 import { RevenueCalculator } from "@/components/RevenueCalculator";
 import { ServiceCard } from "@/components/ServiceCard";
+import { ServiceCustomizerDialog } from "@/components/ServiceCustomizerDialog";
+import { SaaSPricingSection } from "@/components/SaaSPricingSection";
+import { BundlesSection } from "@/components/BundlesSection";
+import { LeadGrader } from "@/components/LeadGrader";
 import { Footer } from "@/components/Footer";
+import { HeroStats } from "@/components/HeroStats";
+import { FeatureGrid } from "@/components/FeatureGrid";
+import { TestimonialsSection } from "@/components/TestimonialsSection";
+import { DemoWidget } from "@/components/DemoWidget";
+import { MagneticButton } from "@/components/MagneticButton";
 import { Button } from "@/components/ui/button";
-import { SERVICES } from "@/lib/services";
-import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, Shield, Cpu, LifeBuoy } from "lucide-react";
+import { SERVICES, ServiceDef } from "@/lib/services";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { ArrowRight, Sparkles, Zap, Shield, Cpu, LifeBuoy, Sliders } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Home = () => {
+  const { scrollY } = useScroll();
+  const backgroundY = useTransform(scrollY, [0, 1000], ["0%", "50%"]);
+  const globeY = useTransform(scrollY, [0, 1000], ["0%", "20%"]);
+  const [customizingService, setCustomizingService] = useState<ServiceDef | null>(null);
+
   return (
     <div className="min-h-screen">
       <Navbar />
 
       {/* Hero */}
       <section className="relative pt-32 pb-24 sm:pt-40 sm:pb-32 overflow-hidden">
-        <div className="absolute inset-0 grid-pattern opacity-30" />
+        <motion.div style={{ y: backgroundY }} className="absolute inset-0 grid-pattern opacity-30" />
         <div className="absolute inset-0 bg-gradient-radial" />
 
         <div className="container relative grid lg:grid-cols-2 gap-12 items-center">
@@ -27,41 +42,33 @@ const Home = () => {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass mb-6">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs font-mono uppercase tracking-wider">Straxon Labs · Automated Digital Agency</span>
+              <span className="text-xs font-mono uppercase tracking-wider text-primary">Straxon Labs · Autonomous Digital Agency</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05]">
               Your <span className="text-gradient">Automated</span> Digital Empire Starts Here
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-xl">
-              Resumes, websites, branding, SEO — designed, automated and delivered with surgical precision.
-              Order at midnight, receive at dawn. Backed by a real human team if anything goes sideways.
+              Resumes, websites, branding, SEO, SaaS architecture, and autonomous AI voice agents — engineered, customized, and delivered with surgical precision. Order at midnight, receive at dawn.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="bg-gradient-primary text-primary-foreground border-0 shadow-glow hover:opacity-90">
-                <Link to="/services">Launch your project <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
+              <MagneticButton>
+                <Button asChild size="lg" className="bg-gradient-primary text-primary-foreground border-0 shadow-glow hover:opacity-90">
+                  <Link to="/services">Explore 16+ Services <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+              </MagneticButton>
               <Button asChild size="lg" variant="outline" className="border-primary/30">
-                <Link to="/contact"><LifeBuoy className="mr-2 h-4 w-4" /> Talk to the team</Link>
+                <Link to="/automations"><Cpu className="mr-2 h-4 w-4 text-primary" /> Automations Hub</Link>
               </Button>
             </div>
 
-            <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground flex-wrap">
-              {[
-                { i: Zap, t: "24h delivery" },
-                { i: Shield, t: "Money-back guarantee" },
-                { i: Cpu, t: "Engineered + human refined" },
-              ].map(({ i: Icon, t }) => (
-                <div key={t} className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-primary" /> {t}
-                </div>
-              ))}
-            </div>
+            <HeroStats />
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
+            style={{ y: globeY }}
             className="relative h-[420px] sm:h-[520px]"
           >
             <NetworkGlobe />
@@ -69,6 +76,8 @@ const Home = () => {
           </motion.div>
         </div>
       </section>
+
+      <FeatureGrid />
 
       {/* Services preview */}
       <section className="container py-20">
@@ -80,15 +89,37 @@ const Home = () => {
         >
           <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] font-mono text-primary mb-3">/ Services</p>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">Built for ambitious operators</h2>
+              <p className="text-xs uppercase tracking-[0.3em] font-mono text-primary mb-3">/ Featured Services</p>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">Engineered for ambitious operators</h2>
             </div>
-            <Button asChild variant="ghost"><Link to="/services">View all <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+            <Button asChild variant="ghost"><Link to="/services">View all 16 services <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {SERVICES.slice(0, 6).map((s, i) => <ServiceCard key={s.slug} service={s} index={i} />)}
+            {SERVICES.slice(0, 6).map((s, i) => (
+              <ServiceCard
+                key={s.slug}
+                service={s}
+                index={i}
+                onCustomize={(selected) => setCustomizingService(selected)}
+              />
+            ))}
           </div>
         </motion.div>
+      </section>
+
+      {/* High-Ticket Turnkey Bundles Section */}
+      <section className="container py-12">
+        <BundlesSection />
+      </section>
+
+      {/* Free Lead Magnet Conversion Grader */}
+      <section id="audit" className="container py-8 scroll-mt-24">
+        <LeadGrader />
+      </section>
+
+      {/* SaaS Pricing Section */}
+      <section className="container py-12">
+        <SaaSPricingSection />
       </section>
 
       {/* Calculator */}
@@ -104,7 +135,7 @@ const Home = () => {
             <p className="text-xs uppercase tracking-[0.3em] font-mono text-primary mb-3">/ ROI Engine</p>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">See your numbers move</h2>
             <p className="text-muted-foreground text-lg">
-              Drag the sliders. Watch your projected revenue compound. Then ship the website that actually delivers it.
+              Drag the sliders. Watch your projected revenue compound. Then ship the website and automations that actually deliver it.
             </p>
           </div>
           <RevenueCalculator />
@@ -151,29 +182,18 @@ const Home = () => {
         </motion.div>
       </section>
 
-      {/* CTA */}
-      <section className="container py-20">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="relative rounded-3xl overflow-hidden glass-strong p-12 text-center"
-        >
-          <div className="absolute inset-0 bg-gradient-luxury opacity-50" />
-          <div className="relative">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-              Ready to <span className="text-gradient">automate</span> your growth?
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Sign up in 30 seconds and place your first automated order today.
-            </p>
-            <Button asChild size="lg" className="bg-gradient-primary text-primary-foreground border-0 shadow-glow">
-              <Link to="/auth">Create your account <ArrowRight className="ml-2 h-4 w-4" /></Link>
-            </Button>
-          </div>
-        </motion.div>
-      </section>
+      {/* Customizer Modal */}
+      <ServiceCustomizerDialog
+        service={customizingService}
+        open={Boolean(customizingService)}
+        onOpenChange={(open) => {
+          if (!open) setCustomizingService(null);
+        }}
+      />
+
+      <TestimonialsSection />
+      
+      <DemoWidget />
 
       <Footer />
     </div>
