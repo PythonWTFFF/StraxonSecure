@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Terminal, Server, Code2, FolderTree, FileCode2, Search, 
-  GitBranch, Play, CheckCircle2, ChevronRight, X, AlertTriangle
+  GitBranch, Play, CheckCircle2, ChevronRight, X, AlertTriangle, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { toast } from "sonner";
 
@@ -16,6 +17,46 @@ export default function LabSandbox() {
   const [scenario, setScenario] = useState<any>(null);
   const [bootState, setBootState] = useState<"initializing" | "provisioning" | "ready">("initializing");
   const [activeFile, setActiveFile] = useState("src/services/cart.ts");
+  const [code, setCode] = useState(`export async function addToCart(userId: string, item: any) {
+  const redis = new Redis();
+  const cart = await redis.get(\`cart:\${userId}\`);
+  
+  // BUG: Race condition here if multiple requests hit concurrently
+  let parsed = cart ? JSON.parse(cart) : [];
+  parsed.push(item);
+  
+  await redis.set(\`cart:\${userId}\`, JSON.stringify(parsed));
+  return parsed;
+}`);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [evaluation, setEvaluation] = useState<any>(null);
+
+  const handleSubmit = async () => {
+    if (!scenario) return;
+    setSubmitting(true);
+    try {
+      // Use straxonsecure's new public API route (in prod this would be the actual domain)
+      const apiUrl = import.meta.env.DEV ? "http://localhost:3000/api/public/evaluate-lab" : "https://secure.straxon.com/api/public/evaluate-lab";
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: crypto.randomUUID(), // Mock session ID for MVP
+          scenarioSlug: scenario.slug,
+          candidateCode: code
+        })
+      });
+
+      if (!res.ok) throw new Error("Evaluation failed");
+      const data = await res.json();
+      setEvaluation(data);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to evaluate code");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     async function loadScenario() {
@@ -97,8 +138,13 @@ export default function LabSandbox() {
           <div className="text-xs font-mono text-amber-400 bg-amber-950/30 px-2 py-1 rounded border border-amber-900/50">
             44:59 remaining
           </div>
-          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white h-8 text-xs font-mono">
-            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+          <Button 
+            size="sm" 
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white h-8 text-xs font-mono disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />}
             Submit PR
           </Button>
         </div>
@@ -148,10 +194,10 @@ export default function LabSandbox() {
                 <X className="h-3 w-3 ml-2 text-slate-500 hover:text-white cursor-pointer" />
               </div>
             </div>
-            <div className="flex-1 p-4 font-mono text-[13px] leading-relaxed overflow-y-auto">
+            <div className="flex-1 p-0 overflow-hidden flex flex-col">
               {/* Mock Editor Content */}
               {activeFile.includes("test") ? (
-                <div className="text-slate-400 whitespace-pre">
+                <div className="p-4 font-mono text-[13px] leading-relaxed overflow-y-auto text-slate-400 whitespace-pre">
                   <span className="text-purple-400">import</span> {"{ "} Redis {" }"} <span className="text-purple-400">from</span> <span className="text-emerald-300">'ioredis'</span>;<br/><br/>
                   <span className="text-blue-400">describe</span>(<span className="text-emerald-300">'Cart Service'</span>, () =&gt; {"{"}<br/>
                   {"  "}<span className="text-blue-400">it</span>(<span className="text-emerald-300">'should accurately calculate total under concurrent load'</span>, <span className="text-purple-400">async</span> () =&gt; {"{"}<br/>
@@ -160,19 +206,12 @@ export default function LabSandbox() {
                   {"});"}
                 </div>
               ) : (
-                <div className="text-slate-400 whitespace-pre">
-                  <span className="text-purple-400">export async function</span> <span className="text-blue-400">addToCart</span>(userId: <span className="text-amber-300">string</span>, item: <span className="text-amber-300">any</span>) {"{"}<br/>
-                  {"  "}<span className="text-purple-400">const</span> redis = <span className="text-purple-400">new</span> <span className="text-amber-200">Redis</span>();<br/>
-                  {"  "}<span className="text-purple-400">const</span> cart = <span className="text-purple-400">await</span> redis.<span className="text-blue-400">get</span>(`cart:<span className="text-cyan-300">${"{"}userId{"}"}</span>`);<br/>
-                  <br/>
-                  {"  "}// BUG: Race condition here if multiple requests hit concurrently<br/>
-                  {"  "}<span className="text-purple-400">let</span> parsed = cart ? <span className="text-amber-200">JSON</span>.<span className="text-blue-400">parse</span>(cart) : [];<br/>
-                  {"  "}parsed.<span className="text-blue-400">push</span>(item);<br/>
-                  <br/>
-                  {"  "}<span className="text-purple-400">await</span> redis.<span className="text-blue-400">set</span>(`cart:<span className="text-cyan-300">${"{"}userId{"}"}</span>`, <span className="text-amber-200">JSON</span>.<span className="text-blue-400">stringify</span>(parsed));<br/>
-                  {"  "}<span className="text-purple-400">return</span> parsed;<br/>
-                  {"}"}
-                </div>
+                <textarea
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  spellCheck={false}
+                  className="flex-1 w-full bg-transparent p-4 font-mono text-[13px] leading-relaxed text-slate-300 resize-none focus:outline-none"
+                />
               )}
             </div>
           </Panel>
@@ -246,6 +285,57 @@ export default function LabSandbox() {
           </Panel>
         </PanelGroup>
       </div>
+
+      {/* AI Evaluation Modal */}
+      <Dialog open={!!evaluation} onOpenChange={(open) => !open && setEvaluation(null)}>
+        <DialogContent className="max-w-3xl bg-[#090d1f] border border-cyan-500/30 text-foreground backdrop-blur-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+              AI Staff Review Complete
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Your PR has been evaluated against our engineering standards.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+            {[
+              { label: "Debugging", score: evaluation?.debugging_score },
+              { label: "Test Hygiene", score: evaluation?.test_hygiene_score },
+              { label: "Code Quality", score: evaluation?.code_quality_score },
+              { label: "Git Hygiene", score: evaluation?.git_hygiene_score },
+              { label: "Architecture", score: evaluation?.architectural_score },
+              { label: "Composite", score: evaluation?.composite_score },
+            ].map((metric) => (
+              <div key={metric.label} className="bg-slate-900/50 border border-slate-800 p-3 rounded-lg text-center">
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{metric.label}</div>
+                <div className={`text-2xl font-black ${metric.score >= 80 ? 'text-emerald-400' : metric.score >= 50 ? 'text-amber-400' : 'text-rose-400'}`}>
+                  {metric.score}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-wider flex items-center gap-2">
+              <Terminal className="h-4 w-4" /> Principal Engineer Feedback
+            </h3>
+            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-lg max-h-[300px] overflow-y-auto text-sm text-slate-300 font-mono whitespace-pre-wrap">
+              {evaluation?.ai_staff_review}
+            </div>
+          </div>
+          
+          <div className="mt-6 flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setEvaluation(null)} className="border-slate-700 hover:bg-slate-800 text-white">
+              Revise Code
+            </Button>
+            <Button onClick={() => navigate("/labs")} className="bg-cyan-600 hover:bg-cyan-500 text-white">
+              Return to Labs
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

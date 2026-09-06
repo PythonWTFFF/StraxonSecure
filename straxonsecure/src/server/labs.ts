@@ -325,3 +325,119 @@ export const useCTFHint = createServerFn({ method: "POST" })
 
     return { hint: hint.text };
   });
+
+// ─── Evaluate DevLab Submission ──────────────────────────────────────────────
+export const evaluateLabSubmission = createServerFn({ method: "POST" })
+  .middleware([requireRequestId]) // Allow anon for MVP since MVP has public access
+  .validator((d) =>
+    z
+      .object({
+        sessionId: z.string().uuid(),
+        scenarioSlug: z.string(),
+        candidateCode: z.string(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    // 1. Fetch Scenario Details
+    const { data: scenario, error: scError } = await supabaseAdmin
+      .from("sim_scenarios")
+      .select("*")
+      .eq("slug", data.scenarioSlug)
+      .single();
+
+    if (scError || !scenario) {
+      throw new Error("Scenario not found.");
+    }
+
+    // 2. Call AI (Gemini 2.5 Flash)
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    if (!geminiApiKey) {
+      throw new Error("AI grading engine unavailable (missing API key).");
+    }
+
+    const systemPrompt = `You are an elite Senior Principal Software Engineer at a top tech company. 
+You are evaluating a candidate's submitted code for a DevLab simulation. 
+The scenario is: "${scenario.title}" 
+Ticket Brief: ${JSON.stringify(scenario.jira_ticket_brief)}
+
+Evaluate the candidate's code out of 100 on the following metrics:
+1. debugging_score: Did they correctly identify and fix the core bug?
+2. test_hygiene_score: Did they add or update tests properly?
+3. code_quality_score: Is the code clean, readable, and idiomatic?
+4. git_hygiene_score: Assume 100 for now.
+5. architectural_score: Did they introduce technical debt or handle the solution robustly?
+
+Output exactly in this JSON format:
+{
+  "debugging_score": number,
+  "test_hygiene_score": number,
+  "code_quality_score": number,
+  "git_hygiene_score": number,
+  "architectural_score": number,
+  "composite_score": number,
+  "ai_staff_review": "string (detailed markdown feedback)"
+}`;
+
+    const userPrompt = `Here is the candidate's modified codebase/files: \n\n${data.candidateCode}`;
+
+    try {
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+            },
+          }),
+        },
+      );
+
+      if (!geminiRes.ok) {
+        throw new Error("AI engine failed to respond.");
+      }
+
+      const gData = await geminiRes.json();
+      const rawText = gData.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!rawText) throw new Error("Empty response from AI.");
+      
+      const parsed = JSON.parse(rawText);
+
+      // 3. Save to database
+      const { data: evalData, error: evError } = await supabaseAdmin
+        .from("sim_evaluations")
+        .insert({
+          session_id: data.sessionId,
+          debugging_score: parsed.debugging_score ?? 0,
+          test_hygiene_score: parsed.test_hygiene_score ?? 0,
+          code_quality_score: parsed.code_quality_score ?? 0,
+          git_hygiene_score: parsed.git_hygiene_score ?? 0,
+          architectural_score: parsed.architectural_score ?? 0,
+          composite_score: parsed.composite_score ?? 0,
+          ai_staff_review: parsed.ai_staff_review ?? "No review provided.",
+        })
+        .select()
+        .single();
+
+      if (evError) {
+        console.error("DB Error:", evError);
+        throw new Error("Failed to save evaluation.");
+      }
+
+      // Update session status
+      await supabaseAdmin
+        .from("sim_sessions")
+        .update({ status: "evaluated", submitted_at: new Date().toISOString() })
+        .eq("id", data.sessionId);
+
+      return evalData;
+    } catch (err: any) {
+      console.error("[DevLab AI Grader] Error:", err);
+      throw new Error(err.message || "Evaluation failed.");
+    }
+  });
