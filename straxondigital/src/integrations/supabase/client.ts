@@ -12,8 +12,8 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
 let client: ReturnType<typeof createClient<Database>>;
 
 const createSupabaseClient = () => createClient<Database>(
-  SUPABASE_URL || "", 
-  SUPABASE_PUBLISHABLE_KEY || "", 
+  SUPABASE_URL || "https://placeholder-project.supabase.co", 
+  SUPABASE_PUBLISHABLE_KEY || "placeholder-key", 
   {
     auth: {
       storage: localStorage,

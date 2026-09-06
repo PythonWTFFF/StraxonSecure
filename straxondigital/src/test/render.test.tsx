@@ -16,12 +16,12 @@ import { SaaSPricingSection } from "@/components/SaaSPricingSection";
 import { BundlesSection } from "@/components/BundlesSection";
 import { ServicesMegaMenu } from "@/components/ServicesMegaMenu";
 
-// Mock matchMedia and resizeObserver if needed
-window.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+class MockResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+window.ResizeObserver = MockResizeObserver as any;
 
 const queryClient = new QueryClient({
   defaultOptions: {
