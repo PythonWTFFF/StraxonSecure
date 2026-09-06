@@ -2,8 +2,13 @@
   "name": "straxon-platform",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "straxonsecure",
+    "straxondigital"
+  ],
   "scripts": {
-    "build": "npm run build:secure && npm run build:digital",
+    "build": "npm --prefix straxonsecure run build",
+    "build:all": "npm run build:secure && npm run build:digital",
     "build:secure": "npm --prefix straxonsecure run build",
     "build:digital": "npm --prefix straxondigital run build",
     "deploy": "npm run deploy:secure",
