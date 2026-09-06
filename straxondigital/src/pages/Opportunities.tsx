@@ -30,7 +30,9 @@ import {
   BookOpen,
   ExternalLink,
   ChevronRight,
+  Plus,
 } from "lucide-react";
+import { AddOpportunityForm } from "@/components/AddOpportunityForm";
 
 export interface EdTechOpportunity {
   id: string;
@@ -214,6 +216,7 @@ export default function OpportunitiesPage() {
   const [selectedMinScore, setSelectedMinScore] = useState<number>(0);
   const [sortBy, setSortBy] = useState<SortKey>("itch_score");
   const [activeModal, setActiveModal] = useState<EdTechOpportunity | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Attempt to fetch live from Supabase if table exists
@@ -398,6 +401,15 @@ export default function OpportunitiesPage() {
                 <option value="frequency_score">Sort by: Frequency</option>
               </select>
             </div>
+
+            {/* Add Button */}
+            <Button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all font-mono text-xs whitespace-nowrap"
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add Opportunity
+            </Button>
           </CardContent>
         </Card>
 
@@ -571,6 +583,30 @@ export default function OpportunitiesPage() {
               </div>
             </DialogContent>
           )}
+        </Dialog>
+
+        {/* Modal: Add Opportunity */}
+        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+          <DialogContent className="max-w-2xl bg-[#090d1f] border border-cyan-500/30 text-foreground backdrop-blur-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold leading-tight text-white flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-cyan-400" />
+                Submit New EdTech Opportunity
+              </DialogTitle>
+              <DialogDescription className="text-sm text-slate-300">
+                Log a new venture intelligence matrix entry. This will be visible in the public dashboard once submitted.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4">
+              <AddOpportunityForm 
+                onSuccess={(newOpp) => {
+                  setOpportunities(prev => [newOpp, ...prev]);
+                  setIsAddModalOpen(false);
+                }}
+                onCancel={() => setIsAddModalOpen(false)}
+              />
+            </div>
+          </DialogContent>
         </Dialog>
       </main>
 

@@ -27,6 +27,8 @@ const Affiliates = lazy(() => import("./pages/Affiliates"));
 const Reseller = lazy(() => import("./pages/Reseller"));
 const ReportView = lazy(() => import("./pages/ReportView"));
 const Opportunities = lazy(() => import("./pages/Opportunities"));
+const Labs = lazy(() => import("./pages/Labs"));
+const LabSandbox = lazy(() => import("./pages/LabSandbox"));
 import { LiveSocialProof } from "@/components/LiveSocialProof";
 import { CurrencyProvider } from "@/context/CurrencyContext";
 import { AiRagAssistant } from "@/components/AiRagAssistant";
@@ -57,6 +59,8 @@ const AnimatedRoutes = () => {
         <Route path="/services" element={<PageWrapper><Services /></PageWrapper>} />
         <Route path="/pricing" element={<PageWrapper><Pricing /></PageWrapper>} />
         <Route path="/opportunities" element={<PageWrapper><Opportunities /></PageWrapper>} />
+        <Route path="/labs" element={<PageWrapper><Labs /></PageWrapper>} />
+        <Route path="/labs/:id" element={<PageWrapper><LabSandbox /></PageWrapper>} />
         <Route path="/automations" element={<PageWrapper><Automations /></PageWrapper>} />
         <Route path="/affiliates" element={<PageWrapper><Affiliates /></PageWrapper>} />
         <Route path="/reseller" element={<PageWrapper><Reseller /></PageWrapper>} />

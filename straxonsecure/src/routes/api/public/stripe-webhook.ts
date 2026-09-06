@@ -31,13 +31,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
         }
 
         const expected = crypto.createHmac("sha256", secret).update(`${t}.${body}`).digest("hex");
-        const expectedBuf = Buffer.from(expected, "utf8");
-        const actualBuf = Buffer.from(v1, "utf8");
+        const expectedBuf = crypto.createHash("sha256").update(expected).digest();
+        const actualBuf = crypto.createHash("sha256").update(v1).digest();
 
-        if (
-          expectedBuf.length !== actualBuf.length ||
-          !crypto.timingSafeEqual(expectedBuf, actualBuf)
-        ) {
+        if (!crypto.timingSafeEqual(expectedBuf, actualBuf)) {
           return new Response("Invalid signature", { status: 401 });
         }
 
