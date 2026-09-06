@@ -296,7 +296,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 relative scanline overflow-y-auto min-h-[calc(100dvh-3.5rem)] pb-24 md:pb-6">{children}</main>
+        <main className="flex-1 min-w-0 relative scanline overflow-y-auto min-h-[calc(100dvh-3.5rem)] pb-24 md:pb-6">
+          {children}
+        </main>
       </div>
       <CommandPalette />
       <StraxonCopilot />

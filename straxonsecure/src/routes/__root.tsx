@@ -22,14 +22,11 @@ import { analytics } from "@/lib/analytics";
 if (typeof window !== "undefined") {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN || "",
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
-    ],
+    integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
     tracesSampleRate: 1.0,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    enabled: !!import.meta.env.VITE_SENTRY_DSN
+    enabled: !!import.meta.env.VITE_SENTRY_DSN,
   });
 }
 
@@ -149,18 +146,19 @@ function RootComponent() {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("/sw.js").then(
           (registration) => console.log("SW registered:", registration.scope),
-          (error) => console.log("SW registration failed:", error)
+          (error) => console.log("SW registration failed:", error),
         );
       });
     }
-    
+
     // iOS specific install prompt logic could go here
     const isIos = () => {
       const userAgent = window.navigator.userAgent.toLowerCase();
       return /iphone|ipad|ipod/.test(userAgent);
     };
-    const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator as any).standalone;
-    
+    const isInStandaloneMode = () =>
+      "standalone" in window.navigator && (window.navigator as any).standalone;
+
     if (isIos() && !isInStandaloneMode()) {
       console.log("Recommend user to add to home screen");
       // Could show a toast here instructing iOS users to add to home screen

@@ -587,6 +587,8 @@ Deno.serve(async (req) => {
           tone: { professional: bb.tone_professional, playful: bb.tone_playful, bold: bb.tone_bold, warm: bb.tone_warm },
           palette: bb.palette, dos: bb.dos, donts: bb.donts,
         }, null, 2)}`;
+      }
+    }
     // RAG Semantic Document Retrieval (Semantic Memory)
     let ragBlock = "";
     if (order.workspace_id && OPENAI_API_KEY) {

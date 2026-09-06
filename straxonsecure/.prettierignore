@@ -5,3 +5,7 @@ dist
 pnpm-lock.yaml
 package-lock.json
 routeTree.gen.ts
+lint-results.json
+lint-errors.txt
+phase2_*.txt
+temp_prompt.*

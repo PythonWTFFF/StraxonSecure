@@ -15,17 +15,17 @@ spec:
         app: straxon-redis
     spec:
       containers:
-      - name: straxon-redis
-        image: redis:7-alpine
-        ports:
-        - containerPort: 6379
-        resources:
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
+        - name: straxon-redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
 ---
 apiVersion: v1
 kind: Service

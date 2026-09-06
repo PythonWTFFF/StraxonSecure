@@ -18,8 +18,26 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
         const parts = Object.fromEntries(sigHeader.split(",").map((p) => p.split("=")));
         const t = parts.t;
         const v1 = parts.v1;
+
+        if (!t || !v1) {
+          return new Response("Malformed signature header", { status: 400 });
+        }
+
+        // Replay attack mitigation: reject signatures older than 5 minutes
+        const timestamp = parseInt(t, 10);
+        const now = Math.floor(Date.now() / 1000);
+        if (isNaN(timestamp) || Math.abs(now - timestamp) > 300) {
+          return new Response("Webhook timestamp out of tolerance", { status: 400 });
+        }
+
         const expected = crypto.createHmac("sha256", secret).update(`${t}.${body}`).digest("hex");
-        if (expected !== v1) {
+        const expectedBuf = Buffer.from(expected, "utf8");
+        const actualBuf = Buffer.from(v1, "utf8");
+
+        if (
+          expectedBuf.length !== actualBuf.length ||
+          !crypto.timingSafeEqual(expectedBuf, actualBuf)
+        ) {
           return new Response("Invalid signature", { status: 401 });
         }
 

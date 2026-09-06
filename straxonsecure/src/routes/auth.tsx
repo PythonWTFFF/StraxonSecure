@@ -28,7 +28,8 @@ export const Route = createFileRoute("/auth")({
       { title: "Authenticate — Straxon Secure Enterprise" },
       {
         name: "description",
-        content: "Authenticate to access global SOC telemetry, interactive attack labs, and cyber defense tooling.",
+        content:
+          "Authenticate to access global SOC telemetry, interactive attack labs, and cyber defense tooling.",
       },
     ],
   }),
@@ -110,7 +111,11 @@ function AuthPage() {
           </div>
         </div>
 
-        <CyberCard variant="cyan" glow className="p-6 sm:p-8 border-[#00f3ff]/30 bg-[#020610]/95 backdrop-blur-2xl shadow-[0_10px_50px_rgba(0,0,0,0.9)]">
+        <CyberCard
+          variant="cyan"
+          glow
+          className="p-6 sm:p-8 border-[#00f3ff]/30 bg-[#020610]/95 backdrop-blur-2xl shadow-[0_10px_50px_rgba(0,0,0,0.9)]"
+        >
           <div className="flex flex-col items-center mb-6 text-center">
             <div className="relative mb-3">
               <img
@@ -163,7 +168,10 @@ function AuthPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="email" className="text-[11px] font-mono tracking-wider uppercase text-slate-300">
+              <Label
+                htmlFor="email"
+                className="text-[11px] font-mono tracking-wider uppercase text-slate-300"
+              >
                 <Mail className="inline h-3 w-3 mr-1 text-[#00f3ff]" /> Operator Email
               </Label>
               <Input
@@ -180,7 +188,10 @@ function AuthPage() {
             </div>
             <div>
               <div className="flex justify-between items-center">
-                <Label htmlFor="password" className="text-[11px] font-mono tracking-wider uppercase text-slate-300">
+                <Label
+                  htmlFor="password"
+                  className="text-[11px] font-mono tracking-wider uppercase text-slate-300"
+                >
                   <KeyRound className="inline h-3 w-3 mr-1 text-[#ff003c]" /> Security Keyphrase
                 </Label>
               </div>
@@ -198,7 +209,13 @@ function AuthPage() {
               />
             </div>
 
-            <CyberButton type="submit" disabled={busy} className="w-full mt-2" size="lg" variant="cyan">
+            <CyberButton
+              type="submit"
+              disabled={busy}
+              className="w-full mt-2"
+              size="lg"
+              variant="cyan"
+            >
               {busy ? (
                 "Verifying Clearance..."
               ) : mode === "signin" ? (

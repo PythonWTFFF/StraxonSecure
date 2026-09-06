@@ -5,9 +5,9 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
-      - 'package.json'
-      - 'vite.config.ts'
+      - "src/**"
+      - "package.json"
+      - "vite.config.ts"
 
 jobs:
   deploy:

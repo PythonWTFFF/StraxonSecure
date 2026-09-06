@@ -9,7 +9,7 @@ test.describe("StraxonSecure Phase 1: Critical Journey Smoke Test", () => {
   test("E2E Journey: Login -> Attack Surface -> Launch Pentest", async ({ page }) => {
     // 1. Authenticate
     await page.goto("/auth");
-    
+
     // Fill in mock credentials (these should map to a test user in the new Supabase instance)
     await page.fill('input[name="email"]', "test-analyst@straxon.io");
     await page.fill('input[name="password"]', "TestPassword123!");
@@ -23,7 +23,7 @@ test.describe("StraxonSecure Phase 1: Critical Journey Smoke Test", () => {
     await page.click('a[href="/easm"]');
     await page.waitForURL("**/easm");
     await expect(page.getByText("Attack Surface")).toBeVisible();
-    
+
     // Check that at least one asset is loaded in the table/cards
     // This relies on actual data being returned from the API
     await expect(page.locator(".cyber-card")).not.toHaveCount(0);
@@ -40,7 +40,7 @@ test.describe("StraxonSecure Phase 1: Critical Journey Smoke Test", () => {
       // Select the 'Quick' scan type
       await page.getByRole("combobox").selectOption("quick");
       await page.click('button:has-text("Launch Scan")');
-      
+
       // Verify success toast or UI update
       await expect(page.getByText("Scan queued")).toBeVisible({ timeout: 5000 });
     }

@@ -225,7 +225,10 @@ function Index() {
       toast.error("Please enter a domain to scan (e.g. acme-corp.com)");
       return;
     }
-    const cleanDomain = domainToScan.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    const cleanDomain = domainToScan
+      .trim()
+      .replace(/^https?:\/\//, "")
+      .replace(/\/.*$/, "");
     setScanDomain(cleanDomain);
     setScanning(true);
     setScanResult(null);
@@ -244,10 +247,26 @@ function Index() {
         ip: "104.21." + Math.floor(Math.random() * 200) + ".42",
         asn: "AS13335 (Cloudflare Global Edge)",
         vulnerabilities: [
-          { type: "Port Exposure", sev: "high", desc: "Open Port 8080/TCP responding with debug banner" },
-          { type: "Email Spoofing", sev: "medium", desc: "DMARC policy set to 'none' instead of 'reject' (Phishing risk)" },
-          { type: "Dark Web Leak", sev: "critical", desc: `2 breached credentials detected under @${cleanDomain}` },
-          { type: "Header Hygiene", sev: "low", desc: "Missing Content-Security-Policy (CSP) strict directive" },
+          {
+            type: "Port Exposure",
+            sev: "high",
+            desc: "Open Port 8080/TCP responding with debug banner",
+          },
+          {
+            type: "Email Spoofing",
+            sev: "medium",
+            desc: "DMARC policy set to 'none' instead of 'reject' (Phishing risk)",
+          },
+          {
+            type: "Dark Web Leak",
+            sev: "critical",
+            desc: `2 breached credentials detected under @${cleanDomain}`,
+          },
+          {
+            type: "Header Hygiene",
+            sev: "low",
+            desc: "Missing Content-Security-Policy (CSP) strict directive",
+          },
         ],
       });
       toast.success(`Attack surface reconnaissance complete for ${cleanDomain}`);
@@ -453,7 +472,7 @@ function Index() {
           >
             <div className="p-6 md:p-10 rounded-2xl bg-[#020610]/90 border border-[#00f3ff]/40 shadow-[0_0_50px_rgba(0,243,255,0.12)] backdrop-blur-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[90px] pointer-events-none" />
-              
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00f3ff]/10 border border-[#00f3ff]/30 text-[10px] font-mono text-[#00f3ff] uppercase tracking-widest mb-2">
@@ -463,7 +482,8 @@ function Index() {
                     Scan Your Attack Surface in Real Time
                   </h3>
                   <p className="text-xs text-slate-400 font-mono mt-1">
-                    Probe external assets for CVE vulnerabilities, open ports, and dark web credential leaks
+                    Probe external assets for CVE vulnerabilities, open ports, and dark web
+                    credential leaks
                   </p>
                 </div>
               </div>
@@ -524,16 +544,20 @@ function Index() {
                   </div>
                   <div className="space-y-1.5 text-[11px]">
                     <div className={scanStep >= 1 ? "text-emerald-400" : "text-slate-600"}>
-                      {scanStep >= 1 ? "✓" : "○"} [STAGE 1] Resolving authoritative DNS records & BGP routing prefix...
+                      {scanStep >= 1 ? "✓" : "○"} [STAGE 1] Resolving authoritative DNS records &
+                      BGP routing prefix...
                     </div>
                     <div className={scanStep >= 2 ? "text-emerald-400" : "text-slate-600"}>
-                      {scanStep >= 2 ? "✓" : "○"} [STAGE 2] Negotiating TLS 1.3 handshake & cipher suite security...
+                      {scanStep >= 2 ? "✓" : "○"} [STAGE 2] Negotiating TLS 1.3 handshake & cipher
+                      suite security...
                     </div>
                     <div className={scanStep >= 3 ? "text-emerald-400" : "text-slate-600"}>
-                      {scanStep >= 3 ? "✓" : "○"} [STAGE 3] Auditing exposed perimeter ports & HTTP defensive headers...
+                      {scanStep >= 3 ? "✓" : "○"} [STAGE 3] Auditing exposed perimeter ports & HTTP
+                      defensive headers...
                     </div>
                     <div className={scanStep >= 4 ? "text-emerald-400" : "text-slate-600"}>
-                      {scanStep >= 4 ? "✓" : "○"} [STAGE 4] Querying Dark Web database for compromised @{scanDomain || "domain"} credentials...
+                      {scanStep >= 4 ? "✓" : "○"} [STAGE 4] Querying Dark Web database for
+                      compromised @{scanDomain || "domain"} credentials...
                     </div>
                   </div>
                 </div>
@@ -557,12 +581,16 @@ function Index() {
 
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-[10px] font-mono text-slate-500 uppercase">SECURITY POSTURE</div>
+                        <div className="text-[10px] font-mono text-slate-500 uppercase">
+                          SECURITY POSTURE
+                        </div>
                         <div className="font-mono text-xs text-slate-300">{scanResult.asn}</div>
                       </div>
                       <div className="w-14 h-14 rounded-xl bg-orange-500/10 border border-orange-500/30 flex flex-col items-center justify-center">
                         <span className="font-display text-2xl font-black text-orange-400">B-</span>
-                        <span className="text-[8px] font-mono text-slate-400">{scanResult.score}/100</span>
+                        <span className="text-[8px] font-mono text-slate-400">
+                          {scanResult.score}/100
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -597,7 +625,9 @@ function Index() {
                               {v.sev}
                             </span>
                           </div>
-                          <p className="text-slate-400 text-[11px] mt-1 leading-relaxed">{v.desc}</p>
+                          <p className="text-slate-400 text-[11px] mt-1 leading-relaxed">
+                            {v.desc}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -609,11 +639,16 @@ function Index() {
                         Eliminate These Exposure Vectors with Straxon Pro
                       </div>
                       <div className="text-[11px] font-mono text-slate-300">
-                        Includes continuous attack surface monitoring, automated patch playbooks, and dark web credential takedown.
+                        Includes continuous attack surface monitoring, automated patch playbooks,
+                        and dark web credential takedown.
                       </div>
                     </div>
                     <Link to="/pricing" className="shrink-0 w-full sm:w-auto">
-                      <CyberButton variant="magenta" size="sm" className="w-full text-xs font-mono uppercase tracking-wider">
+                      <CyberButton
+                        variant="magenta"
+                        size="sm"
+                        className="w-full text-xs font-mono uppercase tracking-wider"
+                      >
                         <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Unlock Remediation Playbook
                       </CyberButton>
                     </Link>

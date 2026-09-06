@@ -35,7 +35,9 @@ export function BottomNav() {
               {isActive && (
                 <span
                   className={`absolute top-0 w-8 h-0.5 rounded-full ${
-                    item.isPro ? "bg-[#ff003c] shadow-[0_0_8px_#ff003c]" : "bg-[#00f3ff] shadow-[0_0_8px_#00f3ff]"
+                    item.isPro
+                      ? "bg-[#ff003c] shadow-[0_0_8px_#ff003c]"
+                      : "bg-[#00f3ff] shadow-[0_0_8px_#00f3ff]"
                   }`}
                 />
               )}
@@ -56,7 +58,9 @@ export function BottomNav() {
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] font-mono tracking-wider uppercase font-medium ${item.isPro ? "text-accent font-bold" : ""}`}>
+              <span
+                className={`text-[10px] font-mono tracking-wider uppercase font-medium ${item.isPro ? "text-accent font-bold" : ""}`}
+              >
                 {item.label}
               </span>
             </Link>

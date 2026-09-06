@@ -84,8 +84,13 @@ const ENTERPRISE_ADDONS = [
     badge: "AI RED-TEAM",
     icon: ShieldCheck,
     price: 299,
-    description: "24/7 continuous autonomous penetration testing bot with automated MITRE ATT&CK exploit path generation and safe validation.",
-    benefits: ["Zero-day vulnerability validation", "Automated GitHub remediation PRs", "Blast-radius simulation graphs"],
+    description:
+      "24/7 continuous autonomous penetration testing bot with automated MITRE ATT&CK exploit path generation and safe validation.",
+    benefits: [
+      "Zero-day vulnerability validation",
+      "Automated GitHub remediation PRs",
+      "Blast-radius simulation graphs",
+    ],
   },
   {
     id: "soc_tenant",
@@ -93,8 +98,13 @@ const ENTERPRISE_ADDONS = [
     badge: "ISOLATED SIEM",
     icon: Server,
     price: 499,
-    description: "High-throughput sovereign SIEM cluster with 1-year immutable hot telemetry retention and custom sigma rule ingestion.",
-    benefits: ["Sub-second federated threat hunting", "Full multi-tenant RBAC & audit logs", "Dedicated NVMe ingestion pipeline"],
+    description:
+      "High-throughput sovereign SIEM cluster with 1-year immutable hot telemetry retention and custom sigma rule ingestion.",
+    benefits: [
+      "Sub-second federated threat hunting",
+      "Full multi-tenant RBAC & audit logs",
+      "Dedicated NVMe ingestion pipeline",
+    ],
   },
   {
     id: "darkweb_vip",
@@ -102,8 +112,13 @@ const ENTERPRISE_ADDONS = [
     badge: "VIP INTEL",
     icon: Eye,
     price: 199,
-    description: "Real-time deep web surveillance scraping Tor hidden services, private Telegram broker channels, and infostealer dumps.",
-    benefits: ["C-Suite credential leak alerts", "VIP domain typosquatting detection", "Rapid takedown legal coordinator"],
+    description:
+      "Real-time deep web surveillance scraping Tor hidden services, private Telegram broker channels, and infostealer dumps.",
+    benefits: [
+      "C-Suite credential leak alerts",
+      "VIP domain typosquatting detection",
+      "Rapid takedown legal coordinator",
+    ],
   },
 ];
 
@@ -150,7 +165,7 @@ function PricingPage() {
 
   const toggleAddon = (id: string) => {
     setSelectedAddons((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -348,7 +363,10 @@ function PricingPage() {
         {/* PRICING CARDS */}
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {/* HOBBY TIER */}
-          <CyberCard variant="plain" className="p-6 md:p-8 border-white/10 shadow-none flex flex-col">
+          <CyberCard
+            variant="plain"
+            className="p-6 md:p-8 border-white/10 shadow-none flex flex-col"
+          >
             <div className="text-[10px] font-mono tracking-widest text-[#00f3ff] uppercase mb-4">
               Hobby
             </div>
@@ -460,7 +478,10 @@ function PricingPage() {
           </CyberCard>
 
           {/* ENTERPRISE TIER */}
-          <CyberCard variant="plain" className="p-6 md:p-8 border-white/10 shadow-none flex flex-col">
+          <CyberCard
+            variant="plain"
+            className="p-6 md:p-8 border-white/10 shadow-none flex flex-col"
+          >
             <div className="text-[10px] font-mono tracking-widest text-[#00f3ff] uppercase mb-4">
               Enterprise
             </div>
@@ -504,7 +525,8 @@ function PricingPage() {
               Enterprise Defense Add-Ons
             </h2>
             <p className="text-xs md:text-sm text-slate-400 max-w-xl mx-auto mt-2">
-              Extend your Straxon Pro instance with mission-critical autonomous agents, dedicated sovereign SOC infrastructure, and VIP intelligence feeds.
+              Extend your Straxon Pro instance with mission-critical autonomous agents, dedicated
+              sovereign SOC infrastructure, and VIP intelligence feeds.
             </p>
           </div>
 
@@ -562,7 +584,9 @@ function PricingPage() {
                   </div>
 
                   <div className="pt-4 border-t border-white/10 flex items-baseline justify-between">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase">ADD-ON PRICE</span>
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">
+                      ADD-ON PRICE
+                    </span>
                     <div className="text-right">
                       <span className="text-lg font-bold text-white">${addon.price}</span>
                       <span className="text-xs text-slate-500 font-mono"> / mo</span>
@@ -583,7 +607,8 @@ function PricingPage() {
                 </span>
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
-                Billed {billing === "monthly" ? "monthly" : "annually"} • Instant zero-trust cloud provisioning
+                Billed {billing === "monthly" ? "monthly" : "annually"} • Instant zero-trust cloud
+                provisioning
               </div>
             </div>
             <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
@@ -608,7 +633,11 @@ function PricingPage() {
 
         {/* INTERACTIVE ENTERPRISE ROI & BREAKEVEN CALCULATOR */}
         <div className="mt-16 max-w-4xl mx-auto">
-          <CyberCard variant="cyan" glow className="p-6 md:p-10 border-[#00f3ff]/30 bg-[#020610]/90 relative overflow-hidden">
+          <CyberCard
+            variant="cyan"
+            glow
+            className="p-6 md:p-10 border-[#00f3ff]/30 bg-[#020610]/90 relative overflow-hidden"
+          >
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2.5 rounded-lg bg-[#00f3ff]/10 border border-[#00f3ff]/30 text-[#00f3ff]">
                 <Calculator className="h-6 w-6" />
@@ -689,7 +718,8 @@ function PricingPage() {
                   <span>+{roiPercentage.toLocaleString()}% Est. ROI</span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed max-w-xs mx-auto">
-                  Plus mitigation against the average $4.45M cost of an uncontained enterprise data breach.
+                  Plus mitigation against the average $4.45M cost of an uncontained enterprise data
+                  breach.
                 </p>
                 <CyberButton
                   variant="magenta"
@@ -715,7 +745,8 @@ function PricingPage() {
               CISO & Enterprise FAQ
             </h2>
             <p className="text-xs md:text-sm text-slate-400 max-w-lg mx-auto mt-2">
-              Everything your security, legal, and procurement teams need to clear Straxon for enterprise deployment.
+              Everything your security, legal, and procurement teams need to clear Straxon for
+              enterprise deployment.
             </p>
           </div>
 

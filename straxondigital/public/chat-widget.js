@@ -287,8 +287,8 @@
     `;
 
     document.getElementById("straxon-lead-submit")?.addEventListener("click", () => {
-      const nameVal = (document.getElementById("straxon-lead-input-name") as HTMLInputElement)?.value.trim();
-      const emailVal = (document.getElementById("straxon-lead-input-email") as HTMLInputElement)?.value.trim();
+      const nameVal = document.getElementById("straxon-lead-input-name")?.value?.trim();
+      const emailVal = document.getElementById("straxon-lead-input-email")?.value?.trim();
 
       if (!nameVal || !emailVal) return;
 

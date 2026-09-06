@@ -52,7 +52,9 @@ const ResellerPage = () => {
         if (parsed.customDomain) setCustomDomain(parsed.customDomain);
         if (parsed.accentColor) setAccentColor(parsed.accentColor);
         if (parsed.markupMultiplier) setMarkupMultiplier(parsed.markupMultiplier);
-      } catch (e) {}
+      } catch {
+        // Ignore JSON parse errors for corrupt local storage
+      }
     }
   }, []);
 

@@ -27,7 +27,11 @@ const SYSTEM_PROMPTS: Record<string, string> = {
 };
 
 export const askAI = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(15, 60, "rate_limit:ask_ai")])
+  .middleware([
+    requireRequestId,
+    requireSupabaseAuth,
+    createRateLimiter(15, 60, "rate_limit:ask_ai"),
+  ])
   .validator((input: AskAIInput) => {
     if (!input || !Array.isArray(input.messages)) {
       throw new Error("Invalid input: messages required");

@@ -25,14 +25,14 @@ export async function sendWelcomeEmail(email: string, name: string = "User") {
         </div>
       `,
     });
-    
+
     logAudit({
       requestId: "system",
       actorUserId: "00000000-0000-0000-0000-000000000000",
       orgId: "system",
       action: "email_sent",
       serverFn: "sendWelcomeEmail",
-      metadata: { type: "welcome", to: email, id: data.data?.id }
+      metadata: { type: "welcome", to: email, id: data.data?.id },
     });
 
     return { success: true, data };
@@ -62,7 +62,7 @@ export async function sendSubscriptionReceipt(email: string, planName: string, a
         </div>
       `,
     });
-    
+
     return { success: true, data };
   } catch (error) {
     console.error("[Email Error] Failed to send receipt:", error);

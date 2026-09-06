@@ -17,7 +17,7 @@ export function createRateLimiter(limit: number, windowSecs: number, prefix: str
 
     // Try to get an identifier (userId from auth, or IP).
     const ctx = context as any;
-    let identifier = ctx.userId || ctx.clientIp || "anonymous";
+    const identifier = ctx.userId || ctx.clientIp || "anonymous";
 
     const key = `${prefix}:${identifier}`;
     const now = Date.now();
@@ -41,7 +41,7 @@ export function createRateLimiter(limit: number, windowSecs: number, prefix: str
       }
 
       const currentCount = results[1][1] as number;
-      
+
       if (currentCount >= limit) {
         throw new Error(`Rate limit exceeded for ${prefix}. Please try again later.`);
       }

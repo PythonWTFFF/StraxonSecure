@@ -15,18 +15,20 @@ const PLANS = {
 type PlanKey = keyof typeof PLANS;
 
 // Initialize Stripe if we have the key
-const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY)
-  : null;
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // ===== STRIPE CHECKOUT =====
 export const createStripeCheckout = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(5, 60, "rate_limit:checkout")])
+  .middleware([
+    requireRequestId,
+    requireSupabaseAuth,
+    createRateLimiter(5, 60, "rate_limit:checkout"),
+  ])
   .validator((d) => z.object({ plan: z.enum(["pro_monthly", "pro_yearly"]) }).parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const origin = process.env.SITE_URL || "http://localhost:8080";
-    
+
     if (!stripe) {
       // Simulate checkout flow if no key exists by upgrading their subscription immediately
       const periodEnd = new Date();
@@ -56,7 +58,7 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
         url: `${origin}/billing?success=1&simulated=true`,
       };
     }
-    
+
     const priceId =
       data.plan === "pro_monthly"
         ? process.env.STRIPE_PRICE_MONTHLY
@@ -185,10 +187,13 @@ export const createPortalSession = createServerFn({ method: "POST" })
     }
   });
 
-
 // ===== RAZORPAY ORDER =====
 export const createRazorpayOrder = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(5, 60, "rate_limit:checkout")])
+  .middleware([
+    requireRequestId,
+    requireSupabaseAuth,
+    createRateLimiter(5, 60, "rate_limit:checkout"),
+  ])
   .validator((d) => z.object({ plan: z.enum(["pro_monthly", "pro_yearly"]) }).parse(d))
   .handler(async ({ data, context }) => {
     const keyId = process.env.RAZORPAY_KEY_ID;

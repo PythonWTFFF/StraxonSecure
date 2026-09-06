@@ -110,7 +110,11 @@ export const fetchThreatIntel = createServerFn({ method: "GET" })
 // ─── AI Analyze a Specific CVE ────────────────────────────────────────────────
 
 export const analyzeCVE = createServerFn({ method: "POST" })
-  .middleware([requireRequestId, requireSupabaseAuth, createRateLimiter(10, 60, "rate_limit:ai_cve")])
+  .middleware([
+    requireRequestId,
+    requireSupabaseAuth,
+    createRateLimiter(10, 60, "rate_limit:ai_cve"),
+  ])
   .validator((d) =>
     z
       .object({
@@ -162,12 +166,12 @@ Be concise, technical, and actionable. Max 400 words.`;
     if (!res.ok) throw new Error("AI analysis failed");
     const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const analysis = json.choices?.[0]?.message?.content ?? "";
-    
+
     // Cache for 24 hours
     if (analysis) {
       await setCache(cacheKey, analysis, 86400);
     }
-    
+
     return { analysis };
   });
 

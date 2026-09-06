@@ -42,7 +42,7 @@ export async function getCache(key: string): Promise<string | null> {
     }
     return item.value;
   }
-  
+
   try {
     return await redisClient.get(key);
   } catch {
@@ -51,7 +51,11 @@ export async function getCache(key: string): Promise<string | null> {
   }
 }
 
-export async function setCache(key: string, value: string, ttlSeconds: number = 3600): Promise<void> {
+export async function setCache(
+  key: string,
+  value: string,
+  ttlSeconds: number = 3600,
+): Promise<void> {
   if (useLocalCache || !redisClient) {
     localCache.set(key, { value, expiry: Date.now() + ttlSeconds * 1000 });
     return;

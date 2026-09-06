@@ -3,7 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "npm --prefix straxonsecure run build",
-    "deploy": "npm --prefix straxonsecure run deploy"
+    "build": "npm run build:secure && npm run build:digital",
+    "build:secure": "npm --prefix straxonsecure run build",
+    "build:digital": "npm --prefix straxondigital run build",
+    "deploy": "npm run deploy:secure",
+    "deploy:secure": "npm --prefix straxonsecure run deploy",
+    "deploy:digital": "npm --prefix straxondigital run deploy",
+    "lint": "npm run lint:secure && npm run lint:digital",
+    "lint:secure": "npm --prefix straxonsecure run lint",
+    "lint:digital": "npm --prefix straxondigital run lint",
+    "format": "npm --prefix straxonsecure run format"
   }
 }

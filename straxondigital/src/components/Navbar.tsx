@@ -42,6 +42,7 @@ export const Navbar = () => {
     { to: "/", label: "Home" },
     { to: "/services", label: "Services" },
     { to: "/pricing", label: "Pricing" },
+    { to: "/opportunities", label: "EdTech Matrix" },
     { to: "/automations", label: "Automations" },
     { to: "/reseller", label: "Agency Reseller" },
     { to: "/affiliates", label: "Partners" },

@@ -10,34 +10,34 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - secure.straxon.io
-    secretName: straxon-tls
+    - hosts:
+        - secure.straxon.io
+      secretName: straxon-tls
   rules:
-  - host: secure.straxon.io
-    http:
-      paths:
-      # Route /api/ml traffic to ML Engine
-      - path: /api/ml
-        pathType: Prefix
-        backend:
-          service:
-            name: straxon-ml-engine-service
-            port:
-              number: 8082
-      # Route /api/labs traffic to ML Engine
-      - path: /api/labs
-        pathType: Prefix
-        backend:
-          service:
-            name: straxon-ml-engine-service
-            port:
-              number: 8082
-      # Route all other traffic to Frontend
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: straxon-frontend-service
-            port:
-              number: 80
+    - host: secure.straxon.io
+      http:
+        paths:
+          # Route /api/ml traffic to ML Engine
+          - path: /api/ml
+            pathType: Prefix
+            backend:
+              service:
+                name: straxon-ml-engine-service
+                port:
+                  number: 8082
+          # Route /api/labs traffic to ML Engine
+          - path: /api/labs
+            pathType: Prefix
+            backend:
+              service:
+                name: straxon-ml-engine-service
+                port:
+                  number: 8082
+          # Route all other traffic to Frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: straxon-frontend-service
+                port:
+                  number: 80

@@ -35,7 +35,7 @@ paths:
                   type: string
                   enum: [pro_monthly, pro_yearly]
       responses:
-        '200':
+        "200":
           description: Checkout URL generated successfully
           content:
             application/json:
@@ -66,7 +66,7 @@ paths:
                   type: string
                   enum: [quick, full, stealth]
       responses:
-        '200':
+        "200":
           description: Job Enqueued Successfully
   /_server/soc/ingestThreatEvent:
     post:
@@ -84,7 +84,7 @@ paths:
                 payload:
                   type: object
       responses:
-        '200':
+        "200":
           description: Event successfully ingested
   /_server/labs/startLabSession:
     post:
@@ -101,5 +101,5 @@ paths:
                 labId:
                   type: string
       responses:
-        '200':
+        "200":
           description: Lab provisioned and proxy URL returned.

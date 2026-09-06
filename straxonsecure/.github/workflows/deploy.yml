@@ -52,7 +52,7 @@ jobs:
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
-        
+
       - name: Set Kubeconfig
         run: |
           mkdir -p $HOME/.kube

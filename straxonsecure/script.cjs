@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = 'c:/project Straxon/straxonsecure/src/integrations/supabase/types.ts';
-let content = fs.readFileSync(path, 'utf8');
+const fs = require("fs");
+const path = "c:/project Straxon/straxonsecure/src/integrations/supabase/types.ts";
+let content = fs.readFileSync(path, "utf8");
 
 const additionalTables = `
         ctf_challenges: {

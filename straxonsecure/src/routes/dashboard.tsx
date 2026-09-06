@@ -909,9 +909,21 @@ function useThreatEngine(paused: boolean, mounted: boolean) {
       .on("presence", { event: "sync" }, () => {
         setLiveOps(Object.keys(channel.presenceState()).length || 1);
       })
-      .subscribe(async (status) => {
-        setRtConnected(status === "SUBSCRIBED");
-        if (status === "SUBSCRIBED") await channel.track({ online_at: new Date().toISOString() });
+      .subscribe(async (status, err) => {
+        const isConnected = status === "SUBSCRIBED";
+        setRtConnected(isConnected);
+        if (isConnected) {
+          try {
+            await channel.track({ online_at: new Date().toISOString() });
+          } catch (e) {
+            console.debug("[SOC Realtime] Presence tracking not available:", e);
+          }
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn(
+            `[SOC Realtime] Realtime status ${status}: fallback to local threat simulation stream.`,
+            err,
+          );
+        }
       });
 
     channelRef.current = channel;
@@ -1406,10 +1418,14 @@ function Dashboard() {
                 <DollarSign className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-[8px] text-slate-500 uppercase tracking-widest font-mono">FAIR RISK EXPOSURE (VaR)</div>
+                <div className="text-[8px] text-slate-500 uppercase tracking-widest font-mono">
+                  FAIR RISK EXPOSURE (VaR)
+                </div>
                 <div className="font-display text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <span className="line-through text-slate-500 text-xs">$2,450,000</span>
-                  <span className="text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.4)]">&lt; $42,500</span>
+                  <span className="text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.4)]">
+                    &lt; $42,500
+                  </span>
                   <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 font-mono">
                     98.3% MITIGATED
                   </span>
@@ -1424,7 +1440,9 @@ function Dashboard() {
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-[8px] text-slate-500 uppercase tracking-widest font-mono">NIST CSF 2.0 ALIGNMENT</div>
+                <div className="text-[8px] text-slate-500 uppercase tracking-widest font-mono">
+                  NIST CSF 2.0 ALIGNMENT
+                </div>
                 <div className="font-display text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <span>96.4%</span>
                   <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950/40 text-cyan-400 border border-cyan-800/40 font-mono">
@@ -1449,7 +1467,9 @@ function Dashboard() {
                   : "bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300"
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${activeCountermeasures.bgpNullRoute ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${activeCountermeasures.bgpNullRoute ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`}
+              />
               BGP Null-Route
             </button>
 
@@ -1462,20 +1482,26 @@ function Dashboard() {
                   : "bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300"
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${activeCountermeasures.cloudflareWaf ? "bg-cyan-400 animate-pulse" : "bg-slate-600"}`} />
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${activeCountermeasures.cloudflareWaf ? "bg-cyan-400 animate-pulse" : "bg-slate-600"}`}
+              />
               Cloudflare WAF
             </button>
 
             <button
               type="button"
-              onClick={() => toggleCountermeasure("aiPacketDisruption", "AI Deep Packet Disruption")}
+              onClick={() =>
+                toggleCountermeasure("aiPacketDisruption", "AI Deep Packet Disruption")
+              }
               className={`px-2.5 py-1.5 rounded-lg text-[9px] font-mono uppercase tracking-wider border transition-all flex items-center gap-1.5 ${
                 activeCountermeasures.aiPacketDisruption
                   ? "bg-fuchsia-950/40 border-fuchsia-600/60 text-fuchsia-400 shadow-[0_0_10px_rgba(255,0,255,0.15)]"
                   : "bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300"
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${activeCountermeasures.aiPacketDisruption ? "bg-fuchsia-400 animate-pulse" : "bg-slate-600"}`} />
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${activeCountermeasures.aiPacketDisruption ? "bg-fuchsia-400 animate-pulse" : "bg-slate-600"}`}
+              />
               AI Disruption
             </button>
 

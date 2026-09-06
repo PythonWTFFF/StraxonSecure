@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
         }
 
         // Calculate next run date
-        let nextRun = new Date();
+        const nextRun = new Date();
         if (sched.frequency === "daily") {
           nextRun.setDate(nextRun.getDate() + 1);
         } else if (sched.frequency === "weekly") {

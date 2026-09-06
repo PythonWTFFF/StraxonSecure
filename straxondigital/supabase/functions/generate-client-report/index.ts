@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     const hoursSaved = deliverablesCount * 8.5; // ~8.5 hours saved per asset
 
     // 2. Synthesize with GPT-4o-mini
-    let reportData = {
+    const reportData = {
       executive_narrative: `During ${reportPeriod}, ${agencyName} delivered ${deliverablesCount} high-impact strategic deliverables for ${clientName}${clientCompany ? ` at ${clientCompany}` : ""}. Through autonomous intelligence and deep brand voice alignment, all assets were completed with zero production turnaround delays, generating an estimated $${(estimatedValueCents / 100).toLocaleString()} in commercial asset value.`,
       top_achievements: [
         "100% On-Time Deliverable Velocity with zero manual bottleneck delays",

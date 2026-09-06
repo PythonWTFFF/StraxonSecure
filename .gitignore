@@ -14,5 +14,5 @@ terraform/tfplan
 dist/
 .tanstack/
 .wrangler/
-supabase/
+/supabase/
 .vite/
