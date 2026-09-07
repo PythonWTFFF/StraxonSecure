@@ -11,12 +11,14 @@
 ## 1. Executive Summary & Problem Thesis
 
 ### 1.1 The Core Industry Failure
+
 Every year, over 1.5 million computer science and engineering students graduate in emerging tech markets. Despite maintaining high GPAs and solving algorithmic leetcode questions, **over 85% of fresh graduates are unemployable on Day 1 in modern engineering teams**.
 
 * **What Colleges Teach**: Isolated algorithm puzzles, single-file scripts (`main.c`, `App.java`), theoretical whiteboard complexity, and synthetic clean-room problems.
 * **What Industry Demands**: Navigating 200,000-line legacy microservice architectures, diagnosing intermittent race conditions, writing resilient unit/integration tests, resolving git merge conflicts, reading unstructured stack traces, and handling production deployments under observability constraints.
 
 ### 1.2 The ProductionSim Vision
+
 ProductionSim is an automated **"Flight Simulator for Software Engineers"**. It drops candidates into realistic, ephemeral multi-tier production codebases (e.g., a broken e-commerce payments service or an incident-stricken distributed cache), assigns them realistic Jira tickets and mock Slack incident alerts, and objectively evaluates their hands-on engineering instincts.
 
 ---
@@ -51,10 +53,12 @@ journey
 ```
 
 ### Persona A: The Aspiring Engineer ("Arjun", 22, CS Senior)
+
 * **Pain Point**: Solved 300+ LeetCode problems, but gets rejected in technical interviews because he has never read an OpenTelemetry trace, used Redis locks, or debugged a Dockerized service.
 * **Desired Outcome**: A verifiable, objective credential demonstrating he can ship clean code into production on Day 1.
 
 ### Persona B: The VP of Engineering ("Sarah", High-Growth SaaS)
+
 * **Pain Point**: Sifts through 2,000 identical resumes with high GPAs; spends 45 engineer-hours per week on live coding interviews where candidates fail basic git commands or error handling.
 * **Desired Outcome**: A pre-screened talent pipeline evaluated on actual code hygiene, debugging efficiency, and architectural reasoning.
 
@@ -88,16 +92,18 @@ graph TD
 ```
 
 ### 4.1 Ephemeral MicroVM Sandbox Infrastructure
+
 1. **Isolation Model**: Each challenge session provisions a lightweight **Firecracker MicroVM** (or gVisor sandbox) within 450ms, containing:
-   - Full Linux environment (Ubuntu 24.04 minimal).
-   - Real multi-container runtime via Rootless Podman / Docker-in-Docker.
-   - Pre-cloned legacy repository with real git history (50+ commits, multiple contributors).
-   - Seeded database (PostgreSQL / Redis / SQLite) with realistic dirty data.
+   * Full Linux environment (Ubuntu 24.04 minimal).
+   * Real multi-container runtime via Rootless Podman / Docker-in-Docker.
+   * Pre-cloned legacy repository with real git history (50+ commits, multiple contributors).
+   * Seeded database (PostgreSQL / Redis / SQLite) with realistic dirty data.
 2. **Network Isolation**:
-   - Zero outbound internet access (prevents external code leaking, cryptomining, or reverse shells).
-   - Internal virtual bridge to mock microservices and third-party APIs (e.g. simulated Stripe, AWS S3, Twilio).
+   * Zero outbound internet access (prevents external code leaking, cryptomining, or reverse shells).
+   * Internal virtual bridge to mock microservices and third-party APIs (e.g. simulated Stripe, AWS S3, Twilio).
 
 ### 4.2 Automated Multi-Vector Evaluation Engine
+
 Instead of binary pass/fail unit tests, ProductionSim grades candidate performance on an enterprise rubric:
 
 | Evaluation Dimension | Weight | Metrics Analyzed |
@@ -105,7 +111,7 @@ Instead of binary pass/fail unit tests, ProductionSim grades candidate performan
 | **Debugging Velocity** | 25% | Time from ticket assignment to first breakpoint, pinpointing root cause in stack trace. |
 | **Regression & Test Hygiene** | 20% | Did the candidate write a reproducing test before modifying source code? Test assertions quality. |
 | **Code Smells & Complexity** | 20% | Cyclomatic complexity delta, memory safety, boundary checks, and dead-code elimination. |
-| **Git Hygiene & Collaboration**| 15% | Atomic commits, descriptive commit messages, branch naming, and clear PR review descriptions. |
+| **Git Hygiene & Collaboration** | 15% | Atomic commits, descriptive commit messages, branch naming, and clear PR review descriptions. |
 | **Architectural Coherence** | 20% | Adherence to existing repository patterns, modularity, dependency management, and error handling. |
 
 ---

@@ -74,9 +74,10 @@ export function AddOpportunityForm({ onSuccess, onCancel }: AddOpportunityFormPr
 
       toast.success("Opportunity added successfully!");
       onSuccess(insertedData as EdTechOpportunity);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error adding opportunity:", error);
-      toast.error(error.message || "Failed to add opportunity");
+      const message = error instanceof Error ? error.message : "Failed to add opportunity";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

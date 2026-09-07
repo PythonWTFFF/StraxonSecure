@@ -15,11 +15,11 @@ export interface SandboxExecutionResult {
 export async function runInSandbox(
   code: string,
   image: string = "node:18-alpine",
-  command: string = "npm test"
+  command: string = "npm test",
 ): Promise<SandboxExecutionResult> {
   // 1. Create a secure temporary directory
   const tempDir = await mkdtemp(join(tmpdir(), "devlab-sandbox-"));
-  
+
   try {
     // 2. Write the candidate's code to a known file (e.g., index.js or similar based on scenario)
     // For simplicity, we just dump it to candidate_code.ts. In a real scenario, this would be a full repo clone.
@@ -44,10 +44,11 @@ export async function runInSandbox(
       const { stdout: out, stderr: err } = await execAsync(dockerCmd, { timeout: 10000 });
       stdout = out;
       stderr = err;
-    } catch (error: any) {
-      stdout = error.stdout || "";
-      stderr = error.stderr || error.message;
-      exitCode = error.code ?? 1;
+    } catch (error: unknown) {
+      const err = error as { stdout?: string; stderr?: string; message?: string; code?: number };
+      stdout = err.stdout || "";
+      stderr = err.stderr || err.message || "Execution error";
+      exitCode = err.code ?? 1;
     }
 
     return { stdout, stderr, exitCode };

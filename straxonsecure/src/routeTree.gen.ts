@@ -59,6 +59,7 @@ import { Route as LabsSsrfRouteImport } from './routes/labs.ssrf'
 import { Route as LabsTerminalRouteImport } from './routes/labs.terminal'
 import { Route as LabsXssRouteImport } from './routes/labs.xss'
 import { Route as LabsXxeRouteImport } from './routes/labs.xxe'
+import { Route as ApiPublicEvaluateLabRouteImport } from './routes/api/public/evaluate-lab'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 import { Route as ApiPublicEdrIngestRouteImport } from './routes/api/public/edr/ingest'
@@ -313,6 +314,11 @@ const LabsXxeRoute = LabsXxeRouteImport.update({
   path: '/xxe',
   getParentRoute: () => LabsRoute,
 } as any)
+const ApiPublicEvaluateLabRoute = ApiPublicEvaluateLabRouteImport.update({
+  id: '/api/public/evaluate-lab',
+  path: '/api/public/evaluate-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicRazorpayWebhookRoute =
   ApiPublicRazorpayWebhookRouteImport.update({
     id: '/api/public/razorpay-webhook',
@@ -381,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/labs/xss': typeof LabsXssRoute
   '/labs/xxe': typeof LabsXxeRoute
   '/labs/': typeof LabsIndexRoute
+  '/api/public/evaluate-lab': typeof ApiPublicEvaluateLabRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/edr/ingest': typeof ApiPublicEdrIngestRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/labs/xss': typeof LabsXssRoute
   '/labs/xxe': typeof LabsXxeRoute
   '/labs': typeof LabsIndexRoute
+  '/api/public/evaluate-lab': typeof ApiPublicEvaluateLabRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/edr/ingest': typeof ApiPublicEdrIngestRoute
@@ -491,6 +499,7 @@ export interface FileRoutesById {
   '/labs/xss': typeof LabsXssRoute
   '/labs/xxe': typeof LabsXxeRoute
   '/labs/': typeof LabsIndexRoute
+  '/api/public/evaluate-lab': typeof ApiPublicEvaluateLabRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/edr/ingest': typeof ApiPublicEdrIngestRoute
@@ -548,6 +557,7 @@ export interface FileRouteTypes {
     | '/labs/xss'
     | '/labs/xxe'
     | '/labs/'
+    | '/api/public/evaluate-lab'
     | '/api/public/razorpay-webhook'
     | '/api/public/stripe-webhook'
     | '/api/public/edr/ingest'
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/labs/xss'
     | '/labs/xxe'
     | '/labs'
+    | '/api/public/evaluate-lab'
     | '/api/public/razorpay-webhook'
     | '/api/public/stripe-webhook'
     | '/api/public/edr/ingest'
@@ -657,6 +668,7 @@ export interface FileRouteTypes {
     | '/labs/xss'
     | '/labs/xxe'
     | '/labs/'
+    | '/api/public/evaluate-lab'
     | '/api/public/razorpay-webhook'
     | '/api/public/stripe-webhook'
     | '/api/public/edr/ingest'
@@ -694,6 +706,7 @@ export interface RootRouteChildren {
   ThreatIntelRoute: typeof ThreatIntelRoute
   WarroomRoute: typeof WarroomRoute
   ApiHealthzRoute: typeof ApiHealthzRoute
+  ApiPublicEvaluateLabRoute: typeof ApiPublicEvaluateLabRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicEdrIngestRoute: typeof ApiPublicEdrIngestRoute
@@ -1051,6 +1064,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabsXxeRouteImport
       parentRoute: typeof LabsRoute
     }
+    '/api/public/evaluate-lab': {
+      id: '/api/public/evaluate-lab'
+      path: '/api/public/evaluate-lab'
+      fullPath: '/api/public/evaluate-lab'
+      preLoaderRoute: typeof ApiPublicEvaluateLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/razorpay-webhook': {
       id: '/api/public/razorpay-webhook'
       path: '/api/public/razorpay-webhook'
@@ -1153,6 +1173,7 @@ const rootRouteChildren: RootRouteChildren = {
   ThreatIntelRoute: ThreatIntelRoute,
   WarroomRoute: WarroomRoute,
   ApiHealthzRoute: ApiHealthzRoute,
+  ApiPublicEvaluateLabRoute: ApiPublicEvaluateLabRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicEdrIngestRoute: ApiPublicEdrIngestRoute,
